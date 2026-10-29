@@ -1,0 +1,46 @@
+{
+ "workflow": "vid_ltx_ff.json",
+ "kind": "ff",
+ "description": "LTX 2.3 image-to-video from a first frame (two-stage, spatial x2 upscale). Length in frames must be 8n+1.",
+ "roles": {
+  "image": {
+   "node": "149",
+   "input": "image"
+  },
+  "prompt": {
+   "node": "257:220",
+   "input": "text"
+  },
+  "negative": {
+   "node": "257:204",
+   "input": "value"
+  },
+  "frames": [
+   {
+    "node": "257:255",
+    "input": "length"
+   },
+   {
+    "node": "257:254",
+    "input": "frames_number"
+   }
+  ],
+  "seed": [
+   {
+    "node": "257:218",
+    "input": "noise_seed"
+   },
+   {
+    "node": "257:228",
+    "input": "noise_seed",
+    "offset": 1
+   }
+  ]
+ },
+ "outputs": {
+  "video": {
+   "node": "75",
+   "input": "filename_prefix"
+  }
+ }
+}

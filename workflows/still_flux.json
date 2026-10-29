@@ -1,0 +1,1993 @@
+{
+ "1363": {
+  "inputs": {
+   "filename_prefix": "nightshift/example",
+   "images": [
+    "1362:1354",
+    0
+   ]
+  },
+  "class_type": "SaveImage",
+  "_meta": {
+   "title": "Save Image"
+  }
+ },
+ "1366": {
+  "inputs": {
+   "value": "person"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "person"
+  }
+ },
+ "1367": {
+  "inputs": {
+   "value": "outfit"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "outfit"
+  }
+ },
+ "1368": {
+  "inputs": {
+   "value": "action"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "action"
+  }
+ },
+ "1369": {
+  "inputs": {
+   "value": "location"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "location"
+  }
+ },
+ "152:362": {
+  "inputs": {
+   "value": true
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if POV"
+  }
+ },
+ "152:400": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if indoor"
+  }
+ },
+ "152:662": {
+  "inputs": {
+   "value": true
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if close up"
+  }
+ },
+ "152:594": {
+  "inputs": {
+   "join_with": " ",
+   "string_list": [
+    "152:592",
+    0
+   ]
+  },
+  "class_type": "StringListToString",
+  "_meta": {
+   "title": "final suffix merge"
+  }
+ },
+ "152:194": {
+  "inputs": {
+   "source": [
+    "1368",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "action input"
+  }
+ },
+ "152:193": {
+  "inputs": {
+   "source": [
+    "1367",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "outfit input"
+  }
+ },
+ "152:195": {
+  "inputs": {
+   "source": [
+    "1369",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "location input"
+  }
+ },
+ "152:698": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if bad photo"
+  }
+ },
+ "152:614": {
+  "inputs": {
+   "value": true
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if pro photo"
+  }
+ },
+ "152:394": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if atmosphere"
+  }
+ },
+ "152:592": {
+  "inputs": {
+   "inputs.input0": [
+    "152:583",
+    0
+   ],
+   "inputs.input1": [
+    "152:585",
+    0
+   ],
+   "inputs.input2": [
+    "152:589",
+    0
+   ],
+   "inputs.input3": [
+    "152:598",
+    0
+   ]
+  },
+  "class_type": "CreateList",
+  "_meta": {
+   "title": "Create List"
+  }
+ },
+ "152:542": {
+  "inputs": {
+   "string_a": "",
+   "string_b": [
+    "152:533",
+    0
+   ],
+   "delimiter": ""
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concat to Front of Prompt"
+  }
+ },
+ "152:202": {
+  "inputs": {
+   "source": [
+    "1366",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "person input"
+  }
+ },
+ "152:396": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if daytime"
+  }
+ },
+ "152:543": {
+  "inputs": {
+   "switch": false,
+   "on_false": [
+    "152:533",
+    0
+   ],
+   "on_true": [
+    "152:542",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "add front pre prefix"
+  }
+ },
+ "152:1080": {
+  "inputs": {
+   "switch": [
+    "152:1083",
+    0
+   ],
+   "on_false": [
+    "152:543",
+    0
+   ],
+   "on_true": [
+    "152:1078",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "min prompt mode"
+  }
+ },
+ "152:1151": {
+  "inputs": {
+   "value": 0
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "number of male"
+  }
+ },
+ "152:1150": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "number of female"
+  }
+ },
+ "152:1044": {
+  "inputs": {
+   "value": "text"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "prompt override"
+  }
+ },
+ "152:576": {
+  "inputs": {
+   "switch": [
+    "152:502",
+    0
+   ],
+   "on_false": [
+    "152:195",
+    0
+   ],
+   "on_true": [
+    "152:696",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if MOD - location"
+  }
+ },
+ "152:585": {
+  "inputs": {
+   "switch": [
+    "152:400",
+    0
+   ],
+   "on_false": [
+    "152:1159",
+    0
+   ],
+   "on_true": [
+    "152:1163",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "indoor or outdoor"
+  }
+ },
+ "152:1188": {
+  "inputs": {
+   "value": "backstage in a bright white studio background with abundant negative space, luxury fashion editorial feeling, serene atmosphere, luminous skin, subtle reflections, gentle shadows, shallow depth of field, atmospheric depth, dreamy, ethereal, elegant with soft even studio lighting and smooth falloff, clean commercial catalogue look, crisp fabric detail for a fashion shoot with stage lights"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "studio light"
+  }
+ },
+ "152:1159": {
+  "inputs": {
+   "value": "outdoor lighting, natural light, lightrays, wind, atmosphere"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "outdoors"
+  }
+ },
+ "152:1163": {
+  "inputs": {
+   "value": "indoor lighting, artifical light, lights"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "indoors"
+  }
+ },
+ "152:1165": {
+  "inputs": {
+   "value": "nighttime, night, in the dark, dim light only, moonlight, moonbeams, dramatic lighting, depth of field, hard lighting, dramatic heavy shadows"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "night"
+  }
+ },
+ "152:1167": {
+  "inputs": {
+   "value": "daytime, during the day, lightrays, late afteroon golden light with shadows and bright areas"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "day"
+  }
+ },
+ "152:1169": {
+  "inputs": {
+   "value": "in a style that is clear with sharp details, detailed vibrant and colorful"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "clear"
+  }
+ },
+ "152:589": {
+  "inputs": {
+   "switch": [
+    "152:396",
+    0
+   ],
+   "on_false": [
+    "152:1165",
+    0
+   ],
+   "on_true": [
+    "152:1167",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "day or night"
+  }
+ },
+ "152:598": {
+  "inputs": {
+   "switch": [
+    "152:394",
+    0
+   ],
+   "on_false": [
+    "152:1169",
+    0
+   ],
+   "on_true": [
+    "152:1171",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "atmosphere not"
+  }
+ },
+ "152:593": {
+  "inputs": {
+   "value": " "
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "blankspace"
+  }
+ },
+ "152:583": {
+  "inputs": {
+   "value": "with"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "connector text"
+  }
+ },
+ "152:579": {
+  "inputs": {
+   "value": "in"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "connector text"
+  }
+ },
+ "152:577": {
+  "inputs": {
+   "delimiter": " ",
+   "string1": [
+    "152:579",
+    0
+   ],
+   "string2": [
+    "152:576",
+    0
+   ]
+  },
+  "class_type": "JoinStrings",
+  "_meta": {
+   "title": "concat  location delin"
+  }
+ },
+ "152:603": {
+  "inputs": {
+   "value": " "
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "blankspace"
+  }
+ },
+ "152:392": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if default outfit"
+  }
+ },
+ "152:558": {
+  "inputs": {
+   "string_a": [
+    "152:202",
+    0
+   ],
+   "string_b": [
+    "152:557",
+    0
+   ],
+   "delimiter": [
+    "152:552",
+    0
+   ]
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concatenate Text"
+  }
+ },
+ "152:557": {
+  "inputs": {
+   "switch": [
+    "152:392",
+    0
+   ],
+   "on_false": [
+    "152:193",
+    0
+   ],
+   "on_true": [
+    "152:1199",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if default outfit"
+  }
+ },
+ "152:552": {
+  "inputs": {
+   "value": " wearing "
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "connector text"
+  }
+ },
+ "152:590": {
+  "inputs": {
+   "switch": [
+    "152:398",
+    0
+   ],
+   "on_false": [
+    "152:593",
+    0
+   ],
+   "on_true": [
+    "152:594",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if SUFFIX on"
+  }
+ },
+ "152:696": {
+  "inputs": {
+   "switch": [
+    "152:396",
+    0
+   ],
+   "on_false": [
+    "152:1185",
+    0
+   ],
+   "on_true": [
+    "152:1188",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "day or night"
+  }
+ },
+ "152:1142": {
+  "inputs": {
+   "switch": [
+    "152:1216",
+    2
+   ],
+   "on_false": [
+    "152:1135",
+    0
+   ],
+   "on_true": [
+    "152:1137",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if people"
+  }
+ },
+ "152:541": {
+  "inputs": {
+   "delimiter": " ",
+   "string1": [
+    "152:532",
+    0
+   ],
+   "string2": [
+    "152:1054",
+    0
+   ]
+  },
+  "class_type": "JoinStrings",
+  "_meta": {
+   "title": "concat prefix2"
+  }
+ },
+ "152:707": {
+  "inputs": {
+   "delimiter": " ",
+   "string1": [
+    "152:702",
+    0
+   ],
+   "string2": [
+    "152:1058",
+    0
+   ]
+  },
+  "class_type": "JoinStrings",
+  "_meta": {
+   "title": "concat prefix5"
+  }
+ },
+ "152:553": {
+  "inputs": {
+   "switch": [
+    "152:362",
+    0
+   ],
+   "on_false": [
+    "152:532",
+    0
+   ],
+   "on_true": [
+    "152:541",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if POV"
+  }
+ },
+ "152:680": {
+  "inputs": {
+   "switch": [
+    "152:662",
+    0
+   ],
+   "on_false": [
+    "152:553",
+    0
+   ],
+   "on_true": [
+    "152:679",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if CU"
+  }
+ },
+ "152:702": {
+  "inputs": {
+   "switch": [
+    "152:698",
+    0
+   ],
+   "on_false": [
+    "152:680",
+    0
+   ],
+   "on_true": [
+    "152:704",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if bad photo"
+  }
+ },
+ "152:673": {
+  "inputs": {
+   "switch": [
+    "152:614",
+    0
+   ],
+   "on_false": [
+    "152:702",
+    0
+   ],
+   "on_true": [
+    "152:707",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if pro photo"
+  }
+ },
+ "152:679": {
+  "inputs": {
+   "delimiter": " ",
+   "string1": [
+    "152:553",
+    0
+   ],
+   "string2": [
+    "152:1056",
+    0
+   ]
+  },
+  "class_type": "JoinStrings",
+  "_meta": {
+   "title": "concat prefix3"
+  }
+ },
+ "152:704": {
+  "inputs": {
+   "delimiter": " ",
+   "string1": [
+    "152:680",
+    0
+   ],
+   "string2": [
+    "152:1057",
+    0
+   ]
+  },
+  "class_type": "JoinStrings",
+  "_meta": {
+   "title": "concat prefix4"
+  }
+ },
+ "152:1078": {
+  "inputs": {
+   "join_with": " ",
+   "string_list": [
+    "152:1077",
+    0
+   ]
+  },
+  "class_type": "StringListToString",
+  "_meta": {
+   "title": "List to String"
+  }
+ },
+ "152:1077": {
+  "inputs": {
+   "inputs.input0": [
+    "152:673",
+    0
+   ],
+   "inputs.input1": [
+    "152:1142",
+    0
+   ],
+   "inputs.input2": [
+    "152:202",
+    0
+   ],
+   "inputs.input3": [
+    "152:193",
+    0
+   ],
+   "inputs.input4": [
+    "152:194",
+    0
+   ],
+   "inputs.input5": [
+    "152:195",
+    0
+   ]
+  },
+  "class_type": "CreateList",
+  "_meta": {
+   "title": "Create List"
+  }
+ },
+ "152:1057": {
+  "inputs": {
+   "value": "amateur photo with film grain, terrible footage, natural motion blur, compression artifacts, dark shadows"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "bad photo text"
+  }
+ },
+ "152:1216": {
+  "inputs": {
+   "expression": "a + b",
+   "values.a": [
+    "152:1150",
+    0
+   ],
+   "values.b": [
+    "152:1151",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "are there people"
+  }
+ },
+ "152:1171": {
+  "inputs": {
+   "value": "in an atmospheric style with atmospheric dust light particles, premium color grading, depth of field, volumetric lighting, caustics, subsurface scattering"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "atmosphere"
+  }
+ },
+ "152:1054": {
+  "inputs": {
+   "value": "POV image, from above, subject of viewer,"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "POV text"
+  }
+ },
+ "152:1056": {
+  "inputs": {
+   "value": "Close up photo, extreme close up, CU,"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "CU text"
+  }
+ },
+ "152:1185": {
+  "inputs": {
+   "value": "dark professional studio with deep black-gray studio backdrop and a polished reflective floor that clearly captures the reflection of her feet and legs wtih cinematic studio lighting, realistic skin texture, detailed fabric, natural proportions, dramatic contrast, shallow depth of field, sharp subject focus, photorealistic details, professional fashion photography, cinematic framing, realistic perspective\n"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "studio dark"
+  }
+ },
+ "152:700": {
+  "inputs": {
+   "value": "futuristic"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "style input"
+  }
+ },
+ "152:660": {
+  "inputs": {
+   "value": "blue"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "color 1 input"
+  }
+ },
+ "152:661": {
+  "inputs": {
+   "value": "white"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "color 2 input"
+  }
+ },
+ "152:1050": {
+  "inputs": {
+   "value": "energetic"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "expression input"
+  }
+ },
+ "152:1244": {
+  "inputs": {
+   "value": "white"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "color 3 input"
+  }
+ },
+ "152:1246": {
+  "inputs": {
+   "value": ""
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "fabric in"
+  }
+ },
+ "152:1248": {
+  "inputs": {
+   "value": ""
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "orientation in"
+  }
+ },
+ "152:398": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if suffix on"
+  }
+ },
+ "152:502": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if default location"
+  }
+ },
+ "152:1083": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if min mode"
+  }
+ },
+ "152:1038": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if bypass full"
+  }
+ },
+ "152:549": {
+  "inputs": {
+   "prompts": [
+    "152:1243",
+    0
+   ],
+   "prompt_number": [
+    "152:1070:1067",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "prompt negative"
+  }
+ },
+ "152:667": {
+  "inputs": {
+   "find1": "[COLOR-1]",
+   "replace1": [
+    "152:660",
+    0
+   ],
+   "find2": "[COLOR-2]",
+   "replace2": [
+    "152:661",
+    0
+   ],
+   "find3": "[COLOR-3]",
+   "replace3": [
+    "152:1244",
+    0
+   ],
+   "prompt": [
+    "152:558",
+    0
+   ]
+  },
+  "class_type": "easy promptReplace",
+  "_meta": {
+   "title": "PromptReplace"
+  }
+ },
+ "152:1070:1059": {
+  "inputs": {
+   "switch": [
+    "152:698",
+    0
+   ],
+   "on_false": [
+    "152:1070:1066",
+    0
+   ],
+   "on_true": [
+    "152:1070:1062",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "or 3"
+  }
+ },
+ "152:1070:1060": {
+  "inputs": {
+   "switch": [
+    "152:362",
+    0
+   ],
+   "on_false": [
+    "152:1070:1059",
+    0
+   ],
+   "on_true": [
+    "152:1070:1063",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "or four"
+  }
+ },
+ "152:1070:1061": {
+  "inputs": {
+   "value": 2
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "2"
+  }
+ },
+ "152:1070:1062": {
+  "inputs": {
+   "value": 3
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "3"
+  }
+ },
+ "152:1070:1063": {
+  "inputs": {
+   "value": 4
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "4"
+  }
+ },
+ "152:1070:1064": {
+  "inputs": {
+   "value": 5
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "5"
+  }
+ },
+ "152:1070:1065": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "1"
+  }
+ },
+ "152:1070:1066": {
+  "inputs": {
+   "switch": [
+    "152:614",
+    0
+   ],
+   "on_false": [
+    "152:1070:1065",
+    0
+   ],
+   "on_true": [
+    "152:1070:1061",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "one or two"
+  }
+ },
+ "152:1070:1067": {
+  "inputs": {
+   "switch": [
+    "152:662",
+    0
+   ],
+   "on_false": [
+    "152:1070:1060",
+    0
+   ],
+   "on_true": [
+    "152:1070:1064",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "or five"
+  }
+ },
+ "152:562": {
+  "inputs": {
+   "string_a": [
+    "152:560",
+    0
+   ],
+   "string_b": [
+    "152:1111",
+    0
+   ],
+   "delimiter": " "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concatenate Text"
+  }
+ },
+ "152:1215": {
+  "inputs": {
+   "value": ""
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "blank text"
+  }
+ },
+ "152:1260": {
+  "inputs": {
+   "value": ""
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "blank text"
+  }
+ },
+ "152:1111": {
+  "inputs": {
+   "string": [
+    "152:194",
+    0
+   ],
+   "find": "[EXPRESSION]",
+   "replace": [
+    "152:1050",
+    0
+   ]
+  },
+  "class_type": "StringReplace",
+  "_meta": {
+   "title": "Replace Text Variable"
+  }
+ },
+ "152:1259": {
+  "inputs": {
+   "switch": [
+    "152:1216",
+    2
+   ],
+   "on_false": [
+    "152:1260",
+    0
+   ],
+   "on_true": [
+    "152:562",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if people"
+  }
+ },
+ "152:717": {
+  "inputs": {
+   "switch": [
+    "152:1038",
+    0
+   ],
+   "on_false": [
+    "152:1080",
+    0
+   ],
+   "on_true": [
+    "152:1044",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "override full prompt"
+  }
+ },
+ "152:1058": {
+  "inputs": {
+   "value": "dramatic lighting, premium color grading, depth of field, detailed, volumetric lighting"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "good photo text"
+  }
+ },
+ "152:534": {
+  "inputs": {
+   "inputs.input0": [
+    "152:673",
+    0
+   ],
+   "inputs.input1": [
+    "152:1142",
+    0
+   ],
+   "inputs.input2": [
+    "152:1210",
+    0
+   ],
+   "inputs.input3": [
+    "152:603",
+    0
+   ],
+   "inputs.input4": [
+    "152:1259",
+    0
+   ],
+   "inputs.input5": [
+    "152:577",
+    0
+   ],
+   "inputs.input6": [
+    "152:590",
+    0
+   ]
+  },
+  "class_type": "CreateList",
+  "_meta": {
+   "title": "Create List"
+  }
+ },
+ "152:533": {
+  "inputs": {
+   "join_with": ", ",
+   "string_list": [
+    "152:534",
+    0
+   ]
+  },
+  "class_type": "StringListToString",
+  "_meta": {
+   "title": "List to String"
+  }
+ },
+ "152:1135": {
+  "inputs": {
+   "value": "no people,"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "Text"
+  }
+ },
+ "152:1304": {
+  "inputs": {
+   "find1": "  ",
+   "replace1": " ",
+   "find2": " ,",
+   "replace2": "",
+   "find3": ",,",
+   "replace3": ",",
+   "prompt": [
+    "152:717",
+    0
+   ]
+  },
+  "class_type": "easy promptReplace",
+  "_meta": {
+   "title": "trim blank space"
+  }
+ },
+ "152:1243": {
+  "inputs": {
+   "value": "worst quality, low quality, artist name, blurry, jpeg artifacts\n\nworst quality, low quality, lowres, score_1, score_2, score_3, blurry, jpeg artifacts, bad anatomy, watermark, artist name, 3d render, comic book, cartoon, animation, anime, illustration, plain background, empty, minimal, simple, bright even lighting, logos, logo, words\n\nbad anatomy, watermark, artist name, 3d render, comic book, cartoon, animation, anime, illustration, plain background, empty, minimal, simple, bright even lighting, even lighting, well lit, logos, logo, words\n\n3rd person, worst quality, low quality, lowres, score_1, score_2, score_3, blurry, jpeg artifacts, bad anatomy, watermark, artist name, 3d render, comic book, cartoon, animation, anime, illustration, empty, minimal, simple, bright even lighting, even lighting, well lit, logos, logo, words\n\nwide angle, wide shot, detailed background, worst quality, low quality, lowres, score_1, score_2, score_3, blurry, jpeg artifacts, bad anatomy, watermark, artist name, 3d render, comic book, cartoon, animation, anime, illustration, empty, minimal, simple, bright even lighting, even lighting, well lit, logos, logo, words"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "prompt negative basic set"
+  }
+ },
+ "152:532": {
+  "inputs": {
+   "prompts": [
+    "152:1242",
+    0
+   ],
+   "prompt_number": [
+    "152:1070:1067",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "default prompt prefix"
+  }
+ },
+ "152:1139": {
+  "inputs": {
+   "expression": "a > b",
+   "values.a": [
+    "152:1150",
+    0
+   ],
+   "values.b": [
+    "152:1141",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "more than one female"
+  }
+ },
+ "152:1140": {
+  "inputs": {
+   "expression": "a > b",
+   "values.a": [
+    "152:1151",
+    0
+   ],
+   "values.b": [
+    "152:1141",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "more than one male"
+  }
+ },
+ "152:1138": {
+  "inputs": {
+   "switch": [
+    "152:1140",
+    2
+   ],
+   "on_false": [
+    "152:1132",
+    0
+   ],
+   "on_true": [
+    "152:1134",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "If/Else Switch"
+  }
+ },
+ "152:1131": {
+  "inputs": {
+   "switch": [
+    "152:1139",
+    2
+   ],
+   "on_false": [
+    "152:1128",
+    0
+   ],
+   "on_true": [
+    "152:1129",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "If/Else Switch"
+  }
+ },
+ "152:1144": {
+  "inputs": {
+   "source": [
+    "152:1150",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "Preview as Text"
+  }
+ },
+ "152:1127": {
+  "inputs": {
+   "source": [
+    "152:1151",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "Preview as Text"
+  }
+ },
+ "152:1141": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "constant 1"
+  }
+ },
+ "152:1146": {
+  "inputs": {
+   "string_a": [
+    "152:1127",
+    0
+   ],
+   "string_b": [
+    "152:1138",
+    0
+   ],
+   "delimiter": " "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concatenate Text"
+  }
+ },
+ "152:1145": {
+  "inputs": {
+   "string_a": [
+    "152:1144",
+    0
+   ],
+   "string_b": [
+    "152:1131",
+    0
+   ],
+   "delimiter": " "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concatenate Text"
+  }
+ },
+ "152:1147": {
+  "inputs": {
+   "string_a": [
+    "152:1145",
+    0
+   ],
+   "string_b": [
+    "152:1146",
+    0
+   ],
+   "delimiter": " "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concatenate Text"
+  }
+ },
+ "152:1254": {
+  "inputs": {
+   "find1": "[STYLE]",
+   "replace1": [
+    "152:700",
+    0
+   ],
+   "find2": "[FABRIC]",
+   "replace2": [
+    "152:1246",
+    0
+   ],
+   "find3": "[POSITION]",
+   "replace3": [
+    "152:1248",
+    0
+   ],
+   "prompt": [
+    "152:667",
+    0
+   ]
+  },
+  "class_type": "easy promptReplace",
+  "_meta": {
+   "title": "PromptReplace"
+  }
+ },
+ "152:1210": {
+  "inputs": {
+   "switch": [
+    "152:1216",
+    2
+   ],
+   "on_false": [
+    "152:1215",
+    0
+   ],
+   "on_true": [
+    "152:1254",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "if people"
+  }
+ },
+ "152:560": {
+  "inputs": {
+   "value": "doing"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "connector text"
+  }
+ },
+ "152:1242": {
+  "inputs": {
+   "value": "photograph, score_5, flash photography\n\nphoto, photograph, best quality, professional photo, real, ultra detailed, highly detailed, refined details, no lineart, lineless, gritty realism,\n\nreal, candid, color photo, gritty realism, film grain, terrible footage, bad quality, dim light, blurry, compression artifacts, dark shadows,\n\nPOV video image, best quality, real, color photograph, gritty realism, terrible footage, natural motion blur,\n\nCU, close-up, detail image, real, color photograph, best quality, score_9,"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "starting prompt prefix default set"
+  }
+ },
+ "152:1199": {
+  "inputs": {
+   "value": "white t-shirt, blue denim jeans, canvas sneakers shoes"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "default outfit"
+  }
+ },
+ "152:1137": {
+  "inputs": {
+   "find1": "0 woman, ",
+   "replace1": "",
+   "find2": "0 man,",
+   "replace2": "",
+   "find3": "",
+   "replace3": "",
+   "prompt": [
+    "152:1136",
+    0
+   ]
+  },
+  "class_type": "easy promptReplace",
+  "_meta": {
+   "title": "PromptReplace"
+  }
+ },
+ "152:1136": {
+  "inputs": {
+   "find1": "1 woman, 0 man,",
+   "replace1": "1 woman, solo,",
+   "find2": "0 woman, 1 man,",
+   "replace2": "1 man, solo,",
+   "find3": "",
+   "replace3": "",
+   "prompt": [
+    "152:1147",
+    0
+   ]
+  },
+  "class_type": "easy promptReplace",
+  "_meta": {
+   "title": "PromptReplace"
+  }
+ },
+ "152:1132": {
+  "inputs": {
+   "value": "man,"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "Text"
+  }
+ },
+ "152:1134": {
+  "inputs": {
+   "value": "men,"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "Text"
+  }
+ },
+ "152:1129": {
+  "inputs": {
+   "value": "women,"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "Text"
+  }
+ },
+ "152:1128": {
+  "inputs": {
+   "value": "woman,"
+  },
+  "class_type": "PrimitiveString",
+  "_meta": {
+   "title": "Text"
+  }
+ },
+ "1362:1312": {
+  "inputs": {
+   "value": 990346845575474
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "seed-input"
+  }
+ },
+ "1362:1313": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if fixed seed"
+  }
+ },
+ "1362:1314": {
+  "inputs": {
+   "value": true
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if vertical-image"
+  }
+ },
+ "1362:1316": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if increment seed"
+  }
+ },
+ "1362:1317": {
+  "inputs": {
+   "value": 1280
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "long edge input"
+  }
+ },
+ "1362:1319": {
+  "inputs": {
+   "value": 768
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "short edge input"
+  }
+ },
+ "1362:1323": {
+  "inputs": {
+   "switch": [
+    "1362:1314",
+    0
+   ],
+   "on_false": [
+    "1362:1319",
+    0
+   ],
+   "on_true": [
+    "1362:1317",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "aspect ratio height"
+  }
+ },
+ "1362:1324": {
+  "inputs": {
+   "switch": [
+    "1362:1314",
+    0
+   ],
+   "on_false": [
+    "1362:1317",
+    0
+   ],
+   "on_true": [
+    "1362:1319",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "aspect ratio width"
+  }
+ },
+ "1362:1326": {
+  "inputs": {
+   "source": [
+    "152:1304",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "prompt pos"
+  }
+ },
+ "1362:1327": {
+  "inputs": {
+   "source": [
+    "152:549",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "prompt neg"
+  }
+ },
+ "1362:1328": {
+  "inputs": {
+   "seed": 1115385480238332
+  },
+  "class_type": "SeedNode",
+  "_meta": {
+   "title": "seed random"
+  }
+ },
+ "1362:1336": {
+  "inputs": {
+   "switch": [
+    "1362:1313",
+    0
+   ],
+   "on_false": [
+    "1362:1337",
+    0
+   ],
+   "on_true": [
+    "1362:1312",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "seed fixed"
+  }
+ },
+ "1362:1337": {
+  "inputs": {
+   "switch": [
+    "1362:1316",
+    0
+   ],
+   "on_false": [
+    "1362:1328",
+    0
+   ],
+   "on_true": [
+    "1362:1338",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "true increment false random"
+  }
+ },
+ "1362:1338": {
+  "inputs": {
+   "seed": 123704
+  },
+  "class_type": "SeedNode",
+  "_meta": {
+   "title": "seed increment"
+  }
+ },
+ "1362:1344": {
+  "inputs": {
+   "unet_name": "flux-2-klein-base-9b-fp8.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "Load Diffusion Model"
+  }
+ },
+ "1362:1345": {
+  "inputs": {
+   "cfg": 5,
+   "model": [
+    "1362:1353",
+    0
+   ],
+   "positive": [
+    "1362:1355",
+    0
+   ],
+   "negative": [
+    "1362:1349",
+    0
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "1362:1346": {
+  "inputs": {
+   "clip_name": "qwen_3_8b_fp8mixed.safetensors",
+   "type": "flux2",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "Load CLIP"
+  }
+ },
+ "1362:1347": {
+  "inputs": {
+   "sampler_name": "res_multistep"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "1362:1348": {
+  "inputs": {
+   "steps": 20,
+   "width": [
+    "1362:1324",
+    0
+   ],
+   "height": [
+    "1362:1323",
+    0
+   ]
+  },
+  "class_type": "Flux2Scheduler",
+  "_meta": {
+   "title": "Flux2Scheduler"
+  }
+ },
+ "1362:1349": {
+  "inputs": {
+   "text": [
+    "1362:1327",
+    0
+   ],
+   "clip": [
+    "1362:1353",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Negative Prompt)"
+  }
+ },
+ "1362:1351": {
+  "inputs": {
+   "noise_seed": [
+    "1362:1336",
+    0
+   ]
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "1362:1353": {
+  "inputs": {
+   "PowerLoraLoaderHeaderWidget": {
+    "type": "PowerLoraLoaderHeaderWidget"
+   },
+   "lora_1": {
+    "on": true,
+    "lora": "lenovo_flux_klein9b.safetensors",
+    "strength": 0.5
+   },
+   "➕ Add Lora": "",
+   "model": [
+    "1362:1344",
+    0
+   ],
+   "clip": [
+    "1362:1346",
+    0
+   ]
+  },
+  "class_type": "Power Lora Loader (rgthree)",
+  "_meta": {
+   "title": "Power Lora Loader (rgthree)"
+  }
+ },
+ "1362:1354": {
+  "inputs": {
+   "samples": [
+    "1362:1360",
+    0
+   ],
+   "vae": [
+    "1362:1359",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "1362:1355": {
+  "inputs": {
+   "text": [
+    "1362:1326",
+    0
+   ],
+   "clip": [
+    "1362:1353",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Positive Prompt)"
+  }
+ },
+ "1362:1359": {
+  "inputs": {
+   "vae_name": "full_encoder_small_decoder.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ },
+ "1362:1360": {
+  "inputs": {
+   "noise": [
+    "1362:1351",
+    0
+   ],
+   "guider": [
+    "1362:1345",
+    0
+   ],
+   "sampler": [
+    "1362:1347",
+    0
+   ],
+   "sigmas": [
+    "1362:1348",
+    0
+   ],
+   "latent_image": [
+    "1362:1361",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "SamplerCustomAdvanced"
+  }
+ },
+ "1362:1361": {
+  "inputs": {
+   "width": [
+    "1362:1324",
+    0
+   ],
+   "height": [
+    "1362:1323",
+    0
+   ],
+   "batch_size": 1
+  },
+  "class_type": "EmptyFlux2LatentImage",
+  "_meta": {
+   "title": "Empty Flux 2 Latent"
+  }
+ }
+}

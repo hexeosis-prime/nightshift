@@ -1,0 +1,468 @@
+{
+ "9": {
+  "inputs": {
+   "filename_prefix": "nightshift/example",
+   "images": [
+    "1312:1330",
+    0
+   ]
+  },
+  "class_type": "SaveImage",
+  "_meta": {
+   "title": "Save Image"
+  }
+ },
+ "1366": {
+  "inputs": {
+   "value": "Film character sheet, photorealistic commercial studio photography. Three views of the exact same person from the character description, standing in a row on a seamless neutral grey #B8B8B8 background: full-body front view, full-body back view, and a macro close-up portrait of the face. Identical person, outfit, hairstyle and styling in all three views, matched true to the description.\n\n"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "character sheet from description part one"
+  }
+ },
+ "1368": {
+  "inputs": {
+   "value": "worst quality, low quality, artist name, blurry, jpeg artifacts\n"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "prompt negative"
+  }
+ },
+ "1375": {
+  "inputs": {
+   "value": "The character is a person. They are wearing plain clothes.\n\n"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "character description"
+  }
+ },
+ "1377": {
+  "inputs": {
+   "value": "\nIn the full-body front view the person stands upright in a relaxed neutral pose facing the camera, head level, and a flat opaque solid white circle graphic is placed directly over the face, completely covering it from forehead to chin, like an anonymized casting photo — crisp clean circle edge, pure white fill. The full-body back view shows the person from behind, feet to head fully in frame. The macro close-up shows the face fully and clearly, looking straight into the lens, sharp focused eyes, clear healthy skin.\n\nSoft even studio lighting with smooth falloff, clean commercial catalogue look, crisp fabric detail, accurate face, body proportions and clothing exactly from the character description.\n\n"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "character sheet from description part three"
+  }
+ },
+ "1378": {
+  "inputs": {
+   "string_a": [
+    "1366",
+    0
+   ],
+   "string_b": [
+    "1375",
+    0
+   ],
+   "delimiter": ""
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concatenate Text"
+  }
+ },
+ "1379": {
+  "inputs": {
+   "string_a": [
+    "1378",
+    0
+   ],
+   "string_b": [
+    "1377",
+    0
+   ],
+   "delimiter": ""
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Concatenate Text"
+  }
+ },
+ "1312:791": {
+  "inputs": {
+   "value": 666666666671
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "seed-input"
+  }
+ },
+ "1312:795": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if fixed seed"
+  }
+ },
+ "1312:796": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if vertical-image"
+  }
+ },
+ "1312:841": {
+  "inputs": {
+   "value": false
+  },
+  "class_type": "PrimitiveBoolean",
+  "_meta": {
+   "title": "if increment seed"
+  }
+ },
+ "1312:905": {
+  "inputs": {
+   "value": 1280
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "long edge input"
+  }
+ },
+ "1312:907": {
+  "inputs": {
+   "value": 768
+  },
+  "class_type": "INTConstant",
+  "_meta": {
+   "title": "short edge input"
+  }
+ },
+ "1312:806": {
+  "inputs": {
+   "switch": [
+    "1312:796",
+    0
+   ],
+   "on_false": [
+    "1312:907",
+    0
+   ],
+   "on_true": [
+    "1312:905",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "aspect ratio height"
+  }
+ },
+ "1312:788": {
+  "inputs": {
+   "switch": [
+    "1312:796",
+    0
+   ],
+   "on_false": [
+    "1312:905",
+    0
+   ],
+   "on_true": [
+    "1312:907",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "aspect ratio width"
+  }
+ },
+ "1312:1030": {
+  "inputs": {
+   "source": [
+    "1379",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "prompt pos"
+  }
+ },
+ "1312:1031": {
+  "inputs": {
+   "source": [
+    "1368",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "prompt neg"
+  }
+ },
+ "1312:809": {
+  "inputs": {
+   "seed": 387616531826159
+  },
+  "class_type": "SeedNode",
+  "_meta": {
+   "title": "seed random"
+  }
+ },
+ "1312:807": {
+  "inputs": {
+   "switch": [
+    "1312:795",
+    0
+   ],
+   "on_false": [
+    "1312:801",
+    0
+   ],
+   "on_true": [
+    "1312:791",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "seed fixed"
+  }
+ },
+ "1312:801": {
+  "inputs": {
+   "switch": [
+    "1312:841",
+    0
+   ],
+   "on_false": [
+    "1312:809",
+    0
+   ],
+   "on_true": [
+    "1312:1052",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "true increment false random"
+  }
+ },
+ "1312:1052": {
+  "inputs": {
+   "seed": 123670
+  },
+  "class_type": "SeedNode",
+  "_meta": {
+   "title": "seed increment"
+  }
+ },
+ "1312:1316": {
+  "inputs": {
+   "unet_name": "flux-2-klein-base-9b-fp8.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "Load Diffusion Model"
+  }
+ },
+ "1312:1320": {
+  "inputs": {
+   "cfg": 5,
+   "model": [
+    "1312:1325",
+    0
+   ],
+   "positive": [
+    "1312:1324",
+    0
+   ],
+   "negative": [
+    "1312:1328",
+    0
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "1312:1322": {
+  "inputs": {
+   "clip_name": "qwen_3_8b_fp8mixed.safetensors",
+   "type": "flux2",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "Load CLIP"
+  }
+ },
+ "1312:1327": {
+  "inputs": {
+   "sampler_name": "res_multistep"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "1312:1329": {
+  "inputs": {
+   "steps": 20,
+   "width": [
+    "1312:788",
+    0
+   ],
+   "height": [
+    "1312:806",
+    0
+   ]
+  },
+  "class_type": "Flux2Scheduler",
+  "_meta": {
+   "title": "Flux2Scheduler"
+  }
+ },
+ "1312:1328": {
+  "inputs": {
+   "text": [
+    "1312:1031",
+    0
+   ],
+   "clip": [
+    "1312:1325",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Negative Prompt)"
+  }
+ },
+ "1312:1317": {
+  "inputs": {
+   "noise_seed": [
+    "1312:807",
+    0
+   ]
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "1312:1325": {
+  "inputs": {
+   "PowerLoraLoaderHeaderWidget": {
+    "type": "PowerLoraLoaderHeaderWidget"
+   },
+   "lora_1": {
+    "on": true,
+    "lora": "lenovo_flux_klein9b.safetensors",
+    "strength": 0.5
+   },
+   "➕ Add Lora": "",
+   "model": [
+    "1312:1316",
+    0
+   ],
+   "clip": [
+    "1312:1322",
+    0
+   ]
+  },
+  "class_type": "Power Lora Loader (rgthree)",
+  "_meta": {
+   "title": "Power Lora Loader (rgthree)"
+  }
+ },
+ "1312:1330": {
+  "inputs": {
+   "samples": [
+    "1312:1321",
+    0
+   ],
+   "vae": [
+    "1312:1331",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "1312:1324": {
+  "inputs": {
+   "text": [
+    "1312:1030",
+    0
+   ],
+   "clip": [
+    "1312:1325",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Positive Prompt)"
+  }
+ },
+ "1312:1331": {
+  "inputs": {
+   "vae_name": "full_encoder_small_decoder.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ },
+ "1312:1321": {
+  "inputs": {
+   "noise": [
+    "1312:1317",
+    0
+   ],
+   "guider": [
+    "1312:1320",
+    0
+   ],
+   "sampler": [
+    "1312:1327",
+    0
+   ],
+   "sigmas": [
+    "1312:1329",
+    0
+   ],
+   "latent_image": [
+    "1312:1318",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "SamplerCustomAdvanced"
+  }
+ },
+ "1312:1318": {
+  "inputs": {
+   "width": [
+    "1312:788",
+    0
+   ],
+   "height": [
+    "1312:806",
+    0
+   ],
+   "batch_size": 1
+  },
+  "class_type": "EmptyFlux2LatentImage",
+  "_meta": {
+   "title": "Empty Flux 2 Latent"
+  }
+ }
+}

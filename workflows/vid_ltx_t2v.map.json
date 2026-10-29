@@ -1,0 +1,44 @@
+{
+ "workflow": "vid_ltx_t2v.json",
+ "kind": "t2v",
+ "description": "LTX 2.3 text-to-video (no first frame): aerials, timelapses, establishing shots.",
+ "roles": {
+  "prompt": {
+   "node": "5",
+   "input": "text"
+  },
+  "negative": {
+   "node": "6",
+   "input": "text"
+  },
+  "frames": {
+   "node": "10",
+   "input": "value"
+  },
+  "width": {
+   "node": "7",
+   "input": "width"
+  },
+  "height": {
+   "node": "7",
+   "input": "height"
+  },
+  "seed": [
+   {
+    "node": "16",
+    "input": "noise_seed"
+   },
+   {
+    "node": "32",
+    "input": "noise_seed",
+    "offset": 1
+   }
+  ]
+ },
+ "outputs": {
+  "video": {
+   "node": "38",
+   "input": "filename_prefix"
+  }
+ }
+}

@@ -1,0 +1,71 @@
+{
+ "_readme": "Who is in the video and what never changes. Written once, read by every job. Identity words must be identical everywhere: the builder copies them, you don't retype them.",
+ "characters": {
+  "lead": {
+   "name": "Lead",
+   "noun": "woman",
+   "pronoun": "she",
+   "possessive": "her",
+   "count": {
+    "female": 1,
+    "male": 0
+   },
+   "person": "woman in her late twenties, oval face, dark brown eyes, straight black shoulder-length hair with a center part, light olive skin, slim build, clear healthy skin",
+   "outfit": {
+    "close": "plain charcoal crew-neck sweater, small gold stud earrings",
+    "medium": "plain charcoal crew-neck sweater, dark green wide-leg trousers, small gold stud earrings",
+    "wide": "plain charcoal crew-neck sweater, dark green wide-leg trousers, white canvas sneakers, small gold stud earrings"
+   },
+   "outfit_stage": {
+    "close": "plain white crew-neck sweater, small gold stud earrings",
+    "medium": "plain white crew-neck sweater, black wide-leg trousers, small gold stud earrings",
+    "wide": "plain white crew-neck sweater, black wide-leg trousers, black canvas sneakers, small gold stud earrings"
+   },
+   "never": "blonde hair, bangs, heavy makeup, airbrushed plastic skin, logos, readable text on clothing",
+   "video_name": "the woman in her late twenties with straight black shoulder-length hair and a charcoal sweater",
+   "video_name_stage": "the woman in her late twenties with straight black shoulder-length hair and a white sweater",
+   "signature": "straight black shoulder-length hair",
+   "reference": null,
+   "_reference": "optional: a picture of this character (refs/<file>.png). With one, the sheet is made from the picture; without, from the description above. Approved sheets are written into \"sheet\" automatically.",
+   "edit_extra": "her skin is clear and healthy.",
+   "voice": {
+    "verb": "sings",
+    "gerund": "singing",
+    "style": "warm, close, expressive singing"
+   }
+  }
+ },
+ "worlds": {
+  "real": {
+   "still_model": "flux",
+   "switches": {
+    "bad_photo": true,
+    "pro_photo": false
+   },
+   "_note": "night exteriors, handheld, photographic"
+  },
+  "stage": {
+   "still_model": "flux",
+   "switches": {
+    "bad_photo": false,
+    "pro_photo": true,
+    "indoor": true
+   },
+   "_note": "a lit performance space"
+  }
+ },
+ "default_world": "real",
+ "location": "a quiet city street at night, wet asphalt, sodium street lamps",
+ "never_common": "text, letters, watermarks, logos",
+ "image_switches_default": {
+  "safe": true,
+  "pro_photo": false,
+  "bad_photo": true,
+  "pov": false,
+  "indoor": false,
+  "daytime": false,
+  "atmosphere": true,
+  "suffix": false
+ },
+ "negatives": {}
+}

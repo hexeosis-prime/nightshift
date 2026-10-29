@@ -1,0 +1,100 @@
+{
+ "workflow": "vid_ltx_fflf.json",
+ "kind": "fflf",
+ "description": "LTX 2.3 first-frame + last-frame video with optional song audio as conditioning (so a singer can lip-sync while the camera travels to a planned end frame). arrive_frame lands the end guide mid-shot (multiple of 8); after it the performance runs free. Length is whole seconds.",
+ "roles": {
+  "image": {
+   "node": "5052",
+   "input": "image"
+  },
+  "last_image": {
+   "node": "5075",
+   "input": "image"
+  },
+  "prompt": {
+   "node": "5257",
+   "input": "prompts"
+  },
+  "negative": {
+   "node": "5109:5143",
+   "input": "text"
+  },
+  "seconds": [
+   {
+    "node": "5110",
+    "input": "Xi",
+    "type": "int"
+   },
+   {
+    "node": "5110",
+    "input": "Xf",
+    "type": "int"
+   }
+  ],
+  "audio": {
+   "node": "5141",
+   "input": "audio"
+  },
+  "audio_start": {
+   "node": "5141",
+   "input": "start_time"
+  },
+  "audio_end": {
+   "node": "5141",
+   "input": "end_time"
+  },
+  "audio_seconds": {
+   "node": "5141",
+   "input": "duration"
+  },
+  "first_strength": {
+   "node": "5151",
+   "input": "Xf",
+   "type": "float"
+  },
+  "last_strength": {
+   "node": "5152",
+   "input": "Xf",
+   "type": "float"
+  },
+  "arrive_frame": {
+   "node": "5155",
+   "input": "expression",
+   "type": "str"
+  },
+  "seed": [
+   {
+    "node": "5277",
+    "input": "seed"
+   },
+   {
+    "node": "5012:5009",
+    "input": "noise_seed",
+    "offset": 1
+   },
+   {
+    "node": "5219:5209",
+    "input": "noise_seed",
+    "offset": 2
+   }
+  ]
+ },
+ "outputs": {
+  "video": {
+   "node": "5033",
+   "input": "filename_prefix"
+  }
+ },
+ "defaults": [
+  {
+   "node": "5257",
+   "input": "prompt_number",
+   "value": 1
+  },
+  {
+   "node": "5258",
+   "input": "switch",
+   "value": true
+  }
+ ]
+}

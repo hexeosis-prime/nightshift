@@ -1,0 +1,81 @@
+{
+ "_readme": "Settings for one video. Keys starting with _ are notes. Anything left out falls back to the defaults in nightshift/project.py.",
+ "name": "starter",
+ "mode": "director",
+ "comfy": {
+  "url": "http://127.0.0.1:8188",
+  "dir": null,
+  "_dir": "Path to the ComfyUI folder when ComfyUI runs on this machine (the one with input/ and output/). Leave null when ComfyUI is on another machine: files are uploaded and downloaded over its API."
+ },
+ "fps": 24,
+ "work_size": [
+  1280,
+  768
+ ],
+ "crop": [
+  1280,
+  720
+ ],
+ "final_size": [
+  1920,
+  1080
+ ],
+ "video_frames": 121,
+ "takes": {
+  "default": 1,
+  "complex": 4,
+  "_complex": "shots marked \"complex\": true (singing + dancing + a camera move) get best-of-4"
+ },
+ "sheets": {
+  "candidates": 3,
+  "approve": true,
+  "yolo_source": "text",
+  "_sheets": "character sheets are made first. approve: stop to approve the looks even in yolo mode (false = fully unattended). yolo_source: text = yolo builds sheets from the written description; image = from the character's reference picture when there is one"
+ },
+ "song_seeds": [
+  101,
+  202,
+  303,
+  404
+ ],
+ "song_voices": null,
+ "_song_voices": "e.g. [\"female\"] when the chosen song has no second singer: shots with \"voice\": \"male\" fall back to their fallback_mode",
+ "grade": {
+  "look": "A2_portra_dusk_plus",
+  "lifts": []
+ },
+ "finish": {
+  "chunk_seconds": 9.0,
+  "halftone": "auto",
+  "grain": 9
+ },
+ "overlay": {
+  "enabled": false,
+  "_enabled": "true to render the HUD overlay (needs node + npm; see docs/overlay.md)",
+  "sections": [
+   {
+    "name": "INTRO"
+   },
+   {
+    "name": "VERSE",
+    "line": "Every light on the avenue"
+   },
+   {
+    "name": "CHORUS",
+    "line": "Tell me what you're chasing"
+   }
+  ],
+  "style": {
+   "title": "UNTITLED",
+   "label": "PASS 01",
+   "hero": "^tell me what you're chasing$",
+   "face_label": "SUBJECT 01",
+   "ticker": [
+    "NIGHT SHIFT",
+    "ALL CHANNELS OPEN",
+    "TAKE {count}"
+   ],
+   "widgets": {}
+  }
+ }
+}

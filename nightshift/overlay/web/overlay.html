@@ -1,0 +1,534 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: "JBM"; src: url("node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2"); font-weight: 400; }
+@font-face { font-family: "JBM"; src: url("node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "BC"; src: url("node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "BC"; src: url("node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-500-normal.woff2"); font-weight: 500; }
+@font-face { font-family: "InterD"; src: url("node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2"); font-weight: 800; }
+html, body { margin: 0; background: transparent; }
+canvas { display: block; }
+</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script>
+// Nightshift overlay: a transparent 1920x1080 HUD rendered frame by frame (render.mjs), keyed over the cut in finish.
+// Every frame is a pure function of the frame number f: no state carried between frames, no Math.random();
+// hash() gives stable per-object randomness. Everything specific to a video lives in data.json "style".
+const W = 1920, H = 1080, M = 64;
+const DEF = {
+  title: "", label: "LOOP 01",
+  palette: ["#0e8ebd","#2475cb","#646ebf","#b374b1","#e77aa1","#fc8083","#fd8e61","#f3a63f","#d5b931","#91c137","#46ba59","#19a98e"],
+  accents: {}, accent_cycle: ["#9beb7c","#fd834d","#f60496","#fcce00","#00f87c","#f5efd5"],
+  hero: null,                     // regex for lines that get the big condensed treatment (e.g. the song's question)
+  face_label: "SUBJECT 01", show_face_score: true,
+  ticker: [], ticker_after: null, // ticker_after: items once the "break" section starts (see readout)
+  slot_by_shot: {}, slot_by_line: {}, dy_by_line: {}, bounce_shots: [], bounces: 3, no_box_shots: [],
+  calm: "saturate(0.55)",         // everything except the lyrics a little less saturated
+  intro: { ticker: 0.5, top: 1.2, lyrics: 2.0, dur: 0.7 }, outro: 1.6,
+  widgets: {},
+};
+let D = null, ctx = null, S = null, IN = null, OUT_LEN = 1.6;
+const INK = "rgba(242,239,230,0.92)", DIM = "rgba(242,239,230,0.55)", FAINT = "rgba(242,239,230,0.28)";
+const LYRIC_FONT = (size) => `800 ${size}px InterD, "Inter Display", Inter, sans-serif`;
+
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const easeIn = x => Math.pow(clamp(x), 3);
+const ease = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const hex2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, k) => { const A = hex2rgb(a), B = hex2rgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * k)).join(",")})`; };
+const gradAt = (pal, pos) => { const n = pal.length; const p = ((pos % n) + n) % n; const i = Math.floor(p); return mix(pal[i], pal[(i + 1) % n], p - i); };
+const pad = (n, w = 2) => String(n).padStart(w, "0");
+const tc = f => { const fr = f % 24, s = Math.floor(f / 24); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}:${pad(fr)}`; };
+const lineText = L => L.words.map(w => w.w).join(" ");
+const normTxt = t => t.toLowerCase().replace(/[.,?!]/g, "").trim();
+
+function sectionAt(t) { let cur = D.sections[0] || { name: "", t: 0 }; for (const s of D.sections) if (t >= s.t) cur = s; return cur; }
+function accent(name) {
+  if (S.accents[name]) return S.accents[name];
+  const i = Math.max(0, D.sections.findIndex(s => s.name === name));
+  return S.accent_cycle[i % S.accent_cycle.length];
+}
+function shotAt(f) { const i = D.shots.findIndex(s => f >= s.f0 && f < s.f1); return [i, D.shots[Math.max(0, i)] || { id: "", f0: 0, f1: D.frames }]; }
+function shotById(id) { return D.shots.find(s => s.id === id); }
+function beatPulse(t) {
+  let last = -9, down = false;
+  for (const b of D.beats) { if (b <= t) last = b; else break; }
+  for (const b of D.downbeats) if (Math.abs(b - last) < 0.01) down = true;
+  return [Math.exp(-(t - last) * 9), down];
+}
+function beatsFrom(t0, n) { return D.beats.filter(x => x >= t0 - 0.05).slice(0, n); }
+function lineByText(txt, after = 0) { return D.lines.find(l => l.start >= after && normTxt(lineText(l)) === normTxt(txt)); }
+
+// Text that decodes from scrambled glyphs, left to right, over `dur` frames after `f0`.
+const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%/<>*+=";
+function decode(text, f, f0, dur = 10) {
+  const k = (f - f0) / dur;
+  if (k >= 1) return text;
+  return [...text].map((ch, i) => (ch === " " || ch === "·" || i / text.length < k) ? ch : GLYPHS[Math.floor(hash(f * 13.1 + i * 7.7) * GLYPHS.length)]).join("");
+}
+function mono(txt, x, y, size = 15, color = INK, align = "left", weight = 400, track = 2) {
+  ctx.font = `${weight} ${size}px JBM`; ctx.fillStyle = color; ctx.textAlign = align;
+  ctx.letterSpacing = `${track}px`; ctx.fillText(txt, x, y); ctx.letterSpacing = "0px";
+}
+
+// ---- frame furniture -------------------------------------------------------------------------------
+function cornerMarks() {
+  ctx.strokeStyle = DIM; ctx.lineWidth = 1.5;
+  for (const [x, y] of [[28, 28], [W - 28, 28], [28, H - 28], [W - 28, H - 28]]) {
+    ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x + 10, y); ctx.moveTo(x, y - 10); ctx.lineTo(x, y + 10); ctx.stroke();
+  }
+}
+function ruler(t) {
+  const x = 18, y0 = 230, y1 = 870;
+  ctx.strokeStyle = FAINT; ctx.lineWidth = 1;
+  for (let y = y0, i = 0; y <= y1; y += 16, i++) { const major = i % 5 === 0; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (major ? 12 : 5), y); ctx.stroke(); }
+  const py = y0 + (y1 - y0) * clamp(t / D.seconds);
+  ctx.fillStyle = accent(sectionAt(t).name);
+  ctx.beginPath(); ctx.moveTo(x + 16, py); ctx.lineTo(x + 25, py - 5); ctx.lineTo(x + 25, py + 5); ctx.closePath(); ctx.fill();
+}
+function topLabels(f, t) {
+  const [i, shot] = shotAt(f); const sec = sectionAt(t);
+  const left = `SHOT ${pad(i + 1)} / ${pad(D.shots.length)}` + (sec.name ? `  ·  ${sec.name}` : "");
+  mono(decode(left, f, shot.f0, 10), M, 66, 15, INK);
+  if (S.title) mono(S.title, W - M, 66, 15, INK, "right");
+  const [p, down] = beatPulse(t);
+  ctx.fillStyle = accent(sec.name); ctx.globalAlpha = 0.25 + 0.75 * p;
+  const s = down ? 12 : 8; ctx.fillRect(W - M - 360 - s / 2, 60 - s / 2, s, s); ctx.globalAlpha = 1;
+  const bars = 56, bw = 4, gap = 2.5, bx = W - M - bars * (bw + gap), by = 112;
+  for (let k = 0; k < bars; k++) {
+    const v = D.rms[Math.max(0, f - (bars - 1 - k))] || 0, h = 3 + v * 34;
+    ctx.fillStyle = k === bars - 1 ? accent(sec.name) : (k > bars - 6 ? INK : DIM);
+    ctx.fillRect(bx + k * (bw + gap), by - h, bw, h);
+  }
+  ctx.strokeStyle = FAINT; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(bx, by + 8); ctx.lineTo(W - M, by + 8); ctx.stroke();
+}
+
+// ---- face-safe placement -------------------------------------------------------------------------------
+// The zone is the bracket area around the face plus a margin, unioned over a frame range, so a lyric line picks one
+// spot for its whole time on screen and never sits on a face. Illustrations and the merge widget count as occupied too.
+function isPeopleFrame(f) { const [, sh] = shotAt(f); return !!(D.people && sh && D.people.includes(sh.id)); }
+function zoneAt(f) {
+  let b = D.faces[f]; if (b && b[3] > H * 0.75) b = null;                      // implausibly large box: detector misfire
+  if (!b) return isPeopleFrame(f) ? [W * 0.2, 0, W * 0.8, H * 0.72] : null;    // person on screen, face lost: keep the upper centre clear
+  const [x0, y0, w0, h0] = b, cx = x0 + w0 / 2, cy = y0 + h0 / 2, w = w0 * 2.1 + 80, h = h0 * 2.5 + 80;
+  return [cx - w / 2, cy - h / 2 - h0 * 0.4, cx + w / 2, cy + h / 2];            // extra room above: hair and head tilt
+}
+function faceZone(f0, f1) {
+  let z = null;
+  for (let f = Math.max(0, f0); f <= Math.min(D.frames - 1, f1); f++) {
+    const r = zoneAt(f); if (!r) continue;
+    z = z ? [Math.min(z[0], r[0]), Math.min(z[1], r[1]), Math.max(z[2], r[2]), Math.max(z[3], r[3])] : r;
+  }
+  return z;
+}
+const overlap = (a, b) => !a || !b ? 0 : Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+function occupiedAt(f) { return [zoneAt(f), mergeBoxAt(f), readoutBoxAt(f), ...illusBoxAt(f)].filter(Boolean); }
+function readoutBoxAt(f) {    // the readout panel is occupied space too while it is on screen
+  const R = rd(); if (!R) return null; const t = f / D.fps;
+  const start = D.sections.find(s => s.name === R.start_section); if (!start || t < start.t || t > breakT() + (R.linger ?? 4.2) + 0.5) return null;
+  const MT = mergeTimes(); if (MT && t > MT.t0 - 0.2 && t < MT.tEnd + 0.6) return null;      // stepped aside for the merge widget
+  const [, shot] = shotAt(f), w = 470, h = 250, x = W - M - w;
+  const y = overlap([x, 160, x + w, 160 + h], faceZone(shot.f0, shot.f1 - 1)) > 0 ? H - 120 - h : 160;
+  return [x - 20, y - 20, x + w + 20, y + h + 20];
+}
+function meanOverlap(box, f0, f1) {
+  let sum = 0, n = 0;
+  for (let f = Math.max(0, f0); f <= Math.min(D.frames - 1, f1); f += 2) { for (const o of occupiedAt(f)) sum += overlap(box, o); n++; }
+  return n ? sum / n : 0;
+}
+
+// ---- lyrics -------------------------------------------------------------------------------
+function isHero(L) { return !!(S.hero && new RegExp(S.hero, "i").test(lineText(L).trim())); }
+function layoutLine(L, hero, scale, slot) {
+  const size = (hero ? 196 : 104) * scale;
+  ctx.font = hero ? `700 ${size}px BC` : LYRIC_FONT(size);
+  ctx.letterSpacing = hero ? "2px" : `${-3 * scale}px`;
+  const maxW = (hero ? 1500 : 1040) * (slot === "tl" || slot === "bl" ? 1 : 0.62), lh = size * (hero ? 0.86 : 1.0);
+  const words = L.words.map((w, k) => ({ ...w, txt: (hero ? w.w.toUpperCase() : w.w) + (hero && k === L.words.length - 1 && !/[?!.]$/.test(w.w) ? "?" : "") }));
+  const rows = [[]]; let x = 0; const space = ctx.measureText(" ").width;
+  for (const w of words) { const ww = ctx.measureText(w.txt).width;
+    if (x > 0 && x + ww > maxW) { rows.push([]); x = 0; }
+    rows.at(-1).push({ ...w, dx: x, ww }); x += ww + space; }
+  const blockW = Math.max(...rows.map(r => r.at(-1).dx + r.at(-1).ww)), capH = size * 0.74;
+  const tail = (hero ? 46 : 40) + 30 + 26 * 3;                  // rule, caption, log under the text
+  const blockH = capH + lh * (rows.length - 1) + tail;
+  let x0 = M, top = hero ? 310 - capH : 232 - capH;               // top-left default
+  if (slot === "bl") top = H - 112 - blockH;
+  if (slot === "tr") { x0 = W - M - Math.max(blockW, 520); top = 460 - capH; }
+  if (slot === "ml") top = 470 - capH;
+  const placed = []; rows.forEach((r, i) => r.forEach(w => placed.push({ ...w, x: x0 + w.dx, y: top + capH + lh * i })));
+  return { size, placed, x0, ruleY: top + capH + lh * (rows.length - 1) + (hero ? 46 : 40),
+           box: [x0 - 10, top - 10, x0 + Math.max(blockW, 900) + 10, top + blockH], ruleW: Math.max(Math.min(900, blockW + 40), 420) };
+}
+const LAYOUT_CACHE = {};
+function chooseLayout(li, L, hold, hero) {
+  if (LAYOUT_CACHE[li]) return LAYOUT_CACHE[li];
+  const fa = Math.round((Math.max(L.start - 0.12, IN.lyrics)) * 24), fb = Math.round(hold * 24) + 8;
+  const sid = shotAt(Math.round(L.start * 24))[1].id, txt = normTxt(lineText(L));
+  const forced = S.slot_by_line[txt] || S.slot_by_shot[sid], bouncy = isBouncy(L);
+  let best = null;
+  for (const slot of forced ? [forced] : ["tl", "bl", "ml", "tr"]) for (const scale of bouncy ? [1] : [1, 0.78, 0.6]) {
+    const lay = layoutLine(L, hero, scale, slot); const o = meanOverlap(lay.box, fa, fb);
+    const score = o * 10 + (1 - scale) * 1e4 + ["tl", "bl", "ml", "tr"].indexOf(slot) * 10;
+    if (!best || score < best.score) best = { ...lay, score, slot, scale };
+    if (o === 0 && scale === 1) break;
+  }
+  const dy = S.dy_by_line[txt] || 0;
+  if (dy && best) { best.placed = best.placed.map(w => ({ ...w, y: w.y + dy })); best.ruleY += dy; best.box = [best.box[0], best.box[1] + dy, best.box[2], best.box[3] + dy]; }
+  return (LAYOUT_CACHE[li] = best);
+}
+function isBouncy(L) { return S.bounce_shots.some(id => { const s = shotById(id); return s && L.start * D.fps >= s.f0 - 6 && L.start * D.fps < s.f1; }); }
+// Headline: the line being sung, word by word, letters on a scrolling gradient.
+function headline(f, t) {
+  let li = -1;
+  for (let i = 0; i < D.lines.length; i++) if (t >= D.lines[i].start - 0.12) li = i;
+  if (li < 0 || t < IN.lyrics) return;
+  const L = D.lines[li], next = D.lines[li + 1];
+  const hold = Math.min(next ? next.start - 0.12 : 1e9, L.end + 1.4, D.seconds - OUT_LEN);
+  const ko = easeIn((t - hold) / 0.32); if (ko >= 1) return;
+  const hero = isHero(L);
+  const lay = chooseLayout(li, L, hold, hero);
+  const right = lay.slot === "tr", dir = right ? 1 : -1;
+  const blockR = Math.max(...lay.placed.map(w => w.x + w.ww));
+  const travel = right ? W - lay.x0 + 80 : blockR + 80;
+  const tIn = Math.max(L.start - 0.12, IN.lyrics); let style = hero ? 0 : Math.floor(hash(li * 9.7 + 3) * 3);
+  const kin = style === 2 ? easeOut((t - tIn) / 0.38) : 1;                 // style 2: the whole block slides in from the side
+  ctx.save(); ctx.translate(dir * (ko + (1 - kin)) * travel, 0);
+  ctx.font = hero ? `700 ${lay.size}px BC` : LYRIC_FONT(lay.size);
+  ctx.letterSpacing = hero ? "2px" : `${-3 * lay.scale}px`; ctx.textAlign = "left";
+  let ci = 0;
+  const bouncy = !hero && isBouncy(L);
+  if (bouncy) style = 0;
+  let beatPh = 0, beatLen = 0.5; if (bouncy) { let b0 = -9, b1 = 9; for (const b of D.beats) { if (b <= t) b0 = b; else { b1 = b; break; } } beatLen = Math.max(0.2, b1 - b0); beatPh = clamp((t - b0) / beatLen); }
+  ctx.save(); ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = 18;
+  const capH = lay.size * 0.74, pal = S.palette;
+  for (const w of lay.placed) {
+    if (hero) {                       // hero lines land hard: each word cuts on at 2x and snaps down; a trailing ? bounces on the beat
+      const ws = Math.max(w.s - 0.02, tIn);
+      if (t < ws) { ci += w.txt.length; continue; }
+      const k = 1 + (1 - easeOut((t - ws) / 0.16));
+      const last = w === lay.placed[lay.placed.length - 1], q = last && /\?$/.test(w.txt), body = q ? w.txt.replace(/\?$/, "") : w.txt;
+      const cxm = w.x + w.ww / 2, cym = w.y - capH / 2;
+      ctx.save(); ctx.translate(cxm, cym); ctx.scale(k, k); ctx.translate(-cxm, -cym);
+      let cx = w.x;
+      for (const ch of body) { ctx.fillStyle = gradAt(pal, ci * 0.55 + t * 2.2); ctx.fillText(ch, cx, w.y); cx += ctx.measureText(ch).width + 2; ci++; }
+      if (q) {
+        let b0 = -9, b1 = 9; for (const b of D.beats) { if (b <= t) b0 = b; else { b1 = b; break; } }
+        const ph = clamp((t - b0) / Math.max(0.2, b1 - b0)), hop = 1 - Math.pow(2 * ph - 1, 2);
+        const sq = ph < 0.08 || ph > 0.94 ? 0.86 : 1;
+        ctx.save(); ctx.translate(cx + ctx.measureText("?").width / 2, w.y); ctx.scale(1 / sq, sq);
+        ctx.fillStyle = gradAt(pal, ci * 0.55 + t * 2.2); ctx.textAlign = "center";
+        ctx.fillText("?", 0, -hop * lay.size * 0.2); ctx.restore(); ctx.textAlign = "left"; ci++;
+      }
+      ctx.restore(); continue;
+    }
+    const ws = Math.max(w.s - 0.06, tIn);
+    const p = easeOut((t - ws) / (style === 1 ? 0.24 : 0.14));
+    let hopY = 0;
+    if (bouncy) {                              // each word hops on the beat, neighbours alternate, a few hops then rest
+      const wi = lay.placed.indexOf(w), ph = ((beatPh + (wi % 2) * 0.5) % 1), hop = 1 - Math.pow(2 * ph - 1, 2);
+      const hops = (t - ws) / beatLen, settle = hops < S.bounces ? 1 - hops / S.bounces * 0.35 : 0;
+      hopY = -hop * lay.size * 0.16 * clamp((t - ws) / 0.2) * settle;
+    }
+    if (p <= 0) { ci += w.txt.length; continue; }
+    ctx.globalAlpha = style === 1 ? 1 : p;
+    const fly = style === 1 ? dir * (1 - p) * (right ? W - w.x + 40 : w.x + w.ww + 40) : 0;   // style 1: each word flies in from the edge
+    let cx = w.x + fly;
+    for (const ch of w.txt) {
+      ctx.fillStyle = gradAt(pal, ci * 0.55 + t * 2.2);
+      ctx.fillText(ch, cx, w.y + hopY + (style === 0 ? (1 - p) * 22 * lay.scale : 0));
+      cx += ctx.measureText(ch).width + (-3 * lay.scale); ci++;
+    }
+  }
+  ctx.restore(); ctx.letterSpacing = "0px"; ctx.globalAlpha = 1;
+  const ry = lay.ruleY, k = easeOut((t - tIn) / 0.35), X = lay.x0;
+  ctx.strokeStyle = DIM; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X, ry); ctx.lineTo(X + lay.ruleW * k, ry); ctx.stroke();
+  const sec = sectionAt(t).name;
+  const cap = `LYRIC ${pad(li + 1)}  ·  ${(L.start).toFixed(2).padStart(6, "0")} S` + (sec ? `  ·  ${sec}` : "");
+  mono(decode(cap, f, Math.round((L.start - 0.12) * 24), 12), X, ry + 30, 14, DIM);
+  for (let j = 1; j <= 3; j++) {
+    const P = D.lines[li - j]; if (!P) break;
+    mono(`>  ${lineText(P).toUpperCase()}`, X, ry + 30 + 26 * j, 13, `rgba(242,239,230,${0.42 - j * 0.1})`);
+  }
+  ctx.restore();
+}
+
+// ---- widget: expand line (a short stub that stretches edge to edge on a sung word) ----------------------
+function expandLine(f, t) {
+  const X = S.widgets.expand_line; if (!X) return;
+  const s = shotById(X.shot); if (!s) return;
+  const t0 = s.f0 / D.fps, t1 = s.f1 / D.fps; if (t < t0 - 0.1 || t > t1 + 0.1) return;
+  const re = new RegExp(X.word || ".", "i");
+  const Ld = D.lines.find(l => l.start >= t0 - 0.5 && re.test(lineText(l))); if (!Ld) return;
+  const wd = Ld.words.find(w => re.test(w.w)) || Ld.words[0], wl = Ld.words[Ld.words.length - 1];
+  const x = X.x ?? 1440, y = X.y ?? 540, len = X.len ?? 40, thick = X.thick ?? 6;
+  const kin = easeOut((t - t0) / 0.3), kx = ease((t - wd.s) / Math.max(0.5, wl.e - wd.s)), kout = easeIn((t - (t1 - 0.3)) / 0.3);
+  const xl = x - len / 2 - kx * (x - len / 2), xr = x + len / 2 + kx * (W - x - len / 2);
+  const g = ctx.createLinearGradient(0, 0, W, 0); for (let i = 0; i <= 12; i++) g.addColorStop(i / 12, gradAt(S.palette, i * 0.9 + t * 2.2));
+  ctx.save(); ctx.globalAlpha = kin * (1 - kout); ctx.shadowColor = "rgba(255,255,255,0.35)"; ctx.shadowBlur = 14; ctx.fillStyle = g;
+  ctx.fillRect(xl, y - thick / 2, xr - xl, thick); ctx.restore();
+}
+
+// ---- widget: merge (N coloured dots fall together into one blob, which smooths to grey, then dissipates) ------------
+const MERGE = { cv: null };
+function mergeTimes() {
+  const C = S.widgets.merge; if (!C) return null;
+  if (MERGE.times !== undefined) return MERGE.times;
+  const [a, b, c] = C.lines || [];
+  const Lm = a && lineByText(a), La = Lm && b && lineByText(b, Lm.start), Lu = La && c && lineByText(c, La.start);
+  if (!(Lm && La && Lu)) return (MERGE.times = null);
+  const sh = C.exit_shot ? shotById(C.exit_shot) : null, shEnd = sh ? sh.f1 / D.fps : 1e9, fade = C.fade ?? 0.7;
+  const tX = Math.min(Lu.end + 0.2, shEnd - fade - 0.04) - (C.early || 0);
+  const t0 = Lm.start - 0.1, c0 = Math.min(La.start, t0 + (tX - t0) * 0.45), c1 = Math.min(La.end + 0.25, c0 + (tX - c0) * 0.6);
+  return (MERGE.times = { t0, c0, c1, s1: Math.min(Lu.end, tX), tX, tEnd: tX + fade });
+}
+function mergeBoxAt(f) {
+  const T = mergeTimes(); if (!T || !MERGE.side) return null; const t = f / D.fps;
+  if (t < T.t0 || t > T.tEnd) return null; const CX = MERGE.side > 0 ? 1480 : 440;
+  return [CX - 270, 590 - 270, CX + 270, 590 + 290];
+}
+function mergeDots(f, t) {
+  const C = S.widgets.merge, T = mergeTimes(); if (!T) return;
+  const { t0, c0, c1, s1, tX, tEnd } = T;
+  if (t < t0 || t > tEnd) return;
+  if (!MERGE.side) {
+    const fa = Math.round(t0 * 24), fb = Math.round(tEnd * 24), box = cx => [cx - 240, 410, cx + 240, 890];
+    MERGE.side = meanOverlap(box(1480), fa, fb) <= meanOverlap(box(440), fa, fb) * 1.3 ? 1 : -1;
+  }
+  const dir = MERGE.side, CX = dir > 0 ? 1480 : 440, CY = 590, out = clamp((t - tX) / (tEnd - tX)), eo = easeOut(out);
+  const SZ = 240, RES = 2, N = C.n || 12, R = C.radius || 175;
+  if (!MERGE.cv) { MERGE.cv = document.createElement("canvas"); MERGE.cv.width = MERGE.cv.height = SZ; }
+  const g = MERGE.cv.getContext("2d"), img = g.createImageData(SZ, SZ), px = img.data;
+  const conv = ease((t - c0) / (c1 - c0)), smooth = ease((t - c1) / Math.max(0.5, s1 - c1));
+  const dots = [];
+  for (let i = 0; i < N; i++) {
+    const appear = easeOut((t - (t0 + i * 0.06)) / 0.18); if (appear <= 0) continue;
+    const a = i / N * Math.PI * 2 + t * 0.35, wob = (1 - smooth) * conv;
+    const rr = R * (1 - conv) + wob * (14 + 10 * Math.sin(t * 3.1 + i * 1.7)) + eo * 70 * (0.5 + hash(i * 3.7 + 1));
+    const x = Math.cos(a) * rr + wob * 12 * Math.sin(t * 2.3 + i), y = Math.sin(a) * rr + wob * 12 * Math.cos(t * 1.9 + i * 2.1);
+    const r = (19 + conv * 17) * appear * (1 + eo * 0.45);
+    const col = hex2rgb(S.palette[i % S.palette.length]), grey = [150, 146, 140];
+    dots.push([x / RES + SZ / 2, y / RES + SZ / 2, (r / RES) ** 2, col.map((c, k) => c + (grey[k] - c) * smooth)]);
+  }
+  for (let yy = 0; yy < SZ; yy++) for (let xx = 0; xx < SZ; xx++) {
+    let fsum = 0, cr = 0, cg = 0, cb = 0;
+    for (const [dx, dy, r2, c] of dots) { const d2 = (xx - dx) ** 2 + (yy - dy) ** 2 + 1e-3, w = r2 / d2; fsum += w; cr += c[0] * w; cg += c[1] * w; cb += c[2] * w; }
+    const al = clamp((fsum - 0.85) / 0.3); if (al <= 0) continue;
+    const o = (yy * SZ + xx) * 4; px[o] = cr / fsum; px[o + 1] = cg / fsum; px[o + 2] = cb / fsum; px[o + 3] = 255 * al;
+  }
+  g.putImageData(img, 0, 0);
+  ctx.save(); ctx.imageSmoothingEnabled = true; ctx.globalAlpha = 1 - easeIn(out);
+  const sc = 1 + eo * 0.8; if (out > 0) ctx.filter = `blur(${(eo * 26).toFixed(1)}px)`;
+  ctx.drawImage(MERGE.cv, CX - SZ * RES * sc / 2, CY - SZ * RES * sc / 2, SZ * RES * sc, SZ * RES * sc); ctx.filter = "none";
+  const labels = C.labels || [`${N} DISTINCT`, "MERGING", "1"];
+  mono(conv < 0.05 ? labels[0] : smooth < 0.95 ? labels[1] : labels[2], CX, CY + 250, 13, DIM, "center");
+  ctx.restore();
+}
+
+// ---- widget: illustrations (luma-keyed line art beside the singer; optional "puzzle" that assembles then greys) ----
+const ILL = { img: {}, seq: {} };
+function illusLayout() {
+  if (ILL.lay !== undefined) return ILL.lay;
+  const lay = [];
+  for (const g of S.widgets.illustrations || []) {            // {shot, items: [{name, side, cy, h, scale, at}], out_early}
+    const s = shotById(g.shot); if (!s) continue;
+    const t0 = s.f0 / D.fps, t1 = (g.until_shot && shotById(g.until_shot) ? shotById(g.until_shot).f1 : s.f1) / D.fps;
+    const hits = beatsFrom(t0 + 0.15, (g.items || []).length);
+    (g.items || []).forEach((it, k) => {
+      const im = ILL.img[it.name] || (ILL.seq[it.name] || [])[0]; if (!im) return;
+      const h = (it.h || 250) * (it.scale || 1), w = h * im.width / im.height, side = it.side || (k % 2 ? 1 : -1);
+      const cx = side < 0 ? 70 + Math.max(w, 300) / 2 + 40 : W - 70 - Math.max(w, 300) / 2 - 40;
+      const tIn = it.at != null ? it.at : (hits[k] ?? t0 + 0.3 + k * 0.45);   // default: one per beat; "at" (seconds) to time them to head turns
+      lay.push({ n: it.name, side, cx, cy: it.cy || 300 + 230 * (k >> 1), w, h, tIn, tOut: t1 - 0.35 + k * 0.03, puzzle: !!it.puzzle,
+                 grey0: it.grey_shot && shotById(it.grey_shot) ? shotById(it.grey_shot).f0 / D.fps : t1, labels: it.labels });
+    });
+  }
+  return (ILL.lay = lay);
+}
+function illusBoxAt(f) {
+  const t = f / D.fps, out = [];
+  for (const L of illusLayout()) if (t >= L.tIn - 0.1 && t <= L.tOut + 0.4) out.push([L.cx - L.w / 2 - 20, L.cy - L.h / 2 - 20, L.cx + L.w / 2 + 20, L.cy + L.h / 2 + 20]);
+  return out;
+}
+function illustrations(f, t) {
+  for (const L of illusLayout()) {
+    if (t < L.tIn || t > L.tOut + 0.45) continue;
+    const A = (D.illusAnim || {})[L.n], seq = ILL.seq[L.n];
+    const im = seq && seq.length ? seq[Math.floor((t - L.tIn) * ((A && A.fps) || 24)) % seq.length] : ILL.img[L.n];
+    const kin = easeOut((t - L.tIn) / 0.28), kout = easeIn((t - L.tOut) / 0.4);
+    const pop = 1 + 0.12 * Math.sin(Math.min(1, (t - L.tIn) / 0.28) * Math.PI);
+    const slide = L.side * ((1 - kin) + kout) * (L.side < 0 ? L.cx + L.w : W - L.cx + L.w);
+    const bob = Math.sin(t * 2.2 + L.cy) * 6;
+    ctx.save(); ctx.translate(L.cx + slide, L.cy + bob); ctx.scale(pop, pop);
+    if (L.puzzle) {             // assembles cell by cell, then drains to grey
+      const grid = 6, cw = L.w / grid, ch = L.h / grid, k = clamp((t - L.tIn) / 1.6);
+      const grey = ease((t - L.grey0) / 2.5); ctx.filter = `saturate(${1 - grey * 0.95}) brightness(${1 - grey * 0.25})`;
+      for (let gy = 0; gy < grid; gy++) for (let gx = 0; gx < grid; gx++) {
+        const order = hash(gx * 7.1 + gy * 13.3); if (order > k) continue;
+        const land = easeOut(clamp((k - order) / 0.12)), dy = (1 - land) * -40;
+        ctx.globalAlpha = land;
+        ctx.drawImage(im, gx * im.width / grid, gy * im.height / grid, im.width / grid, im.height / grid, -L.w / 2 + gx * cw, -L.h / 2 + gy * ch + dy, cw + 0.5, ch + 0.5);
+      }
+      ctx.globalAlpha = 1; ctx.filter = "none";
+      if (k >= 1) { const fl = Math.exp(-(t - L.tIn - 1.6) * 6); if (fl > 0.02) { ctx.strokeStyle = `rgba(242,239,230,${fl})`; ctx.lineWidth = 3; ctx.strokeRect(-L.w / 2 - 6, -L.h / 2 - 6, L.w + 12, L.h + 12); } }
+      const lb = L.labels || ["ASSEMBLING", "COMPLETE  ·  100%", "NOTHING LEFT TO DO"];
+      mono(t < L.grey0 ? (k < 1 ? `${lb[0]}  ${Math.round(k * 100)}%` : lb[1]) : lb[2], 0, L.h / 2 + 34, 13, DIM, "center");
+    } else {
+      const dw = L.w * (A ? A.sx || 1 : 1), dh = L.h * (A ? A.sy || 1 : 1);
+      ctx.globalAlpha = kin; ctx.drawImage(im, -dw / 2, -dh / 2, dw, dh); ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+}
+
+// ---- widget: readout (a number that ticks up on the beat through some sections, then breaks into a "?") --------------
+function rd() { return S.widgets.readout; }
+function breakT() { const R = rd(); const b = R && D.sections.find(s => s.name === R.break_section); return b ? b.t : 1e9; }
+function readoutValue(t) {
+  const R = rd(); let v = R.start_value ?? 0.07;
+  for (const b of D.beats) { if (b > t) break; const c = (R.climb || {})[sectionAt(b).name]; if (c) v += c[0] + hash(b * 3.1) * c[1]; }
+  return Math.min(v, R.max ?? 0.999);
+}
+function countSinceBreak(t) { let n = 0; for (const b of D.beats) { if (b > t) break; if (b >= breakT()) n++; } return n; }
+function readout(f, t) {
+  const R = rd(); if (!R) return;
+  const start = D.sections.find(s => s.name === R.start_section);
+  if (t < IN.top + IN.dur) return;
+  if ((!start || t < start.t) && illusBoxAt(f).length) return;
+  if (!start || t < start.t) {
+    const on = Math.floor(f / 12) % 2 === 0;
+    mono((R.waiting || "AWAITING INPUT") + (on ? " _" : "  "), W - M - 470, 188, 14, DIM); return;
+  }
+  const exitT = breakT() + (R.linger ?? 4.2), MT = mergeTimes();
+  const aside = MT ? easeIn((t - (MT.t0 - 0.2)) / 0.45) * (1 - easeOut((t - MT.tEnd - 0.1) / 0.5)) : 0;   // steps aside for the merge widget
+  const kx = Math.max(easeIn((t - exitT) / 0.5), aside); if (kx >= 1) return;
+  ctx.save(); ctx.translate(kx * 560, 0);
+  try { readoutBody(f, t, start); } finally { ctx.restore(); }
+}
+function readoutBody(f, t, start) {
+  const R = rd(), sec = sectionAt(t).name, acc = accent(sec), w = 470, h = 250, x = W - M - w;
+  const [, shot] = shotAt(f); const zone = faceZone(shot.f0, shot.f1 - 1);
+  const y = overlap([x, 160, x + w, 160 + h], zone) > 0 ? H - 120 - h : 160;
+  const k = easeOut((t - start.t) / 0.7);
+  ctx.strokeStyle = DIM; ctx.lineWidth = 1.5;
+  const per = 2 * (w + h), len = per * k; ctx.beginPath(); ctx.moveTo(x, y);
+  const pts = [[x + w, y], [x + w, y + h], [x, y + h], [x, y]]; let accl = 0, px = x, py = y;
+  for (const [qx, qy] of pts) { const seg = Math.hypot(qx - px, qy - py); if (accl + seg <= len) ctx.lineTo(qx, qy); else { const r = (len - accl) / seg; ctx.lineTo(px + (qx - px) * r, py + (qy - py) * r); break; } accl += seg; px = qx; py = qy; }
+  ctx.stroke();
+  ctx.fillStyle = "rgba(8,8,10,0.38)"; ctx.globalAlpha = k; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+  if (k < 0.5) return;
+  mono(decode(R.title || "READOUT", f, Math.round(start.t * 24) + 8, 10), x + 20, y + 32, 14, INK, "left", 700);
+  const bk = t - breakT(), glitching = bk >= 0 && bk < 1.4, st = R.states || {};
+  mono(bk >= 0 ? (glitching ? st.glitch || "NO SIGNAL" : st.broken || "UNDEFINED") : (st[sec] || st.live || "LIVE"), x + w - 20, y + 32, 13, acc, "right");
+  ctx.strokeStyle = FAINT; ctx.beginPath(); ctx.moveTo(x + 20, y + 48); ctx.lineTo(x + w - 20, y + 48); ctx.stroke();
+  const v = readoutValue(t);
+  ctx.font = "700 116px BC"; ctx.textAlign = "left"; ctx.letterSpacing = "1px";
+  let digits = v.toFixed(3), dx = x + 18;
+  if (glitching) digits = digits.split("").map((c, i) => c === "." ? "." : String(Math.floor(hash(f * 7.3 + i * 13.1) * 10))).join("");
+  if (bk >= 1.4) {
+    const pop = easeOut((bk - 1.4) / 0.35); ctx.save(); ctx.translate(x + 70, y + 172); ctx.scale(0.6 + 0.4 * pop, 0.6 + 0.4 * pop);
+    ctx.fillStyle = acc; ctx.font = "700 150px BC"; ctx.textAlign = "center"; ctx.fillText("?", 0, 0); ctx.restore();
+  } else for (let i = 0; i < digits.length; i++) {
+    const ch = digits[i], flip = beatPulse(t)[0];
+    const jx = glitching ? (hash(f * 3.1 + i) - 0.5) * 18 : 0, jy = glitching ? (hash(f * 5.7 + i) - 0.5) * 12 : 0;
+    ctx.fillStyle = glitching ? (hash(f + i) > 0.5 ? acc : INK) : i >= 2 ? mix(acc, "#f2efe6", 1 - flip * 0.8) : INK;
+    ctx.fillText(ch, dx + jx, y + 172 + jy); dx += ctx.measureText(ch).width + 2;
+  }
+  ctx.letterSpacing = "0px";
+  const sx = x + w - 150, sw = 130, sy = y + 72, sh = 96;
+  ctx.strokeStyle = FAINT; ctx.strokeRect(sx, sy, sw, sh);
+  ctx.strokeStyle = acc; ctx.lineWidth = 2; ctx.beginPath();
+  const t0 = start.t, tEnd = Math.min(t, breakT());
+  for (let s = 0; s <= 40; s++) { const ts = t0 + (tEnd - t0) * s / 40, vv = readoutValue(ts);
+    const X = sx + (bk >= 0 ? sw * 0.6 : sw) * s / 40, Y = sy + sh - sh * vv; s ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }
+  ctx.stroke(); ctx.lineWidth = 1.5;
+  if (bk >= 0) { ctx.setLineDash([3, 5]); ctx.strokeStyle = acc; ctx.beginPath(); ctx.moveTo(sx + sw * 0.6, sy + 4);
+    ctx.lineTo(sx + sw * 0.6 + sw * 0.4 * Math.min(1, bk / 2), sy + 4 + sh * 0.9 * Math.min(1, bk / 2)); ctx.stroke(); ctx.setLineDash([]); }
+  const foot = bk >= 0 ? (R.footer_after || "CONFIDENCE  —   ·   COUNT {count}") : (R.footer || "CONFIDENCE {conf}%");
+  mono(fill(foot, t), x + 20, y + h - 22, 13, bk >= 0 ? acc : DIM);
+}
+function fill(s, t) {
+  return s.replace("{value}", rd() ? (t >= breakT() ? "?" : readoutValue(t).toFixed(3)) : "")
+          .replace("{count}", String(countSinceBreak(t)))
+          .replace("{conf}", (96 + hash(Math.floor(t * 2)) * 3.5).toFixed(1))
+          .replace("{n}", (88301227 + Math.floor(t * 4113)).toLocaleString("en-US"));
+}
+
+// ---- face brackets -------------------------------------------------------------------------------
+function faceBrackets(f, t) {
+  if (t < IN.lyrics || t > D.seconds - OUT_LEN || !S.face_label) return;
+  const b = D.faces[f]; if (!b) return;
+  if (S.no_box_shots.includes(shotAt(f)[1].id)) return;
+  let first = f; while (first > 0 && D.faces[first - 1]) first--;
+  const k = easeOut((f - first) / 9);
+  const [x0, y0, w0, h0] = b, cx = x0 + w0 / 2, cy = y0 + h0 / 2;
+  const s = 1.55 + (1 - k) * 0.5, w = w0 * s, h = h0 * s * 1.15, x = cx - w / 2, y = cy - h / 2, L = Math.min(w, h) * 0.16;
+  ctx.globalAlpha = k; ctx.strokeStyle = INK; ctx.lineWidth = 2;
+  for (const [px, py, dx, dy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) {
+    ctx.beginPath(); ctx.moveTo(px + dx * L, py); ctx.lineTo(px, py); ctx.lineTo(px, py + dy * L); ctx.stroke();
+  }
+  const acc = accent(sectionAt(t).name), label = decode(S.face_label, f, first, 12);
+  ctx.font = "700 13px JBM"; ctx.letterSpacing = "1.5px"; const lw = ctx.measureText(label).width + 16;
+  const ly = y - 30 < 96 ? y + h + 10 : y - 30;
+  ctx.fillStyle = acc; ctx.fillRect(x, ly, lw, 22);
+  mono(label, x + 8, ly + 16, 13, "#0b0b0d", "left", 700, 1.5);
+  if (S.show_face_score) mono((0.94 + hash(Math.floor(f / 6)) * 0.05).toFixed(2), x + w, ly + 16, 13, INK, "right");
+  ctx.fillStyle = acc; ctx.fillRect(cx - 2, cy - 2, 4, 4);
+  ctx.globalAlpha = 1;
+}
+
+// ---- ticker + timecode -------------------------------------------------------------------------------
+function ticker(f, t) {
+  const sec = sectionAt(t).name;
+  const items = (S.ticker_after && t >= breakT() ? S.ticker_after : S.ticker).map(s => fill(s, t));
+  ctx.strokeStyle = FAINT; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, H - 62); ctx.lineTo(W - M, H - 62); ctx.stroke();
+  if (items.length) {
+    const str = items.join("   ✱   ") + "   ✱   ";
+    ctx.save(); ctx.beginPath(); ctx.rect(M, H - 60, W - 2 * M, 40); ctx.clip();
+    ctx.font = "400 15px JBM"; ctx.letterSpacing = "2px"; const sw = ctx.measureText(str).width;
+    const off = (t * 110) % sw; ctx.fillStyle = DIM; ctx.textAlign = "left";
+    for (let x = M - off; x < W; x += sw) ctx.fillText(str, x, H - 34);
+    ctx.restore(); ctx.letterSpacing = "0px";
+  }
+  mono(tc(f), W - M, H - 78, 14, INK, "right");
+  mono([sec, S.label].filter(Boolean).join("  ·  "), M, H - 78, 13, DIM);
+}
+
+const LAYER = { cv: null };
+window.renderAt = function (f) {
+  const t = f / D.fps;
+  ctx = document.getElementById("c").getContext("2d");
+  ctx.clearRect(0, 0, W, H);
+  const tail = easeIn((t - (D.seconds - OUT_LEN)) / 0.8);                         // loop seam: everything leaves before the end
+  const kB = easeOut((t - IN.ticker) / IN.dur) * (1 - tail), kT = easeOut((t - IN.top) / IN.dur) * (1 - tail);
+  const grad = (y0, y1) => { const g = ctx.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, "rgba(6,6,8,0.55)"); g.addColorStop(1, "rgba(6,6,8,0)"); ctx.fillStyle = g; ctx.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0)); };
+  const main = ctx;                                   // graphics go to a layer that is desaturated once; lyrics stay full colour on top
+  if (!LAYER.cv) { LAYER.cv = document.createElement("canvas"); LAYER.cv.width = W; LAYER.cv.height = H; }
+  ctx = LAYER.cv.getContext("2d"); ctx.clearRect(0, 0, W, H);
+  if (kT > 0) { ctx.save(); ctx.translate(0, -(1 - kT) * 190); grad(0, 220); cornerMarks(); topLabels(f, t); ctx.restore();
+    ctx.save(); ctx.translate(-(1 - kT) * 70, 0); ruler(t); ctx.restore(); }
+  faceBrackets(f, t); if (t < D.seconds - OUT_LEN + 0.3) readout(f, t); mergeDots(f, t); illustrations(f, t);
+  if (kB > 0) { ctx.save(); ctx.translate(0, (1 - kB) * 200); grad(H, H - 190); ticker(f, t); ctx.restore(); }
+  ctx = main; ctx.filter = S.calm || "none"; ctx.drawImage(LAYER.cv, 0, 0); ctx.filter = "none";
+  expandLine(f, t); headline(f, t);
+  return document.getElementById("c").toDataURL("image/png");
+};
+window.init = async function (data) {
+  D = data; ctx = document.getElementById("c").getContext("2d");
+  const st = D.style || {};
+  S = { ...DEF, ...st, intro: { ...DEF.intro, ...(st.intro || {}) }, widgets: { ...(st.widgets || {}) } };
+  IN = S.intro; OUT_LEN = S.outro;
+  D.sections = D.sections || []; D.faces = D.faces || []; D.beats = D.beats || []; D.downbeats = D.downbeats || []; D.rms = D.rms || [];
+  const load = url => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = url; });
+  for (const [n, url] of Object.entries(D.illus || {})) { const im = await load(url); if (im) ILL.img[n] = im; }
+  for (const [n, a] of Object.entries(D.illusAnim || {})) {         // {base: ".../il_x_%03d.png", count, fps}
+    const ims = await Promise.all(Array.from({ length: a.count }, (_, i) => load(a.base.replace("%03d", String(i + 1 + (a.start || 0)).padStart(3, "0")))));
+    ILL.seq[n] = ims.filter(Boolean);
+  }
+  await Promise.all(["400 15px JBM", "700 15px JBM", "700 100px BC", "500 100px BC", LYRIC_FONT(100)].map(s => document.fonts.load(s)));
+  return document.fonts.check("700 100px BC") && document.fonts.check("400 15px JBM") && document.fonts.check(LYRIC_FONT(100));
+};
+</script></body></html>

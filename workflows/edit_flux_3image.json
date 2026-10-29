@@ -1,0 +1,482 @@
+{
+ "76": {
+  "inputs": {
+   "image": "example.png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "Load Image 1"
+  }
+ },
+ "81": {
+  "inputs": {
+   "image": "example.png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "Load Image 2"
+  }
+ },
+ "94": {
+  "inputs": {
+   "filename_prefix": "nightshift/example",
+   "images": [
+    "92:104",
+    0
+   ]
+  },
+  "class_type": "SaveImage",
+  "_meta": {
+   "title": "Save Image"
+  }
+ },
+ "131": {
+  "inputs": {
+   "width": 1280,
+   "height": 768,
+   "interpolation": "nearest",
+   "method": "keep proportion",
+   "condition": "always",
+   "multiple_of": 0,
+   "image": [
+    "76",
+    0
+   ]
+  },
+  "class_type": "ImageResize+",
+  "_meta": {
+   "title": "🔧 Image Resize"
+  }
+ },
+ "132": {
+  "inputs": {
+   "width": [
+    "131",
+    1
+   ],
+   "height": [
+    "131",
+    2
+   ],
+   "interpolation": "nearest",
+   "method": "keep proportion",
+   "condition": "always",
+   "multiple_of": 0,
+   "image": [
+    "81",
+    0
+   ]
+  },
+  "class_type": "ImageResize+",
+  "_meta": {
+   "title": "🔧 Image Resize"
+  }
+ },
+ "133": {
+  "inputs": {
+   "image": "example.png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "Load Image 2"
+  }
+ },
+ "134": {
+  "inputs": {
+   "width": [
+    "131",
+    1
+   ],
+   "height": [
+    "131",
+    2
+   ],
+   "interpolation": "nearest",
+   "method": "keep proportion",
+   "condition": "always",
+   "multiple_of": 0,
+   "image": [
+    "133",
+    0
+   ]
+  },
+  "class_type": "ImageResize+",
+  "_meta": {
+   "title": "🔧 Image Resize"
+  }
+ },
+ "92:102": {
+  "inputs": {
+   "sampler_name": "euler"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "92:104": {
+  "inputs": {
+   "samples": [
+    "92:103",
+    0
+   ],
+   "vae": [
+    "92:107",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "92:105": {
+  "inputs": {
+   "noise_seed": 870340465892453
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "92:106": {
+  "inputs": {
+   "unet_name": "flux-2-klein-base-9b-fp8.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "Load Diffusion Model"
+  }
+ },
+ "92:108": {
+  "inputs": {
+   "image": [
+    "92:110",
+    0
+   ]
+  },
+  "class_type": "GetImageSize",
+  "_meta": {
+   "title": "Get Image Size"
+  }
+ },
+ "92:109": {
+  "inputs": {
+   "width": [
+    "92:108",
+    0
+   ],
+   "height": [
+    "92:108",
+    1
+   ],
+   "batch_size": 1
+  },
+  "class_type": "EmptyFlux2LatentImage",
+  "_meta": {
+   "title": "Empty Flux 2 Latent"
+  }
+ },
+ "92:110": {
+  "inputs": {
+   "upscale_method": "lanczos",
+   "megapixels": 1,
+   "resolution_steps": 1,
+   "image": [
+    "131",
+    0
+   ]
+  },
+  "class_type": "ImageScaleToTotalPixels",
+  "_meta": {
+   "title": "Scale Image to Total Pixels"
+  }
+ },
+ "92:111": {
+  "inputs": {
+   "clip_name": "qwen_3_8b_fp8mixed.safetensors",
+   "type": "flux2",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "Load CLIP"
+  }
+ },
+ "92:113": {
+  "inputs": {
+   "text": "using [reference_image1] as the base, update the appearance of the woman to match the film character sheet from [reference_image2] using accurate face, body proportions and clothing carried over exactly from the [reference_image2] and then add in the man character from [reference_image3] so that he appears naturally and realisticlly added into the shot in the background on the left side of the frame. keep the outfits clothing and costumes exactly the same as the reference images and make the face expressions look happy.\n",
+   "clip": [
+    "92:111",
+    0
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Positive Prompt)"
+  }
+ },
+ "92:87": {
+  "inputs": {
+   "text": "",
+   "clip": [
+    "92:111",
+    0
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode ( Negative Prompt)"
+  }
+ },
+ "92:114": {
+  "inputs": {
+   "cfg": 5,
+   "model": [
+    "92:106",
+    0
+   ],
+   "positive": [
+    "92:137",
+    0
+   ],
+   "negative": [
+    "92:138",
+    0
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "92:115": {
+  "inputs": {
+   "steps": 20,
+   "width": [
+    "92:108",
+    0
+   ],
+   "height": [
+    "92:108",
+    1
+   ]
+  },
+  "class_type": "Flux2Scheduler",
+  "_meta": {
+   "title": "Flux2Scheduler"
+  }
+ },
+ "92:125": {
+  "inputs": {
+   "conditioning": [
+    "92:87",
+    0
+   ],
+   "latent": [
+    "92:126",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ },
+ "92:126": {
+  "inputs": {
+   "pixels": [
+    "92:110",
+    0
+   ],
+   "vae": [
+    "92:107",
+    0
+   ]
+  },
+  "class_type": "VAEEncode",
+  "_meta": {
+   "title": "VAE Encode"
+  }
+ },
+ "92:127": {
+  "inputs": {
+   "conditioning": [
+    "92:113",
+    0
+   ],
+   "latent": [
+    "92:126",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ },
+ "92:129": {
+  "inputs": {
+   "pixels": [
+    "92:85",
+    0
+   ],
+   "vae": [
+    "92:107",
+    0
+   ]
+  },
+  "class_type": "VAEEncode",
+  "_meta": {
+   "title": "VAE Encode"
+  }
+ },
+ "92:103": {
+  "inputs": {
+   "noise": [
+    "92:105",
+    0
+   ],
+   "guider": [
+    "92:114",
+    0
+   ],
+   "sampler": [
+    "92:102",
+    0
+   ],
+   "sigmas": [
+    "92:115",
+    0
+   ],
+   "latent_image": [
+    "92:109",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "SamplerCustomAdvanced"
+  }
+ },
+ "92:85": {
+  "inputs": {
+   "upscale_method": "lanczos",
+   "megapixels": 1,
+   "resolution_steps": 1,
+   "image": [
+    "132",
+    0
+   ]
+  },
+  "class_type": "ImageScaleToTotalPixels",
+  "_meta": {
+   "title": "Scale Image to Total Pixels"
+  }
+ },
+ "92:136": {
+  "inputs": {
+   "pixels": [
+    "92:135",
+    0
+   ],
+   "vae": [
+    "92:107",
+    0
+   ]
+  },
+  "class_type": "VAEEncode",
+  "_meta": {
+   "title": "VAE Encode"
+  }
+ },
+ "92:130": {
+  "inputs": {
+   "conditioning": [
+    "92:127",
+    0
+   ],
+   "latent": [
+    "92:129",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ },
+ "92:137": {
+  "inputs": {
+   "conditioning": [
+    "92:130",
+    0
+   ],
+   "latent": [
+    "92:136",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ },
+ "92:138": {
+  "inputs": {
+   "conditioning": [
+    "92:128",
+    0
+   ],
+   "latent": [
+    "92:136",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ },
+ "92:128": {
+  "inputs": {
+   "conditioning": [
+    "92:125",
+    0
+   ],
+   "latent": [
+    "92:129",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ },
+ "92:135": {
+  "inputs": {
+   "upscale_method": "lanczos",
+   "megapixels": 1,
+   "resolution_steps": 1,
+   "image": [
+    "134",
+    0
+   ]
+  },
+  "class_type": "ImageScaleToTotalPixels",
+  "_meta": {
+   "title": "Scale Image to Total Pixels"
+  }
+ },
+ "92:107": {
+  "inputs": {
+   "vae_name": "full_encoder_small_decoder.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ }
+}

@@ -1,0 +1,43 @@
+{
+ "workflow": "vid_ltx_lipsync.json",
+ "kind": "lipsync",
+ "description": "LTX 2.3 image-to-video lip-sync: the song section is separated (MelBand RoFormer) and drives the mouth. Length follows the audio duration (frames = seconds x 24 + 1).",
+ "roles": {
+  "image": {
+   "node": "48",
+   "input": "image"
+  },
+  "prompt": {
+   "node": "36",
+   "input": "text"
+  },
+  "negative": {
+   "node": "35",
+   "input": "text"
+  },
+  "audio": {
+   "node": "60",
+   "input": "audio"
+  },
+  "audio_start": {
+   "node": "60",
+   "input": "start_time"
+  },
+  "audio_seconds": {
+   "node": "60",
+   "input": "duration"
+  },
+  "seed": [
+   {
+    "node": "32",
+    "input": "noise_seed"
+   }
+  ]
+ },
+ "outputs": {
+  "video": {
+   "node": "47",
+   "input": "filename_prefix"
+  }
+ }
+}

@@ -1,0 +1,6 @@
+Nightshift
+Copyright 2026 hexeosis inc.
+
+This product includes software developed by hexeosis inc. with Claude (Anthropic).
+
+The ComfyUI workflows in workflows/ load third-party models that are not covered by this license; see docs/licenses.md.

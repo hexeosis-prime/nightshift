@@ -1,0 +1,126 @@
+{
+ "_readme": "Song-agnostic shot list. `nightshift timeline resolve` fits it to the chosen song (shots_resolved.json + cut.json). Fields: see docs/shots.md.",
+ "shots": [
+  {
+   "id": "s01",
+   "section": "intro",
+   "world": "real",
+   "mode": "fflf",
+   "framing": "wide",
+   "chars": [],
+   "seed": 1001,
+   "fit": true,
+   "action": "",
+   "location": "a long empty avenue in a city at night, wet asphalt reflecting sodium street lamps and shop signs with no readable text, light mist, completely empty, 24mm wide lens, low angle",
+   "video": "A wide, low-angle shot of an empty avenue at night. Mist drifts through the lamp light, puddles shiver in the wind. The camera glides slowly forward along the centre line."
+  },
+  {
+   "id": "s02",
+   "section": "intro",
+   "world": "real",
+   "mode": "lipsync",
+   "framing": "close",
+   "chars": [
+    "lead"
+   ],
+   "seed": 1002,
+   "still": "edit",
+   "anchor": "Every light on the avenue",
+   "expr": "calm, lips gently closed, about to sing",
+   "action": "standing under a street lamp, singing softly, eyes half closed, 85mm lens",
+   "location": "a long empty avenue in a city at night, wet asphalt reflecting sodium street lamps and shop signs with no readable text, light mist",
+   "video": "Close-up of {lead} under a street lamp at night, singing softly, the avenue a blur of lights behind her. Handheld camera drifting slowly around her."
+  },
+  {
+   "id": "s03",
+   "section": "verse",
+   "world": "real",
+   "mode": "ff",
+   "framing": "medium",
+   "chars": [
+    "lead"
+   ],
+   "seed": 1003,
+   "still": "edit",
+   "expr": "restless, searching",
+   "action": "walking toward the camera down the middle of the avenue, arms loose, 35mm lens",
+   "location": "a long empty avenue in a city at night, wet asphalt reflecting sodium street lamps and shop signs with no readable text, light mist",
+   "video": "Medium shot of {lead} walking toward the camera down the middle of a wet avenue at night. The camera tracks backward in front of her, steady."
+  },
+  {
+   "id": "s04",
+   "section": "verse",
+   "world": "real",
+   "mode": "t2v",
+   "framing": "wide",
+   "chars": [],
+   "seed": 1004,
+   "video": "Aerial drone shot at night rising slowly over a city grid, ribbons of headlights and taillights streaming along the avenues, low clouds glowing orange from below. Smooth, cinematic camera movement."
+  },
+  {
+   "id": "s05",
+   "section": "verse",
+   "world": "real",
+   "mode": "lipsync",
+   "framing": "medium",
+   "chars": [
+    "lead"
+   ],
+   "seed": 1005,
+   "still": "edit",
+   "anchor": "Somebody left the radio on",
+   "expr": "wry half smile, singing",
+   "action": "leaning on the rooftop ledge with the skyline behind her, singing, 50mm lens",
+   "location": "the flat gravel rooftop of an old brick building at night, water tanks, the city skyline glowing behind under low clouds",
+   "video": "Medium shot of {lead} leaning on a rooftop ledge at night, singing, the skyline glowing behind her. The camera arcs slowly around her."
+  },
+  {
+   "id": "s06",
+   "section": "chorus",
+   "world": "stage",
+   "mode": "lipsync",
+   "framing": "medium",
+   "chars": [
+    "lead"
+   ],
+   "seed": 1006,
+   "still": "edit",
+   "anchor": "Tell me what you're chasing",
+   "lead": 0.8,
+   "complex": true,
+   "expr": "open, joyful, singing with full voice",
+   "action": "singing with full voice and arms opening wide under a ring of warm bulbs, 35mm lens",
+   "location": "a dark rehearsal stage with a ring of warm tungsten bulbs hanging overhead, haze, glossy black floor",
+   "video": "Medium shot of {lead} on a dark stage under a ring of warm bulbs, singing with full voice, arms opening wide as the bulbs pulse. The camera dollies in fast and swings around her."
+  },
+  {
+   "id": "s07",
+   "section": "chorus",
+   "world": "stage",
+   "mode": "ff",
+   "framing": "wide",
+   "chars": [
+    "lead"
+   ],
+   "seed": 1007,
+   "still": "edit",
+   "complex": true,
+   "expr": "laughing, mid-spin",
+   "action": "dancing freely in the centre of the stage, mid-spin with her arms out, small figure under the ring of bulbs, 24mm lens",
+   "location": "a dark rehearsal stage with a ring of warm tungsten bulbs hanging overhead, haze, glossy black floor",
+   "video": "Wide shot of {lead} dancing and spinning under a ring of warm bulbs, haze glowing. The camera cranes down and sweeps around her."
+  },
+  {
+   "id": "s08",
+   "section": "outro",
+   "world": "real",
+   "mode": "fflf",
+   "framing": "wide",
+   "chars": [],
+   "seed": 1008,
+   "fit": true,
+   "still_from": "s01",
+   "video": "A wide, low-angle shot of an empty avenue at night. The mist settles, the lamps hum. The camera drifts slowly backward along the centre line."
+  }
+ ]
+}

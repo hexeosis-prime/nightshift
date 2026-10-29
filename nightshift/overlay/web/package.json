@@ -1,0 +1,14 @@
+{
+  "name": "nightshift-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Renders the Nightshift HUD overlay to transparent PNG frames with headless Chromium.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/inter": "^5.2.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "playwright-core": "^1.55.0"
+  }
+}

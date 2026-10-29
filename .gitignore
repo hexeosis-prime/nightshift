@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+models/*.onnx
+models/*.xml
+nightshift/overlay/web/node_modules/
+nightshift/overlay/web/package-lock.json
+# projects you make live wherever you like; keep renders out of git
+projects/*/
+!projects/starter/
+*.mp4
+*.webm
+*.mp3
+*.wav

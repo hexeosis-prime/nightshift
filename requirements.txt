@@ -1,0 +1,6 @@
+numpy
+pillow
+opencv-python>=4.8      # YuNet / SFace face scoring, Haar face tracks
+librosa>=0.10           # beat map, loudness, pitch
+faster-whisper>=1.0     # lyric timing
+mcp>=1.6                # MCP server (1.x and 2.x both work)

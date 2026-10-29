@@ -1,0 +1,39 @@
+{
+ "workflow": "edit_flux_3image.json",
+ "kind": "edit3",
+ "description": "Flux 2 Klein 9B edit with three images: base scene, character sheet for the person in it, and a second character sheet to add a second person.",
+ "roles": {
+  "image1": {
+   "node": "76",
+   "input": "image"
+  },
+  "image2": {
+   "node": "81",
+   "input": "image"
+  },
+  "image3": {
+   "node": "133",
+   "input": "image"
+  },
+  "prompt": {
+   "node": "92:113",
+   "input": "text"
+  },
+  "negative": {
+   "node": "92:87",
+   "input": "text"
+  },
+  "seed": [
+   {
+    "node": "92:105",
+    "input": "noise_seed"
+   }
+  ]
+ },
+ "outputs": {
+  "edit": {
+   "node": "94",
+   "input": "filename_prefix"
+  }
+ }
+}

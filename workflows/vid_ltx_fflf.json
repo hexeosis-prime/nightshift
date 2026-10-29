@@ -1,0 +1,1754 @@
+{
+ "5033": {
+  "inputs": {
+   "frame_rate": [
+    "5100",
+    0
+   ],
+   "loop_count": 0,
+   "filename_prefix": "nightshift/example",
+   "format": "video/h264-mp4",
+   "pix_fmt": "yuv420p",
+   "crf": 15,
+   "save_metadata": false,
+   "trim_to_audio": false,
+   "pingpong": false,
+   "save_output": true,
+   "images": [
+    "5027:5094",
+    0
+   ],
+   "audio": [
+    "5027:4848",
+    0
+   ]
+  },
+  "class_type": "VHS_VideoCombine",
+  "_meta": {
+   "title": "Final Video"
+  }
+ },
+ "5045": {
+  "inputs": {
+   "start_index": 0,
+   "duration": [
+    "5141",
+    1
+   ],
+   "audio": [
+    "5141",
+    0
+   ]
+  },
+  "class_type": "TrimAudioDuration",
+  "_meta": {
+   "title": "Trim Audio Duration"
+  }
+ },
+ "5046": {
+  "inputs": {
+   "audio": [
+    "5045",
+    0
+   ],
+   "audio_vae": [
+    "5025:5030",
+    0
+   ]
+  },
+  "class_type": "LTXVAudioVAEEncode",
+  "_meta": {
+   "title": "LTXV Audio VAE Encode"
+  }
+ },
+ "5047": {
+  "inputs": {
+   "value": 0,
+   "width": 768,
+   "height": 1280
+  },
+  "class_type": "SolidMask",
+  "_meta": {
+   "title": "Create Solid Mask"
+  }
+ },
+ "5048": {
+  "inputs": {
+   "samples": [
+    "5046",
+    0
+   ],
+   "mask": [
+    "5047",
+    0
+   ]
+  },
+  "class_type": "SetLatentNoiseMask",
+  "_meta": {
+   "title": "Set Latent Noise Mask"
+  }
+ },
+ "5052": {
+  "inputs": {
+   "image": "example.png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "Input Img"
+  }
+ },
+ "5060": {
+  "inputs": {
+   "any_01": [
+    "5052",
+    0
+   ]
+  },
+  "class_type": "Any Switch (rgthree)",
+  "_meta": {
+   "title": "First Input Switch"
+  }
+ },
+ "5061": {
+  "inputs": {
+   "any_02": [
+    "5048",
+    0
+   ]
+  },
+  "class_type": "Any Switch (rgthree)",
+  "_meta": {
+   "title": "Any Switch (rgthree)"
+  }
+ },
+ "5075": {
+  "inputs": {
+   "image": "example.png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "End Image"
+  }
+ },
+ "5096": {
+  "inputs": {
+   "any_01": [
+    "5075",
+    0
+   ]
+  },
+  "class_type": "Any Switch (rgthree)",
+  "_meta": {
+   "title": "End Input Switch"
+  }
+ },
+ "5100": {
+  "inputs": {
+   "Xi": 24,
+   "Xf": 24,
+   "isfloatX": 1
+  },
+  "class_type": "mxSlider",
+  "_meta": {
+   "title": "FPS"
+  }
+ },
+ "5110": {
+  "inputs": {
+   "Xi": 6,
+   "Xf": 6,
+   "isfloatX": 1
+  },
+  "class_type": "mxSlider",
+  "_meta": {
+   "title": "Length (seconds)"
+  }
+ },
+ "5127": {
+  "inputs": {
+   "any_01": [
+    "5155",
+    1
+   ]
+  },
+  "class_type": "Any Switch (rgthree)",
+  "_meta": {
+   "title": "Amt of End Frames"
+  }
+ },
+ "5141": {
+  "inputs": {
+   "audio": "example.mp3",
+   "start_time": 0,
+   "end_time": 137.15,
+   "duration": 137.15,
+   "audio_ui": ""
+  },
+  "class_type": "LoadAudioUI",
+  "_meta": {
+   "title": "Load Audio UI"
+  }
+ },
+ "5149": {
+  "inputs": {
+   "vae_name": "taeltx2_3.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ },
+ "5150": {
+  "inputs": {
+   "preview_rate": 16,
+   "model": [
+    "5109:5144",
+    0
+   ],
+   "vae": [
+    "5149",
+    0
+   ]
+  },
+  "class_type": "LTX2SamplingPreviewOverride",
+  "_meta": {
+   "title": "LTX2 Sampling Preview Override"
+  }
+ },
+ "5151": {
+  "inputs": {
+   "Xi": 0,
+   "Xf": 0.9,
+   "isfloatX": 1
+  },
+  "class_type": "mxSlider",
+  "_meta": {
+   "title": "INPUT Reference Strength (Best 0.6 - 0.9)"
+  }
+ },
+ "5152": {
+  "inputs": {
+   "Xi": 0,
+   "Xf": 0.7,
+   "isfloatX": 1
+  },
+  "class_type": "mxSlider",
+  "_meta": {
+   "title": "END Reference Strength (Best 0.6 - 0.9)"
+  }
+ },
+ "5155": {
+  "inputs": {
+   "expression": "-1"
+  },
+  "class_type": "SimpleCalculatorKJ",
+  "_meta": {
+   "title": "SimpleCalculatorKJ"
+  }
+ },
+ "5156": {
+  "inputs": {
+   "PowerLoraLoaderHeaderWidget": {
+    "type": "PowerLoraLoaderHeaderWidget"
+   },
+   "lora_1": {
+    "on": true,
+    "lora": "LTX2\\LTX-2.3-OmniNFT-RL-Lora_bf16.safetensors",
+    "strength": 2
+   },
+   "lora_2": {
+    "on": false,
+    "lora": "ltx-2.3-22b-distilled-1.1_lora-dynamic_fro09_avg_rank_111_bf16.safetensors",
+    "strength": 1
+   },
+   "lora_3": {
+    "on": false,
+    "lora": "LTX2.3_Soft_Enhance.safetensors",
+    "strength": 1
+   },
+   "lora_4": {
+    "on": true,
+    "lora": "LTX2.3_Crisp_Enhance.safetensors",
+    "strength": 1
+   },
+   "lora_5": {
+    "on": false,
+    "lora": "ltx-2.3-22b-distilled-lora-384.safetensors",
+    "strength": 1
+   },
+   "➕ Add Lora": "",
+   "model": [
+    "5025:5225",
+    0
+   ],
+   "clip": [
+    "5025:5032",
+    0
+   ]
+  },
+  "class_type": "Power Lora Loader (rgthree)",
+  "_meta": {
+   "title": "Power Lora Loader (rgthree)"
+  }
+ },
+ "5157": {
+  "inputs": {
+   "expression": "a",
+   "variables.a": [
+    "5100",
+    0
+   ]
+  },
+  "class_type": "SimpleCalculatorKJ",
+  "_meta": {
+   "title": "SimpleCalculatorKJ"
+  }
+ },
+ "5158": {
+  "inputs": {
+   "expression": "1+ 8*(round(a*b)/8)",
+   "variables.a": [
+    "5110",
+    0
+   ],
+   "variables.b": [
+    "5100",
+    0
+   ]
+  },
+  "class_type": "SimpleCalculatorKJ",
+  "_meta": {
+   "title": "SimpleCalculatorKJ"
+  }
+ },
+ "5177": {
+  "inputs": {
+   "av_latent": [
+    "5002:4829",
+    0
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "LTXVSeparateAVLatent"
+  }
+ },
+ "5179": {
+  "inputs": {
+   "samples": [
+    "5012:5092",
+    2
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "5180": {
+  "inputs": {
+   "samples": [
+    "5012:5011",
+    1
+   ],
+   "audio_vae": [
+    "5025:5030",
+    0
+   ]
+  },
+  "class_type": "LTXVAudioVAEDecode",
+  "_meta": {
+   "title": "LTXV Audio VAE Decode"
+  }
+ },
+ "5207": {
+  "inputs": {
+   "positive": [
+    "5013:5074",
+    0
+   ],
+   "negative": [
+    "5013:5074",
+    1
+   ],
+   "latent": [
+    "5177",
+    0
+   ]
+  },
+  "class_type": "LTXVCropGuides",
+  "_meta": {
+   "title": "LTXVCropGuides"
+  }
+ },
+ "5241": {
+  "inputs": {
+   "prompts": "strictly empty landscape scene focusing purely on environment and atmosphere\n\ncinematic night-time music video, handheld, sodium-lit city streets and wet asphalt\n\nsunny tropical travel vlog with bright, relaxed pacing\n\ncinematic, realistic\n\nrealistic, nature documentary\n\nrealistic, entertainment news TV style\n\nrealistic, BBC nature documentary\n\nvertical social media format\n\nvertical homemade selfie format\n\nopulent sci-fi palace exploration blending classical grandeur with futuristic design\n\nquiet nighttime backyard documentary with intimate, observant framing\n\nmoody coastal landscape film emphasizing isolation and natural rhythm\n\nabstract digital tech visualization focused on geometry and data flow\n\na dslr photo, amateur photo, candid photo, available light, underexposed, high resolution\n",
+   "prompt_number": [
+    "5252",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Genre / Type"
+  }
+ },
+ "5242": {
+  "inputs": {
+   "prompts": "no visible subjects, focusing entirely on the environment\n\na singer in her mid-twenties with wavy brunette hair, a plain black t-shirt and a white pleated mini-skirt\n\na rapper in his early thirties with a trimmed goatee, a black knit beanie and a faded black t-shirt\n\nprofessional news reporter holding a broadcast microphone in a tailored blazer\n\ntwo dancers in early twenties in oversized streetwear and reflective sneakers\n\nlone wanderer in weathered travel gear carrying a worn leather satchel\n\npair of street musicians playing acoustic instruments with open instrument cases\n\nsilent guardian figure in polished armor standing perfectly still\n\nwoman in her late 20s with tied-back auburn hair and a smudged apron (florist)\n\nyoung woman with long flowing black hair and pale skin, simple dark green dress\n\ngirl with loose braids, oversized pastel hoodie and sweatpants",
+   "prompt_number": [
+    "5253",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Person / Subject"
+  }
+ },
+ "5243": {
+  "inputs": {
+   "prompts": "remaining completely still as ambient environmental elements shift naturally\n\nperforming precise methodical movements with focused concentration and smooth pacing\n\nstanding calmly, observing surroundings with steady focus and subtle breathing motion\n\nspeaking directly to camera, delivering lines in a clear conversational tone\n\ninteracting naturally with the environment, showing gentle gestures and relaxed reactions\n\n([woman], [speaking softly]): \"close your eyes and listen\", intimate whispering style\n\n([man], [steady tone]): \"I've been thinking about this all day\", calm reflective delivery\n\nreacting dynamically to subtle environmental shifts, moving with grounded urgency\n\ntrims stems with sharp scissors... looks directly into camera, expression calm and content, says in warm slightly husky voice: \"Can't beat the smell of fresh cut flowers.\"\n\nmove purposefully... synchronized stances into rapid footwork, fluid arm waves, tight body isolations when beat drops... spin simultaneously mirroring each other, hold pose briefly, break with playful shrug coinciding with musical cut\n\nstarts relaxed posture, launches into tight viral choreography (shoulder rolls, finger snaps, hip isolations matching beat)... finishes with playful wink and quick hair flip as track cuts... holds steady on laughing expression\n\ngentle waves crash... Voice Over narrator speaks in [measured/grave/solemn] British accent: \"[Specific myth/history line about ocean].\" pauses, continues: \"[Second line reinforcing reality vs illusion].\" camera holds on receding tide as narration fades",
+   "prompt_number": [
+    "5254",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Action"
+  }
+ },
+ "5244": {
+  "inputs": {
+   "prompts": "wide static frame with no movement\n\nZoom In / Zoom Out\n\nPush In / Pull Out\n\nPan Left / Pan Right\n\nTruck Left / Truck Right\n\nTilt Up / Tilt Down\n\nPedestal Up / Pedestal Down\n\nArc Shot\n\nTracking Shot\n\nStatic Shot\n\nPOV\n\nmedium shot, slow push-in toward the subject while maintaining steady focus\n\nclose-up tracking right following subtle movement across the frame\n\ngentle horizontal pan right revealing more of the surrounding environment\n\nvertical tilt down emphasizing depth and scale of the setting\n\ntracking shot moving alongside the subject at a consistent walking pace\n\nsubtle handheld drift for a natural documentary feel, keeping the subject centered\n\nstatic handheld phone shot... camera remains fixed on frame with slight natural sway mimicking casual mirror recording\n\nslow orbital rotation around the subject, maintaining central framing throughout\n\n[handheld eye-level / steady tripod / wide tracking / handheld close-up pulling back]... slowly [pushes forward/tracks right/tilts down/glides backward] maintaining sharp focus",
+   "prompt_number": [
+    "5245",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Camera Movement"
+  }
+ },
+ "5245": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Lighting + Mood"
+  }
+ },
+ "5246": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Style"
+  }
+ },
+ "5247": {
+  "inputs": {
+   "prompts": "soft overcast daylight filling the scene evenly with no harsh shadows or contrast\n\nwarm golden hour sunlight casting long gentle shadows, evoking peaceful nostalgia\n\nWarm sunset light blends with cool artificial tones casting sharp shadows that pulse rhythmically\n\ncool moonlight filtering through darkness, establishing a quiet mysterious ambiance\n\nhigh-contrast directional lighting with deep shadows, conveying tension and drama\n\nsoft studio-style three-point lighting, producing a clean polished professional look\n\nvibrant neon glow casting colorful reflections, creating an energetic futuristic vibe\n\nstrong backlighting outlining the subject in bright rim light, generating a bold cinematic feel\n\nvolumetric light shafts cutting through mist or haze, adding depth and atmospheric mystery\n\nSoft morning light streams through front glass, illuminating dust motes dancing in air\n\nflat natural room lighting, soft daylight streams through window casting even illumination without harsh shadows",
+   "prompt_number": [
+    "5246",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Lighting"
+  }
+ },
+ "5248": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Misc"
+  }
+ },
+ "5252": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Genra / Type"
+  }
+ },
+ "5253": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Person"
+  }
+ },
+ "5254": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Action"
+  }
+ },
+ "5257": {
+  "inputs": {
+   "prompts": "A wide, low-angle shot of the empty top level of a parking structure in downtown Los Angeles at night. Storm clouds churn quickly over the skyline, sodium lamps buzz and flicker, wind ripples the puddles across the painted white lines. The camera glides slowly forward along the painted lines, low over the wet asphalt.\n\nClose-up of the woman in her mid-twenties with wavy brunette hair in a black t-shirt, on a rooftop parking level at night, the downtown skyline and storm clouds behind her. Wind whips her hair across her face; she pushes it back with one hand as she sings, eyes half closed, then lifting toward the sky. Handheld camera drifting slowly around her.\n\nMedium shot of the woman in her mid-twenties with wavy brunette hair in a black t-shirt, walking across a caged pedestrian bridge over a freeway at night, her fingers trailing along the chain-link fence as red and white traffic light trails stream beneath her. She sings, turning her head from the traffic to the camera. The camera dollies sideways alongside her, the fence sliding past in the foreground.",
+   "prompt_number": 1
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Direct Prompt Override"
+  }
+ },
+ "5258": {
+  "inputs": {
+   "switch": true,
+   "on_false": [
+    "5262",
+    0
+   ],
+   "on_true": [
+    "5257",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "Override Prompt Builder"
+  }
+ },
+ "5262": {
+  "inputs": {
+   "source": [
+    "5274",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "Prompt Builder Result"
+  }
+ },
+ "5263": {
+  "inputs": {
+   "string_a": "a",
+   "string_b": [
+    "5241",
+    0
+   ],
+   "delimiter": " "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "Prompt Prefix"
+  }
+ },
+ "5264": {
+  "inputs": {
+   "prompts": "scene remains tranquil with gentle natural movement throughout, rendered in photoreal cinematic style\n\nmaintains consistent pacing as environmental details gradually come into sharper focus\n\nstyle shifts subtly to emphasize texture and material realism as the camera settles\n\nmotion remains smooth and continuous, with soft depth of field isolating the focal plane\n\nvisual tone gradually warms while preserving natural color balance and subtle film grain\n\nsubtle digital glitch overlay appears intermittently, adding retro-tech aesthetic without breaking continuity\n\nlens flare and light halation evolve naturally as light sources shift slightly in frame\n\ncomposition holds steady while atmospheric elements like dust or mist drift slowly across the view\n\nThe woman sings the lyric words \"What do you want\" straight into the lens, warm, expressive singing style, as the wind pushes her hair across her face\n\nDespite the high-resolution capture, severe underexposure, crushed shadows, greenish-brown color cast obscure much of the scene",
+   "prompt_number": [
+    "5248",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Cont Action / Misc Style"
+  }
+ },
+ "5265": {
+  "inputs": {
+   "string_a": [
+    "5263",
+    0
+   ],
+   "string_b": [
+    "5242",
+    0
+   ],
+   "delimiter": " — featuring "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "concat 1"
+  }
+ },
+ "5266": {
+  "inputs": {
+   "string_a": [
+    "5265",
+    0
+   ],
+   "string_b": [
+    "5243",
+    0
+   ],
+   "delimiter": " . "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "concat 2"
+  }
+ },
+ "5267": {
+  "inputs": {
+   "string_a": [
+    "5266",
+    0
+   ],
+   "string_b": [
+    "5270",
+    0
+   ],
+   "delimiter": " — set in a "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "concat 3"
+  }
+ },
+ "5268": {
+  "inputs": {
+   "string_a": [
+    "5267",
+    0
+   ],
+   "string_b": [
+    "5244",
+    0
+   ],
+   "delimiter": "  . The camera "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "concat 4"
+  }
+ },
+ "5269": {
+  "inputs": {
+   "string_a": [
+    "5268",
+    0
+   ],
+   "string_b": [
+    "5247",
+    0
+   ],
+   "delimiter": " — illuminated by "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "concat 5"
+  }
+ },
+ "5270": {
+  "inputs": {
+   "prompts": "a vast empty landscape with no structures or figures, emphasizing natural terrain and sky\n\nthe empty top level of a concrete parking structure in downtown Los Angeles at night, wet asphalt with painted white lines, sodium vapor lamps, storm clouds over the skyline\n\nsun-drenched tropical coastline with pristine white sand, turquoise waves, and swaying palms\n\ninfinitely extending opulent corridor blending classical palace architecture with sleek futuristic design\n\nquiet nighttime backyard framed by tall palm trees and a clear starlit sky\n\nmisty coastal shoreline at twilight with soft fog rolling over rocky shores \n\n[windswept cliff / jagged sea cliffs / tidal pools / rugged coastline / secluded cove] overlooking turquoise water/sandy beaches/rocky shoreline\n\ndimly lit overgrown forest clearing, damp earth and decaying leaves\n\nurban rooftop at dusk, concrete floor reflecting faint LED strips, blurred city skyline behind, railing\n\ntidy bedroom, half-closed window, floor\n\ndigital abstract space filled with glowing multicolored wireframe structures and holographic data panels",
+   "prompt_number": [
+    "5271",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Location / Setting"
+  }
+ },
+ "5271": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Location"
+  }
+ },
+ "5272": {
+  "inputs": {
+   "prompts": "pure ambient foley with no music: subtle environmental sounds, gentle movement cues, quiet room tone\n\nnatural outdoor ambience featuring rustling foliage, distant bird calls, soft wind, calm organic backdrop\n\nmellow lo-fi instrumental at 80 BPM with warm synth pads, crisp hi-hats, subtle melodic loops, relaxed dreamy state\n\nrich orchestral arrangement with sweeping strings and delicate harp glissandos, slow graceful tempo, elegant serene mood\n\ngritty desert-blues instrumental with raw acoustic guitar, steady percussion, low atmospheric drones, weathered desolate vibe\n\nwarm dream-pop vocal over analog synth pads with gentle tape wow, the singer close and clear, a lush natural reverb\n\nvibrant tropical rhythm blending steel drums, distant xylophone melodies, gentle ocean waves, upbeat carefree energy\n\nminimalist electronic texture with soft arpeggiated synths, subtle granular effects, spacious reverb, futuristic introspective feel\n\nrustling leaves, distant birdsong, gentle dripping water, faint ethereal hum resonating subtly growing louder\n\ncrashing wave rhythm, distant seabird calls, wind howling/rustling leaves... [soft ambient harp/xylophone / subtle resonant drone pad / low atmospheric strings / minimalist piano motif] layered quietly beneath natural soundscape without overpowering it",
+   "prompt_number": [
+    "5273",
+    0
+   ]
+  },
+  "class_type": "PromptJournal",
+  "_meta": {
+   "title": "Sound + Music"
+  }
+ },
+ "5273": {
+  "inputs": {
+   "value": 1
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Sound + Music"
+  }
+ },
+ "5274": {
+  "inputs": {
+   "string_a": [
+    "5275",
+    0
+   ],
+   "string_b": [
+    "5272",
+    0
+   ],
+   "delimiter": "  — layered with "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "concat 7"
+  }
+ },
+ "5275": {
+  "inputs": {
+   "string_a": [
+    "5269",
+    0
+   ],
+   "string_b": [
+    "5264",
+    0
+   ],
+   "delimiter": " . "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "concat 6"
+  }
+ },
+ "5277": {
+  "inputs": {
+   "seed": 1109725912198706
+  },
+  "class_type": "SeedNode",
+  "_meta": {
+   "title": "Seed"
+  }
+ },
+ "5025:5021": {
+  "inputs": {
+   "model_name": "ltx-2.3-spatial-upscaler-x2-1.1.safetensors"
+  },
+  "class_type": "LatentUpscaleModelLoader",
+  "_meta": {
+   "title": "Load Latent Upscale Model"
+  }
+ },
+ "5025:5029": {
+  "inputs": {
+   "vae_name": "ltx-2.3-22b-dev_video_vae.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE (video VAE)"
+  }
+ },
+ "5025:5030": {
+  "inputs": {
+   "vae_name": "ltx-2.3-22b-dev_audio_vae.safetensors",
+   "device": "main_device",
+   "weight_dtype": "bf16"
+  },
+  "class_type": "VAELoaderKJ",
+  "_meta": {
+   "title": "VAELoader KJ (audio VAE)"
+  }
+ },
+ "5025:5225": {
+  "inputs": {
+   "unet_name": "ltx-2.3-22b-distilled-1.1-int8-ConvRot.safetensors",
+   "weight_dtype": "default",
+   "model_type": "ltx2",
+   "on_the_fly_quantization": false,
+   "enable_convrot": true,
+   "lora_mode": "None"
+  },
+  "class_type": "OTUNetLoaderW8A8",
+  "_meta": {
+   "title": "Load Diffusion Model INT8 (W8A8)"
+  }
+ },
+ "5025:5032": {
+  "inputs": {
+   "clip_name1": "gemma_3_12B_it_fp4_mixed.safetensors",
+   "clip_name2": "ltx-2.3_text_projection_bf16.safetensors",
+   "type": "ltxv",
+   "device": "default"
+  },
+  "class_type": "DualCLIPLoader",
+  "_meta": {
+   "title": "CLIPLoader (Gemma + LTX Embeddings)"
+  }
+ },
+ "5109:5103": {
+  "inputs": {
+   "frame_rate": [
+    "5100",
+    0
+   ],
+   "positive": [
+    "5109:5108",
+    0
+   ],
+   "negative": [
+    "5109:5145",
+    0
+   ]
+  },
+  "class_type": "LTXVConditioning",
+  "_meta": {
+   "title": "LTXVConditioning"
+  }
+ },
+ "5109:5144": {
+  "inputs": {
+   "nag_scale": 50,
+   "nag_alpha": 0.25,
+   "nag_tau": 2.5,
+   "inplace": true,
+   "model": [
+    "5156",
+    0
+   ],
+   "nag_cond_video": [
+    "5109:5143",
+    0
+   ],
+   "nag_cond_audio": [
+    "5109:5142",
+    0
+   ]
+  },
+  "class_type": "LTX2_NAG",
+  "_meta": {
+   "title": "LTX2 NAG"
+  }
+ },
+ "5109:5102": {
+  "inputs": {
+   "text": "",
+   "clip": [
+    "5156",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Negative Prompt)"
+  }
+ },
+ "5109:5142": {
+  "inputs": {
+   "text": "distortion",
+   "clip": [
+    "5156",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "Audio Negatives"
+  }
+ },
+ "5109:5108": {
+  "inputs": {
+   "text": [
+    "5258",
+    0
+   ],
+   "clip": [
+    "5156",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Positive Prompt)"
+  }
+ },
+ "5109:5145": {
+  "inputs": {
+   "conditioning": [
+    "5109:5102",
+    0
+   ]
+  },
+  "class_type": "ConditioningZeroOut",
+  "_meta": {
+   "title": "Conditioning Zero Out"
+  }
+ },
+ "5109:5143": {
+  "inputs": {
+   "text": "scene cut, scene transition, no movement, low quality, still frame, frames, watermark, overlay, titles, subtitles, worst quality, low quality, lowres, jpeg artifacts, bad anatomy, watermark, artist name, stock, watermark, signature, bad_quality\n",
+   "clip": [
+    "5156",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "Video Negatives"
+  }
+ },
+ "5013:4528": {
+  "inputs": {
+   "video_latent": [
+    "5013:5074",
+    2
+   ],
+   "audio_latent": [
+    "5061",
+    0
+   ]
+  },
+  "class_type": "LTXVConcatAVLatent",
+  "_meta": {
+   "title": "LTXVConcatAVLatent"
+  }
+ },
+ "5013:5081": {
+  "inputs": {
+   "width": [
+    "5013:5167",
+    0
+   ],
+   "height": [
+    "5013:5168",
+    0
+   ],
+   "upscale_method": "lanczos",
+   "keep_proportion": "crop",
+   "pad_color": "0, 0, 0",
+   "crop_position": "center",
+   "divisible_by": 2,
+   "device": "cpu",
+   "image": [
+    "5013:5136",
+    0
+   ]
+  },
+  "class_type": "ImageResizeKJv2",
+  "_meta": {
+   "title": "Resize Image v2"
+  }
+ },
+ "5013:5073": {
+  "inputs": {
+   "frame_idx": 0,
+   "strength": [
+    "5151",
+    0
+   ],
+   "positive": [
+    "5109:5103",
+    0
+   ],
+   "negative": [
+    "5109:5103",
+    1
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ],
+   "latent": [
+    "5013:3059",
+    0
+   ],
+   "image": [
+    "5013:5134",
+    0
+   ]
+  },
+  "class_type": "LTXVAddGuide",
+  "_meta": {
+   "title": "Guide: Start Frame"
+  }
+ },
+ "5013:5074": {
+  "inputs": {
+   "frame_idx": [
+    "5127",
+    0
+   ],
+   "strength": [
+    "5152",
+    0
+   ],
+   "positive": [
+    "5013:5073",
+    0
+   ],
+   "negative": [
+    "5013:5073",
+    1
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ],
+   "latent": [
+    "5013:5073",
+    2
+   ],
+   "image": [
+    "5013:5135",
+    0
+   ]
+  },
+  "class_type": "LTXVAddGuide",
+  "_meta": {
+   "title": "Guide: End Frame"
+  }
+ },
+ "5013:3059": {
+  "inputs": {
+   "width": [
+    "5013:5165",
+    1
+   ],
+   "height": [
+    "5013:5166",
+    1
+   ],
+   "length": [
+    "5158",
+    1
+   ],
+   "batch_size": 1
+  },
+  "class_type": "EmptyLTXVLatentVideo",
+  "_meta": {
+   "title": "EmptyLTXVLatentVideo"
+  }
+ },
+ "5013:5167": {
+  "inputs": {
+   "value": 1280
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Width"
+  }
+ },
+ "5013:5168": {
+  "inputs": {
+   "value": 768
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Height"
+  }
+ },
+ "5013:5136": {
+  "inputs": {
+   "longer_edge": 1536,
+   "images": [
+    "5060",
+    0
+   ]
+  },
+  "class_type": "ResizeImagesByLongerEdge",
+  "_meta": {
+   "title": "Resize Images by Longer Edge (DEPRECATED)"
+  }
+ },
+ "5013:5134": {
+  "inputs": {
+   "img_compression": 0,
+   "image": [
+    "5013:5081",
+    0
+   ]
+  },
+  "class_type": "LTXVPreprocess",
+  "_meta": {
+   "title": "LTXV Preprocess"
+  }
+ },
+ "5013:5135": {
+  "inputs": {
+   "img_compression": 0,
+   "image": [
+    "5013:5082",
+    0
+   ]
+  },
+  "class_type": "LTXVPreprocess",
+  "_meta": {
+   "title": "LTXV Preprocess"
+  }
+ },
+ "5013:5082": {
+  "inputs": {
+   "width": [
+    "5013:5167",
+    0
+   ],
+   "height": [
+    "5013:5168",
+    0
+   ],
+   "upscale_method": "lanczos",
+   "keep_proportion": "crop",
+   "pad_color": "0, 0, 0",
+   "crop_position": "center",
+   "divisible_by": 2,
+   "device": "cpu",
+   "image": [
+    "5013:5137",
+    0
+   ]
+  },
+  "class_type": "ImageResizeKJv2",
+  "_meta": {
+   "title": "Resize Image v2"
+  }
+ },
+ "5013:5137": {
+  "inputs": {
+   "longer_edge": 1536,
+   "images": [
+    "5096",
+    0
+   ]
+  },
+  "class_type": "ResizeImagesByLongerEdge",
+  "_meta": {
+   "title": "Resize Images by Longer Edge (DEPRECATED)"
+  }
+ },
+ "5013:5165": {
+  "inputs": {
+   "expression": "a/2/2",
+   "variables.a": [
+    "5013:5167",
+    0
+   ]
+  },
+  "class_type": "SimpleCalculatorKJ",
+  "_meta": {
+   "title": "SimpleCalculatorKJ"
+  }
+ },
+ "5013:5166": {
+  "inputs": {
+   "expression": "a/2/2",
+   "variables.a": [
+    "5013:5168",
+    0
+   ]
+  },
+  "class_type": "SimpleCalculatorKJ",
+  "_meta": {
+   "title": "SimpleCalculatorKJ"
+  }
+ },
+ "5002:4832": {
+  "inputs": {
+   "noise_seed": [
+    "5277",
+    0
+   ]
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "5002:4828": {
+  "inputs": {
+   "cfg": 1,
+   "model": [
+    "5109:5144",
+    0
+   ],
+   "positive": [
+    "5013:5074",
+    0
+   ],
+   "negative": [
+    "5013:5074",
+    1
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "5002:4984": {
+  "inputs": {
+   "sigmas": "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0"
+  },
+  "class_type": "ManualSigmas",
+  "_meta": {
+   "title": "ManualSigmas"
+  }
+ },
+ "5002:4831": {
+  "inputs": {
+   "sampler_name": "euler_ancestral_cfg_pp"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "5002:4829": {
+  "inputs": {
+   "noise": [
+    "5002:4832",
+    0
+   ],
+   "guider": [
+    "5002:4828",
+    0
+   ],
+   "sampler": [
+    "5002:4831",
+    0
+   ],
+   "sigmas": [
+    "5002:4984",
+    0
+   ],
+   "latent_image": [
+    "5013:4528",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "1st"
+  }
+ },
+ "5002:5192": {
+  "inputs": {
+   "positive": [
+    "5013:5074",
+    0
+   ],
+   "negative": [
+    "5013:5074",
+    1
+   ],
+   "latent": [
+    "5002:5191",
+    0
+   ]
+  },
+  "class_type": "LTXVCropGuides",
+  "_meta": {
+   "title": "LTXVCropGuides"
+  }
+ },
+ "5002:5191": {
+  "inputs": {
+   "av_latent": [
+    "5002:4829",
+    0
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "LTXVSeparateAVLatent"
+  }
+ },
+ "5012:5005": {
+  "inputs": {
+   "cfg": 1,
+   "model": [
+    "5150",
+    0
+   ],
+   "positive": [
+    "5012:5090",
+    0
+   ],
+   "negative": [
+    "5012:5090",
+    1
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "5012:5004": {
+  "inputs": {
+   "noise": [
+    "5012:5009",
+    0
+   ],
+   "guider": [
+    "5012:5005",
+    0
+   ],
+   "sampler": [
+    "5012:5003",
+    0
+   ],
+   "sigmas": [
+    "5012:5006",
+    0
+   ],
+   "latent_image": [
+    "5012:5007",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "3rd"
+  }
+ },
+ "5012:5011": {
+  "inputs": {
+   "av_latent": [
+    "5012:5004",
+    0
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "LTXVSeparateAVLatent"
+  }
+ },
+ "5012:5006": {
+  "inputs": {
+   "sigmas": "0.85, 0.7250, 0.4219, 0.0"
+  },
+  "class_type": "ManualSigmas",
+  "_meta": {
+   "title": "ManualSigmas"
+  }
+ },
+ "5012:5092": {
+  "inputs": {
+   "positive": [
+    "5012:5090",
+    0
+   ],
+   "negative": [
+    "5012:5090",
+    1
+   ],
+   "latent": [
+    "5012:5011",
+    0
+   ]
+  },
+  "class_type": "LTXVCropGuides",
+  "_meta": {
+   "title": "LTXVCropGuides"
+  }
+ },
+ "5012:5007": {
+  "inputs": {
+   "video_latent": [
+    "5012:5090",
+    2
+   ],
+   "audio_latent": [
+    "5177",
+    1
+   ]
+  },
+  "class_type": "LTXVConcatAVLatent",
+  "_meta": {
+   "title": "LTXVConcatAVLatent"
+  }
+ },
+ "5012:5090": {
+  "inputs": {
+   "frame_idx": [
+    "5127",
+    0
+   ],
+   "strength": [
+    "5152",
+    0
+   ],
+   "positive": [
+    "5012:5089",
+    0
+   ],
+   "negative": [
+    "5012:5089",
+    1
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ],
+   "latent": [
+    "5012:5089",
+    2
+   ],
+   "image": [
+    "5013:5135",
+    0
+   ]
+  },
+  "class_type": "LTXVAddGuide",
+  "_meta": {
+   "title": "Guide: End Frame"
+  }
+ },
+ "5012:5003": {
+  "inputs": {
+   "sampler_name": "euler_ancestral_cfg_pp"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "5012:5089": {
+  "inputs": {
+   "frame_idx": 0,
+   "strength": [
+    "5151",
+    0
+   ],
+   "positive": [
+    "5109:5103",
+    0
+   ],
+   "negative": [
+    "5109:5103",
+    1
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ],
+   "latent": [
+    "5012:5010",
+    0
+   ],
+   "image": [
+    "5013:5134",
+    0
+   ]
+  },
+  "class_type": "LTXVAddGuide",
+  "_meta": {
+   "title": "Guide: Start Frame"
+  }
+ },
+ "5012:5009": {
+  "inputs": {
+   "noise_seed": 890622690211747
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "5012:5010": {
+  "inputs": {
+   "samples": [
+    "5207",
+    2
+   ],
+   "upscale_model": [
+    "5025:5021",
+    0
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ]
+  },
+  "class_type": "LTXVLatentUpsampler",
+  "_meta": {
+   "title": "LTXVLatentUpsampler"
+  }
+ },
+ "5219:5208": {
+  "inputs": {
+   "cfg": 1,
+   "model": [
+    "5150",
+    0
+   ],
+   "positive": [
+    "5219:5215",
+    0
+   ],
+   "negative": [
+    "5219:5215",
+    1
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "5219:5209": {
+  "inputs": {
+   "noise_seed": 423407847148309
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "5219:5210": {
+  "inputs": {
+   "noise": [
+    "5219:5209",
+    0
+   ],
+   "guider": [
+    "5219:5208",
+    0
+   ],
+   "sampler": [
+    "5219:5216",
+    0
+   ],
+   "sigmas": [
+    "5219:5212",
+    0
+   ],
+   "latent_image": [
+    "5219:5214",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "3rd"
+  }
+ },
+ "5219:5211": {
+  "inputs": {
+   "av_latent": [
+    "5219:5210",
+    0
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "LTXVSeparateAVLatent"
+  }
+ },
+ "5219:5212": {
+  "inputs": {
+   "sigmas": "0.85, 0.7250, 0.4219, 0.0"
+  },
+  "class_type": "ManualSigmas",
+  "_meta": {
+   "title": "ManualSigmas"
+  }
+ },
+ "5219:5213": {
+  "inputs": {
+   "positive": [
+    "5219:5215",
+    0
+   ],
+   "negative": [
+    "5219:5215",
+    1
+   ],
+   "latent": [
+    "5219:5211",
+    0
+   ]
+  },
+  "class_type": "LTXVCropGuides",
+  "_meta": {
+   "title": "LTXVCropGuides"
+  }
+ },
+ "5219:5214": {
+  "inputs": {
+   "video_latent": [
+    "5219:5215",
+    2
+   ],
+   "audio_latent": [
+    "5012:5011",
+    1
+   ]
+  },
+  "class_type": "LTXVConcatAVLatent",
+  "_meta": {
+   "title": "LTXVConcatAVLatent"
+  }
+ },
+ "5219:5215": {
+  "inputs": {
+   "frame_idx": [
+    "5127",
+    0
+   ],
+   "strength": [
+    "5152",
+    0
+   ],
+   "positive": [
+    "5219:5217",
+    0
+   ],
+   "negative": [
+    "5219:5217",
+    1
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ],
+   "latent": [
+    "5219:5217",
+    2
+   ],
+   "image": [
+    "5013:5135",
+    0
+   ]
+  },
+  "class_type": "LTXVAddGuide",
+  "_meta": {
+   "title": "Guide: End Frame"
+  }
+ },
+ "5219:5216": {
+  "inputs": {
+   "sampler_name": "euler_ancestral_cfg_pp"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "5219:5217": {
+  "inputs": {
+   "frame_idx": 0,
+   "strength": [
+    "5151",
+    0
+   ],
+   "positive": [
+    "5109:5103",
+    0
+   ],
+   "negative": [
+    "5109:5103",
+    1
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ],
+   "latent": [
+    "5219:5218",
+    0
+   ],
+   "image": [
+    "5013:5134",
+    0
+   ]
+  },
+  "class_type": "LTXVAddGuide",
+  "_meta": {
+   "title": "Guide: Start Frame"
+  }
+ },
+ "5219:5218": {
+  "inputs": {
+   "samples": [
+    "5012:5092",
+    2
+   ],
+   "upscale_model": [
+    "5025:5021",
+    0
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ]
+  },
+  "class_type": "LTXVLatentUpsampler",
+  "_meta": {
+   "title": "LTXVLatentUpsampler"
+  }
+ },
+ "5027:5094": {
+  "inputs": {
+   "samples": [
+    "5219:5213",
+    2
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "5027:4848": {
+  "inputs": {
+   "samples": [
+    "5219:5211",
+    1
+   ],
+   "audio_vae": [
+    "5025:5030",
+    0
+   ]
+  },
+  "class_type": "LTXVAudioVAEDecode",
+  "_meta": {
+   "title": "LTXV Audio VAE Decode"
+  }
+ },
+ "5027:5093": {
+  "inputs": {
+   "tile_size": 512,
+   "overlap": 128,
+   "temporal_size": 128,
+   "temporal_overlap": 16,
+   "samples": [
+    "5219:5213",
+    2
+   ],
+   "vae": [
+    "5025:5029",
+    0
+   ]
+  },
+  "class_type": "VAEDecodeTiled",
+  "_meta": {
+   "title": "VAE Decode (Tiled)"
+  }
+ }
+}

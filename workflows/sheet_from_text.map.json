@@ -1,0 +1,39 @@
+{
+ "workflow": "sheet_from_text.json",
+ "kind": "sheet",
+ "description": "Character reference sheet from a written description (Flux 2 Klein 9B): front full-body view with the face covered by a white circle, back view, and a macro close-up of the face, on seamless grey. The sheet language is built into the graph; the builder supplies the character description.",
+ "roles": {
+  "description": {
+   "node": "1375",
+   "input": "value"
+  },
+  "negative": {
+   "node": "1368",
+   "input": "value"
+  },
+  "seed": [
+   {
+    "node": "1312:791",
+    "input": "value"
+   }
+  ]
+ },
+ "outputs": {
+  "sheet": {
+   "node": "9",
+   "input": "filename_prefix"
+  }
+ },
+ "defaults": [
+  {
+   "node": "1312:795",
+   "input": "value",
+   "value": true
+  },
+  {
+   "node": "1312:841",
+   "input": "value",
+   "value": false
+  }
+ ]
+}

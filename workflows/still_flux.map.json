@@ -1,0 +1,131 @@
+{
+ "workflow": "still_flux.json",
+ "kind": "still",
+ "description": "Text-to-image stills with Flux 2 Klein 9B. A structured prompt (person / outfit / action / location + style switches for framing, photo look, indoor/outdoor, day/night, atmosphere) is assembled inside the graph; the builder fills the four boxes and the switches from canon.json and the shot.",
+ "roles": {
+  "person": {
+   "node": "1366",
+   "input": "value"
+  },
+  "outfit": {
+   "node": "1367",
+   "input": "value"
+  },
+  "action": {
+   "node": "1368",
+   "input": "value"
+  },
+  "location": {
+   "node": "1369",
+   "input": "value"
+  },
+  "female_count": {
+   "node": "152:1150",
+   "input": "value"
+  },
+  "male_count": {
+   "node": "152:1151",
+   "input": "value"
+  },
+  "switch.pro_photo": {
+   "node": "152:614",
+   "input": "value"
+  },
+  "switch.bad_photo": {
+   "node": "152:698",
+   "input": "value"
+  },
+  "switch.pov": {
+   "node": "152:362",
+   "input": "value"
+  },
+  "switch.indoor": {
+   "node": "152:400",
+   "input": "value"
+  },
+  "switch.daytime": {
+   "node": "152:396",
+   "input": "value"
+  },
+  "switch.atmosphere": {
+   "node": "152:394",
+   "input": "value"
+  },
+  "switch.suffix": {
+   "node": "152:398",
+   "input": "value"
+  },
+  "switch.closeup": {
+   "node": "152:662",
+   "input": "value"
+  },
+  "long_edge": {
+   "node": "1362:1317",
+   "input": "value"
+  },
+  "short_edge": {
+   "node": "1362:1319",
+   "input": "value"
+  },
+  "vertical": {
+   "node": "1362:1314",
+   "input": "value"
+  },
+  "seed": [
+   {
+    "node": "1362:1312",
+    "input": "value"
+   }
+  ],
+  "negative": {
+   "concat_from": [
+    "152:549",
+    0
+   ],
+   "into": [
+    {
+     "node": "1362:1327",
+     "input": "source"
+    }
+   ]
+  }
+ },
+ "outputs": {
+  "flux": {
+   "node": "1363",
+   "input": "filename_prefix"
+  }
+ },
+ "defaults": [
+  {
+   "node": "1362:1313",
+   "input": "value",
+   "value": true
+  },
+  {
+   "node": "1362:1316",
+   "input": "value",
+   "value": false
+  },
+  {
+   "node": "152:392",
+   "input": "value",
+   "value": false
+  },
+  {
+   "node": "152:502",
+   "input": "value",
+   "value": false
+  },
+  {
+   "node": "152:1038",
+   "input": "value",
+   "value": false
+  },
+  {
+   "node": "152:1083",
+   "input": "value",
+   "value": false
+  }
+ ]
+}

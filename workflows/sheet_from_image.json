@@ -1,0 +1,302 @@
+{
+ "76": {
+  "inputs": {
+   "image": "example.png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "Load Image Reference"
+  }
+ },
+ "94": {
+  "inputs": {
+   "filename_prefix": "nightshift/example",
+   "images": [
+    "92:104",
+    0
+   ]
+  },
+  "class_type": "SaveImage",
+  "_meta": {
+   "title": "Save Image"
+  }
+ },
+ "131": {
+  "inputs": {
+   "width": 1280,
+   "height": 768,
+   "interpolation": "nearest",
+   "method": "keep proportion",
+   "condition": "always",
+   "multiple_of": 0,
+   "image": [
+    "76",
+    0
+   ]
+  },
+  "class_type": "ImageResize+",
+  "_meta": {
+   "title": "🔧 Image Resize"
+  }
+ },
+ "135": {
+  "inputs": {
+   "seed": 534739464963759
+  },
+  "class_type": "SeedNode",
+  "_meta": {
+   "title": "Seed"
+  }
+ },
+ "92:102": {
+  "inputs": {
+   "sampler_name": "euler"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "92:104": {
+  "inputs": {
+   "samples": [
+    "92:103",
+    0
+   ],
+   "vae": [
+    "92:107",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "92:105": {
+  "inputs": {
+   "noise_seed": [
+    "135",
+    0
+   ]
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "92:106": {
+  "inputs": {
+   "unet_name": "flux-2-klein-base-9b-fp8.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "Load Diffusion Model"
+  }
+ },
+ "92:107": {
+  "inputs": {
+   "vae_name": "full_encoder_small_decoder.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ },
+ "92:108": {
+  "inputs": {
+   "image": [
+    "92:110",
+    0
+   ]
+  },
+  "class_type": "GetImageSize",
+  "_meta": {
+   "title": "Get Image Size"
+  }
+ },
+ "92:109": {
+  "inputs": {
+   "width": [
+    "92:108",
+    0
+   ],
+   "height": [
+    "92:108",
+    1
+   ],
+   "batch_size": 1
+  },
+  "class_type": "EmptyFlux2LatentImage",
+  "_meta": {
+   "title": "Empty Flux 2 Latent"
+  }
+ },
+ "92:110": {
+  "inputs": {
+   "upscale_method": "lanczos",
+   "megapixels": 1,
+   "resolution_steps": 1,
+   "image": [
+    "131",
+    0
+   ]
+  },
+  "class_type": "ImageScaleToTotalPixels",
+  "_meta": {
+   "title": "Scale Image to Total Pixels"
+  }
+ },
+ "92:111": {
+  "inputs": {
+   "clip_name": "qwen_3_8b_fp8mixed.safetensors",
+   "type": "flux2",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "Load CLIP"
+  }
+ },
+ "92:113": {
+  "inputs": {
+   "text": "Film character sheet, photorealistic commercial studio photography. Three views of the exact same person from the attached reference image, standing in a row on a seamless neutral grey #B8B8B8 background: full-body front view, full-body back view, and a macro close-up portrait of the face. Identical person, outfit, hairstyle and styling in all three views, matched true to the reference image photo.\n\nIn the full-body front view the person stands upright in a relaxed neutral pose facing the camera, head level, and a flat opaque solid white circle graphic is placed directly over the face, completely covering it from forehead to chin, like an anonymized casting photo — crisp clean circle edge, pure white fill. The full-body back view shows the person from behind, feet to head fully in frame. The macro close-up shows the face fully and clearly, looking straight into the lens, sharp focused eyes, clear healthy skin.\n\nSoft even studio lighting with smooth falloff, clean commercial catalogue look, crisp fabric detail, accurate face, body proportions and clothing carried over exactly from the reference image.",
+   "clip": [
+    "92:111",
+    0
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Positive Prompt)"
+  }
+ },
+ "92:87": {
+  "inputs": {
+   "text": "",
+   "clip": [
+    "92:111",
+    0
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode ( Negative Prompt)"
+  }
+ },
+ "92:114": {
+  "inputs": {
+   "cfg": 5,
+   "model": [
+    "92:106",
+    0
+   ],
+   "positive": [
+    "92:127",
+    0
+   ],
+   "negative": [
+    "92:125",
+    0
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "92:115": {
+  "inputs": {
+   "steps": 20,
+   "width": [
+    "92:108",
+    0
+   ],
+   "height": [
+    "92:108",
+    1
+   ]
+  },
+  "class_type": "Flux2Scheduler",
+  "_meta": {
+   "title": "Flux2Scheduler"
+  }
+ },
+ "92:126": {
+  "inputs": {
+   "pixels": [
+    "92:110",
+    0
+   ],
+   "vae": [
+    "92:107",
+    0
+   ]
+  },
+  "class_type": "VAEEncode",
+  "_meta": {
+   "title": "VAE Encode"
+  }
+ },
+ "92:127": {
+  "inputs": {
+   "conditioning": [
+    "92:113",
+    0
+   ],
+   "latent": [
+    "92:126",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ },
+ "92:103": {
+  "inputs": {
+   "noise": [
+    "92:105",
+    0
+   ],
+   "guider": [
+    "92:114",
+    0
+   ],
+   "sampler": [
+    "92:102",
+    0
+   ],
+   "sigmas": [
+    "92:115",
+    0
+   ],
+   "latent_image": [
+    "92:109",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "SamplerCustomAdvanced"
+  }
+ },
+ "92:125": {
+  "inputs": {
+   "conditioning": [
+    "92:87",
+    0
+   ],
+   "latent": [
+    "92:126",
+    0
+   ]
+  },
+  "class_type": "ReferenceLatent",
+  "_meta": {
+   "title": "Set Reference Latent"
+  }
+ }
+}

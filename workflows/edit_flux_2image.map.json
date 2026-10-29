@@ -1,0 +1,35 @@
+{
+ "workflow": "edit_flux_2image.json",
+ "kind": "edit2",
+ "description": "Flux 2 Klein 9B edit with two reference images: image 1 = the base (composition, pose, light), image 2 = the reference (character sheet, face portrait, a relight frame, or the same image again for an environment edit).",
+ "roles": {
+  "image1": {
+   "node": "76",
+   "input": "image"
+  },
+  "image2": {
+   "node": "81",
+   "input": "image"
+  },
+  "prompt": {
+   "node": "92:113",
+   "input": "text"
+  },
+  "negative": {
+   "node": "92:87",
+   "input": "text"
+  },
+  "seed": [
+   {
+    "node": "92:105",
+    "input": "noise_seed"
+   }
+  ]
+ },
+ "outputs": {
+  "edit": {
+   "node": "94",
+   "input": "filename_prefix"
+  }
+ }
+}

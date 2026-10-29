@@ -1,0 +1,35 @@
+{
+ "workflow": "song_minimax_m3.json",
+ "kind": "song",
+ "description": "MiniMax Music 3 (local, open weights) text-to-song: caption (genre, tempo, key, vocal and arrangement direction) + lyrics with section tags. Runs ~10-30 min per song on a 3090.",
+ "roles": {
+  "caption": {
+   "node": "37:13",
+   "input": "caption"
+  },
+  "lyrics": {
+   "node": "37:13",
+   "input": "lyrics"
+  },
+  "max_seconds": {
+   "node": "37:13",
+   "input": "max_duration"
+  },
+  "seed": [
+   {
+    "node": "37:38",
+    "input": "seed"
+   }
+  ],
+  "tiled_decode": {
+   "node": "37:43",
+   "input": "switch"
+  }
+ },
+ "outputs": {
+  "song": {
+   "node": "35",
+   "input": "filename_prefix"
+  }
+ }
+}
