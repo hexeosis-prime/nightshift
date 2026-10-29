@@ -101,6 +101,7 @@ def mapfaces(project, edl, cut_name="cut.json", out=None):
     FW, FH = project.cfg["final_size"]
     fps = project.cfg["fps"]
     cy = (H - CH) // 2
+    cx = (W - CW) // 2
     s = FW / CW
     faces = []
     for r in csv.DictReader(open(edl)):
@@ -116,7 +117,7 @@ def mapfaces(project, edl, cut_name="cut.json", out=None):
                 kx, ky = W / tr["w"], H / tr["h"]
                 if j >= 0 and src[j]:
                     x, y, w, h = src[j]
-                    b = [round(x * kx * s, 1), round((y * ky - cy) * s, 1), round(w * kx * s, 1), round(h * ky * s, 1)]
+                    b = [round((x * kx - cx) * s, 1), round((y * ky - cy) * s, 1), round(w * kx * s, 1), round(h * ky * s, 1)]
             faces.append(b)
     out = out or project.path("overlay", "faces.json")
     with open(out, "w") as f:

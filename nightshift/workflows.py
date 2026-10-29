@@ -21,6 +21,7 @@ workflows/ folder), and write its map or title its nodes.
 """
 import copy
 import json
+import re
 import os
 
 PKG_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -53,6 +54,12 @@ def available(extra_dirs=()):
             if f.endswith(".json") and not f.endswith(".map.json") and not f.endswith(".meta.json"):
                 out[f[:-5]] = os.path.join(d, f)
     return out
+
+
+def flux3_refs(text):
+    """Reference names for FLUX 3 edits: "[reference_image2]" / "image 2" -> "<ref_image_1>" (FLUX 3 counts from 0)."""
+    text = re.sub(r"\[reference_image(\d)\]", lambda m: f"<ref_image_{int(m.group(1)) - 1}>", text)
+    return re.sub(r"\b[Ii]mage (\d)\b", lambda m: f"<ref_image_{int(m.group(1)) - 1}>", text)
 
 
 class Workflow:
@@ -119,6 +126,8 @@ class Workflow:
         return {"int": lambda x: int(round(float(x))), "float": float, "str": str, "bool": bool}.get(t, lambda x: x)(v)
 
     def set(self, role, value, required=True):
+        if role == "prompt" and isinstance(value, str) and self.spec.get("ref_syntax") == "flux3":
+            value = flux3_refs(value)
         if not self.has(role):
             if required:
                 raise WorkflowError(f"{self.name}: no role '{role}'")

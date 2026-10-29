@@ -126,7 +126,8 @@ Shots with `"takes": n` (or `"complex": true`) are cloned into n seeds (base + 1
 
 Every take of a person shot is scored against the character sheet (median of three frames; lip-sync takes also get a mouth
 activity number) and the cut points at the best one. Director mode stops (`takes_review`) with a contact sheet per shot
-(first/middle/last frame of every take). Override with `nightshift timeline pick <shot> clips/<file> [--in 0.5] [--speed 2]`;
+(first/middle/last frame of every take); with one take per shot (the `short` profile) there is nothing to choose and it
+doesn't stop. Override with `nightshift timeline pick <shot> clips/<file> [--in 0.5] [--speed 2]`;
 a hand pick is never overridden by the scorer again.
 
 ## 9. cut (`assemble` · `assemble_cut`)

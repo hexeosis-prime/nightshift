@@ -48,6 +48,47 @@ DEFAULTS = {
     "overlay": {},
 }
 
+# Profiles: presets layered under project.json (project.json still wins on any key it sets).
+#   profile      full = the first video's settings (a ~50-shot, ~7 hour pass); short = a ~30-40 s video in about an hour
+#   aspect       16:9 or 9:16 (stills, edits, video renders, crop and delivery size all follow)
+#   image_model  flux2 = Flux 2 Klein 9B (the first video); flux3 = FLUX 3 Image Klein (stills, identity edits, sheets)
+PROFILES = {
+    "full": {},
+    "short": {
+        "video_frames": 97,
+        "takes": {"default": 1, "complex": 1},
+        "sheets": {"candidates": 2},
+        "song_seeds": [101, 202],
+        "song_max_seconds": 40,
+        "timeline": {"min_seconds": 1.5, "max_seconds": 6.0, "max_fit_seconds": 8.0},
+        "yolo_variants": False,
+        "overlay": {"enabled": False},
+        "finish": {"chunk_seconds": 12.0, "halftone": None, "grain": 7},
+    },
+}
+ASPECTS = {
+    "16:9": {"work_size": [1280, 768], "crop": [1280, 720], "final_size": [1920, 1080]},
+    "9:16": {"work_size": [768, 1280], "crop": [720, 1280], "final_size": [1080, 1920]},
+}
+IMAGE_MODELS = {
+    "flux2": {},
+    "flux3": {"workflows": {"still": "still_flux3", "edit2": "edit_flux3_2image", "edit3": "edit_flux3_3image",
+                            "sheet_text": "sheet_from_text_flux3", "sheet_image": "sheet_from_image_flux3"}},
+}
+
+
+def presets(file_cfg):
+    """The profile / aspect / image_model layers a project.json asks for, merged."""
+    out = {}
+    for table, key, default in ((PROFILES, "profile", "full"), (ASPECTS, "aspect", None), (IMAGE_MODELS, "image_model", "flux2")):
+        name = (file_cfg or {}).get(key) or default
+        if name is None:
+            continue
+        if name not in table:
+            raise ValueError(f"project.json {key} '{name}': choose one of {', '.join(table)}")
+        out = _merge(out, table[name])
+    return out
+
 
 def _merge(a, b):
     out = dict(a)
@@ -77,7 +118,8 @@ class Project:
         self.root = os.path.abspath(root)
         if not os.path.exists(self.path("project.json")):
             raise FileNotFoundError(f"{self.root} has no project.json (nightshift init <folder> makes one)")
-        self.cfg = _merge(DEFAULTS, _load(self.path("project.json"), {}))
+        file_cfg = _load(self.path("project.json"), {})
+        self.cfg = _merge(_merge(DEFAULTS, presets(file_cfg)), file_cfg)
         self.name = self.cfg.get("name") or os.path.basename(self.root)
         self._client = None
 

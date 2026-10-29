@@ -103,6 +103,37 @@ class Builder:
     def save(self, wf, name, meta):
         return wf.save(self.p.path("jobs", name), meta)
 
+    def size(self, wf):
+        """Graphs that render at a fixed size get the project's work size (16:9 or 9:16)."""
+        w, h = self.p.cfg["work_size"]
+        wf.try_set("width", w)
+        wf.try_set("height", h)
+        wf.try_set("long_edge", max(w, h))
+
+    def caption(self, s, person, outfit, action, loc, framing, people):
+        """One full caption for caption-style graphs (FLUX 3 Klein): what the switch-built Flux 2 prompt says, in prose."""
+        sw = dict(self.canon.get("image_switches_default", {}), **self.world_cfg(s).get("switches", {}), **s.get("switches", {}))
+        shot = {"close": "Close-up", "medium": "Medium shot", "wide": "Wide shot"}.get(framing, "Shot")
+        parts = []
+        if person:
+            subject = f"{shot} of a {person}" + (f", wearing {outfit}" if outfit else "")
+            parts.append(subject + (f", {action}" if action else "") + ".")
+        else:
+            parts.append(f"{shot}" + (f": {action}" if action else "") + ".")
+        if loc:
+            parts.append(f"Setting: {loc}.")
+        look = self.world_cfg(s).get("style") or self.canon.get("style")
+        if not look:
+            look = ("professional cinematic photograph" if sw.get("pro_photo") else "candid handheld film photograph, natural imperfections")
+            look += ", " + ("daylight" if sw.get("daytime") else "night") + ", " + ("indoors" if sw.get("indoor") else "outdoors")
+            if sw.get("atmosphere"):
+                look += ", atmospheric haze and depth"
+        parts.append(f"Style: {look}, photorealistic film still, natural skin texture.")
+        if person:
+            parts.append("Only one person in the frame." if people <= 1 else "")
+        parts.append("No text, no letters, no logos, no watermark.")
+        return " ".join(p for p in parts if p)
+
     # ---- stills -------------------------------------------------------------------------------
     def still_job(self, s):
         wf = self.p.workflow("still")
@@ -127,6 +158,8 @@ class Builder:
             wf.set("location", loc)
             wf.try_set("female_count", fem)
             wf.try_set("male_count", male)
+        elif wf.spec.get("prompt_style") == "caption":
+            wf.set("prompt", self.caption(s, person, outfit, action, loc, framing, fem + male))
         else:
             wf.set("prompt", ", ".join(x for x in (person, ("wearing " + outfit) if outfit else "", action, loc) if x))
         sw = dict(self.canon.get("image_switches_default", {}), **self.world_cfg(s).get("switches", {}), **s.get("switches", {}))
@@ -137,6 +170,8 @@ class Builder:
         wf.try_set("long_edge", max(w, h))
         wf.try_set("short_edge", min(w, h))
         wf.try_set("vertical", h > w)
+        wf.try_set("width", w)
+        wf.try_set("height", h)
         wf.seed(s["seed"])
         never = ", ".join([c.get("never", "") for c in chars if c.get("never")] + ([self.canon["never_common"]] if self.canon.get("never_common") else []))
         if never:
@@ -191,6 +226,7 @@ class Builder:
             wf = self.p.workflow("edit2")
             text = self.sheet_text(s, wording or s.get("wording", "A"))
         wf.apply_defaults()
+        self.size(wf)
         wf.set("image1", img)
         wf.set("image2", self.sheet(ch_key, world, s.get("sheet_ref")))
         if s.get("edit_light"):
@@ -204,6 +240,7 @@ class Builder:
     def edit_job(self, s):
         wf = self.p.workflow("edit2")
         wf.apply_defaults()
+        self.size(wf)
         img, _ = self.stage_still(s, s.get("edit_base") or self.default_model(s))
         wf.set("image1", img)
         wf.set("image2", self.input_file(s["edit_ref"]))
@@ -230,6 +267,7 @@ class Builder:
         if mode == "ff":
             wf = self.p.workflow("ff")
             wf.apply_defaults()
+            self.size(wf)
             img, label = (self.input_file(s["first_frame"]), "file") if s.get("first_frame") else self.stage_still(s)
             wf.set("image", img)
             wf.set("prompt", self.names(s["video"], s))
@@ -249,6 +287,7 @@ class Builder:
         elif mode == "fflf":
             wf = self.p.workflow("fflf")
             wf.apply_defaults()
+            self.size(wf)
             src_id = s.get("start_shot") or s.get("still_from")
             src = self.by_id[src_id] if src_id else s
             if s.get("still_from") and src.get("dropped"):   # loop seam: end on the first live shot's still
@@ -283,6 +322,7 @@ class Builder:
         elif mode == "lipsync":
             wf = self.p.workflow("lipsync")
             wf.apply_defaults()
+            self.size(wf)
             img, label = (self.input_file(s["first_frame"]), "file") if s.get("first_frame") else self.stage_still(s)
             wf.set("image", img)
             wf.set("prompt", self.sung(s))

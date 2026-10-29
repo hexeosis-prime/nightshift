@@ -1,0 +1,39 @@
+{
+ "workflow": "sheet_from_text_flux3.json",
+ "kind": "sheet_text",
+ "description": "FLUX 3 Image Klein character sheet (front view with the face covered by a white circle, back view, macro face close-up, on grey) from a written description.",
+ "roles": {
+  "description": {
+   "node": "20",
+   "input": "string_b"
+  },
+  "negative": {
+   "node": "5",
+   "input": "text"
+  },
+  "seed": [
+   {
+    "node": "7",
+    "input": "seed"
+   }
+  ],
+  "steps": {
+   "node": "7",
+   "input": "steps"
+  },
+  "cfg": {
+   "node": "7",
+   "input": "cfg"
+  },
+  "model": {
+   "node": "1",
+   "input": "unet_name"
+  }
+ },
+ "outputs": {
+  "sheet": {
+   "node": "9",
+   "input": "filename_prefix"
+  }
+ }
+}

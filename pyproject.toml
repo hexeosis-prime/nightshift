@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nightshift"
 version = "0.1.0"
-description = "Music videos from a local ComfyUI (Flux 2 Klein, LTX 2.3, MiniMax Music 3), directed by a person or run by any agent over MCP."
+description = "Music videos from a local ComfyUI (Flux 2 / FLUX 3 Klein, LTX 2.3, MiniMax Music 3): an app, a CLI, and an MCP server for agents."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -18,4 +18,5 @@ nightshift = "nightshift.cli:main"
 packages = ["nightshift", "nightshift.overlay"]
 
 [tool.setuptools.package-data]
+"nightshift" = ["web/studio.html"]
 "nightshift.overlay" = ["web/overlay.html", "web/render.mjs", "web/package.json"]

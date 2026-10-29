@@ -35,7 +35,15 @@
     "input": "noise_seed",
     "offset": 1
    }
-  ]
+  ],
+  "width": {
+   "node": "257:251",
+   "input": "width"
+  },
+  "height": {
+   "node": "257:251",
+   "input": "height"
+  }
  },
  "outputs": {
   "video": {

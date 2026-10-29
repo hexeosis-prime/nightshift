@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightshift Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080d; --bg2:#0d0f18; --panel:#11131e; --panel2:#161927; --line:#232738; --line2:#2f3449;
+  --ink:#e9e6df; --dim:#8d90a3; --faint:#5b5f74;
+  --amber:#ffb23e; --amber2:#ff8a1f; --amberglow:rgba(255,178,62,.16);
+  --cyan:#5fd4e6; --red:#ff5d6c; --green:#7fe0a0;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+body{min-height:100vh;background:
+  radial-gradient(1200px 500px at 85% -10%,rgba(255,138,31,.10),transparent 60%),
+  radial-gradient(900px 500px at -10% 110%,rgba(95,212,230,.07),transparent 60%),var(--bg)}
+a{color:var(--amber)}
+button,input,textarea,select{font:inherit;color:inherit}
+.mono{font-family:var(--mono)}
+.label{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+/* top bar */
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:18px;padding:14px 28px;
+  background:rgba(7,8,13,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.brand svg{width:30px;height:30px}
+.brand b{font:700 19px/1 var(--sans);letter-spacing:.24em}
+.brand span{font:500 11px/1 var(--mono);letter-spacing:.2em;color:var(--amber);text-transform:uppercase;padding-top:2px}
+.grow{flex:1}
+.pill{display:flex;align-items:center;gap:9px;padding:7px 12px;border:1px solid var(--line2);border-radius:999px;
+  font:500 12px/1 var(--mono);color:var(--dim);cursor:pointer;background:var(--bg2)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.dot.ok{background:var(--green);box-shadow:0 0 10px var(--green)}
+.dot.bad{background:var(--red);box-shadow:0 0 10px var(--red)}
+.dot.run{background:var(--amber);box-shadow:0 0 12px var(--amber);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.btn{border:1px solid var(--line2);background:var(--panel2);padding:10px 16px;border-radius:8px;cursor:pointer;
+  font:500 14px/1 var(--sans);transition:.15s}
+.btn:hover{border-color:var(--dim)}
+.btn.primary{background:linear-gradient(180deg,var(--amber),var(--amber2));color:#1a1000;border:0;font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--red);border-color:rgba(255,93,108,.4)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+main{max-width:1320px;margin:0 auto;padding:28px}
+
+/* home */
+.hero{display:flex;align-items:flex-end;gap:30px;margin:6px 0 26px}
+.hero h1{font:600 40px/1.05 var(--sans);margin:0;letter-spacing:-.01em}
+.hero h1 em{font-style:normal;color:var(--amber)}
+.hero p{margin:10px 0 0;color:var(--dim);max-width:640px}
+.home{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:26px}
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:22px}
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;padding:22px 0;border-top:1px solid var(--line)}
+.step:first-child{border-top:0;padding-top:4px}
+.num{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font:600 14px/1 var(--mono);
+  color:var(--amber);border:1px solid rgba(255,178,62,.35);background:var(--amberglow)}
+.step h3{margin:4px 0 4px;font:600 18px/1.2 var(--sans)}
+.step .hint{color:var(--dim);font-size:13.5px;margin:0 0 14px}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:7px;flex:1;min-width:200px}
+input[type=text],input[type=number],textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-radius:8px;
+  padding:10px 12px;outline:none;transition:.15s}
+input:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amberglow)}
+textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
+.field>.seg{align-self:flex-start}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;background:var(--bg)}
+.seg button{border:0;background:transparent;padding:9px 14px;cursor:pointer;color:var(--dim);font:500 13.5px/1 var(--sans);
+  display:flex;align-items:center;gap:8px}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button.on{background:var(--panel2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--amber)}
+.drop{position:relative;width:150px;height:186px;flex:none;border:1px dashed var(--line2);border-radius:10px;display:grid;place-items:center;
+  text-align:center;color:var(--faint);font-size:12.5px;cursor:pointer;overflow:hidden;background:var(--bg)}
+.drop:hover{border-color:var(--amber);color:var(--dim)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.drop .x{position:absolute;top:6px;right:6px;z-index:2;background:rgba(0,0,0,.7);border:0;border-radius:6px;padding:3px 7px;cursor:pointer;display:none}
+.drop.has .x{display:block}
+.note{font-size:12.5px;color:var(--faint);margin-top:10px}
+.scenes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.scene{position:relative;border:1px solid var(--line2);border-radius:12px;overflow:hidden;cursor:pointer;min-height:150px;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:12px;transition:.18s}
+.scene:hover{transform:translateY(-2px)}
+.scene.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 10px 30px rgba(255,138,31,.15)}
+.scene .sky{position:absolute;inset:0;z-index:0}
+.scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(5,6,10,.92));z-index:1}
+.scene b,.scene small{position:relative;z-index:2}
+.scene b{font:600 15px/1.2 var(--sans)}
+.scene small{color:#b9b7c4;font-size:12px;line-height:1.35;margin-top:4px}
+.sky.night-avenue{background:radial-gradient(60px 60px at 22% 38%,rgba(255,170,60,.85),transparent 70%),radial-gradient(40px 40px at 70% 30%,rgba(255,150,40,.6),transparent 70%),
+  linear-gradient(180deg,#0b1024 0%,#1c1a33 45%,#3a2418 70%,#120c0a 100%)}
+.sky.desert-highway{background:radial-gradient(70px 70px at 70% 52%,#ffd27a,transparent 70%),linear-gradient(180deg,#f6a05a 0%,#f0b77b 40%,#c4724a 62%,#4b2a1c 64%,#2b1a14 100%)}
+.sky.neon-stage{background:radial-gradient(120px 80px at 25% 30%,rgba(255,40,170,.75),transparent 70%),radial-gradient(120px 90px at 78% 35%,rgba(40,220,255,.6),transparent 70%),
+  linear-gradient(180deg,#0a0614,#140a22 60%,#050308)}
+.sky.seaside-dawn{background:linear-gradient(180deg,#26314f 0%,#55608a 35%,#e3a7a6 58%,#7c8fb0 60%,#3d4b6b 100%)}
+.aspect{display:inline-block;border:1.5px solid currentColor;border-radius:2px}
+.aspect.w{width:20px;height:12px}.aspect.v{width:10px;height:17px}
+.go{display:flex;align-items:center;gap:16px;margin-top:6px;padding-top:22px;border-top:1px solid var(--line)}
+.go .btn.primary{padding:15px 26px;font-size:16px}
+.err{color:var(--red);font-size:13.5px}
+.side h4{margin:0 0 12px}
+.vlist{display:flex;flex-direction:column;gap:8px}
+.vitem{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:var(--bg)}
+.vitem:hover{border-color:var(--line2)}
+.vitem .n{font-weight:600;font-size:14px}
+.vitem .s{font:12px/1.3 var(--mono);color:var(--dim)}
+.badge{margin-left:auto;font:500 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 7px;border-radius:5px;
+  border:1px solid var(--line2);color:var(--dim);white-space:nowrap}
+.badge.wait{color:var(--amber);border-color:rgba(255,178,62,.45)}
+.badge.done{color:var(--green);border-color:rgba(127,224,160,.4)}
+.how{margin-top:18px;font-size:13px;color:var(--dim)}
+.how ol{padding-left:18px;margin:8px 0 0}.how li{margin:5px 0}
+
+/* project */
+.proj{display:grid;grid-template-columns:230px minmax(0,1fr);gap:24px}
+.rail{position:sticky;top:88px;align-self:start}
+.rail h2{font:600 22px/1.15 var(--sans);margin:0 0 4px;word-break:break-word}
+.facts{font:12px/1.7 var(--mono);color:var(--dim);margin:8px 0 18px}
+.facts b{color:var(--ink);font-weight:500}
+.steps{list-style:none;margin:0;padding:0;border-left:1px solid var(--line2)}
+.steps li{position:relative;padding:7px 0 7px 18px;font:500 13px/1.2 var(--mono);color:var(--faint);letter-spacing:.04em}
+.steps li::before{content:"";position:absolute;left:-5px;top:11px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:1px solid var(--line2)}
+.steps li.done{color:var(--dim)}.steps li.done::before{background:var(--dim);border-color:var(--dim)}
+.steps li.now{color:var(--amber)}.steps li.now::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px var(--amber)}
+.steps li.wait{color:var(--amber)}.steps li.wait::before{background:transparent;border:2px solid var(--amber)}
+.ctl{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.stage{display:flex;flex-direction:column;gap:20px}
+.panel{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel.cp{border-color:rgba(255,178,62,.45);box-shadow:0 0 0 1px rgba(255,178,62,.12),0 18px 50px rgba(255,138,31,.07)}
+.phead{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.phead h3{margin:0;font:600 20px/1.2 var(--sans)}
+.phead .label{margin-left:auto}
+.status{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.status .big{font:600 26px/1 var(--sans)}
+.bar{flex:1;min-width:160px;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber2),var(--amber));transition:width .6s}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.opt{position:relative;border:1px solid var(--line2);border-radius:10px;overflow:hidden;cursor:pointer;background:var(--bg)}
+.opt img{display:block;width:100%;height:auto}
+.opt .meta{display:flex;justify-content:space-between;padding:8px 10px;font:12px/1.2 var(--mono);color:var(--dim)}
+.opt.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+.opt.on .meta{color:var(--amber)}
+.songs{display:flex;flex-direction:column;gap:10px}
+.song{display:grid;grid-template-columns:110px minmax(0,1fr) 120px;gap:14px;align-items:center;padding:10px 12px;border:1px solid var(--line2);
+  border-radius:10px;background:var(--bg);cursor:pointer}
+.song.on{border-color:var(--amber)}
+.song audio{width:100%;height:34px}
+.cov{font:12px/1.2 var(--mono);color:var(--dim)}
+.cov b{display:block;font-size:20px;color:var(--ink)}
+.packet img{max-width:100%;border-radius:8px;border:1px solid var(--line2);display:block;margin-bottom:12px}
+.packet video,.final video{width:100%;max-height:70vh;border-radius:10px;background:#000;display:block}
+.final video.v{max-width:420px;margin:0 auto}
+.approve{display:flex;gap:12px;align-items:flex-end;margin-top:16px;flex-wrap:wrap}
+.approve textarea{min-height:44px;flex:1;min-width:240px}
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.wall .t{position:relative;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--line);aspect-ratio:16/10}
+.wall.v{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}.wall.v .t{aspect-ratio:9/16}
+.wall img,.wall video{width:100%;height:100%;object-fit:cover;display:block}
+.wall .t span{position:absolute;left:6px;bottom:5px;font:10.5px/1 var(--mono);color:#fff;text-shadow:0 1px 3px #000;opacity:.85}
+.log{font:12px/1.6 var(--mono);color:#a9acbc;background:#05060a;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+  height:230px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.log .e{color:var(--red)}.log .c{color:var(--amber)}.log .d{color:#7f8296}
+.empty{color:var(--faint);font-size:13.5px}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line2);border-radius:14px;padding:22px;width:min(460px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.hide{display:none!important}
+@media (max-width:980px){
+  .home,.proj{grid-template-columns:1fr}.rail{position:static}
+  .scenes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  main{padding:18px 16px}header{padding:12px 16px;gap:10px}.hero h1{font-size:30px}
+  .brand span,#comfyText{display:none}.brand b{font-size:16px;letter-spacing:.18em}
+  .song{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" onclick="go('')" title="Home">
+    <svg viewBox="0 0 40 40" fill="none"><path d="M20 3 35 11.5v17L20 37 5 28.5v-17z" stroke="#ffb23e" stroke-width="1.6"/>
+      <path d="M20 10 29 15v10l-9 5-9-5V15z" stroke="#ffb23e" stroke-opacity=".5" stroke-width="1.2"/>
+      <circle cx="24" cy="16" r="4.2" fill="#ffb23e"/><circle cx="25.8" cy="14.6" r="3.6" fill="#07080d"/></svg>
+    <b>NIGHTSHIFT</b><span>studio</span>
+  </div>
+  <div class="grow"></div>
+  <div class="pill" id="comfyPill" onclick="comfyDlg.showModal()" title="ComfyUI connection"><i class="dot" id="comfyDot"></i><span id="comfyText">ComfyUI…</span></div>
+  <button class="btn" onclick="go('')">New video</button>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section id="home">
+    <div class="hero">
+      <div>
+        <h1>A music video of you,<br>made overnight <em>on your own GPU.</em></h1>
+        <p>Give it a face, a song and a place. Nightshift writes or takes the song, locks the character's look, paints every first
+          frame, animates them with lip-sync on LTX&nbsp;2.3, cuts on the beat and grades it, all in your local ComfyUI with open-weight models.</p>
+      </div>
+    </div>
+    <div class="home">
+      <div class="card">
+        <div class="step">
+          <div class="num">01</div>
+          <div>
+            <h3>Who's in it</h3>
+            <p class="hint">A photo makes the character sheet from the picture; without one it's built from your description. You approve the look before anything else renders.</p>
+            <div class="row">
+              <label class="drop" id="photoDrop"><input type="file" accept="image/*" id="photo" hidden>
+                <span id="photoHint">Drop a photo<br>or click<br><small>(optional)</small></span><img id="photoImg" class="hide" alt="">
+                <button class="x" type="button" onclick="clearPhoto(event)">✕</button></label>
+              <div class="field" style="min-width:260px">
+                <div class="seg" id="who"><button data-v="woman" class="on">Woman</button><button data-v="man">Man</button><button data-v="person">Person</button></div>
+                <input type="text" id="look" placeholder="Look: late twenties, curly red hair, freckles, green eyes">
+                <input type="text" id="outfit" placeholder="Outfit: a cropped denim jacket, white tank top, black jeans">
+              </div>
+            </div>
+            <div class="note">Only use a photo of yourself or of someone who said yes. No celebrities.</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="num">02</div>
+          <div>
+            <h3>The song</h3>
+            <p class="hint">MiniMax Music 3 writes and sings it from your words (open weights, running in ComfyUI), or bring your own track.</p>
+            <div class="seg" id="songSrc" style="margin-bottom:14px"><button data-v="generate" class="on">Write it for me</button><button data-v="upload">Use my track</button></div>
+            <div id="genBox" class="row">
+              <div class="field"><span class="label">Vibe (added to the scene's genre)</span><input type="text" id="vibe" placeholder="e.g. bittersweet, a big singalong hook, a whistled melody"></div>
+            </div>
+            <div id="upBox" class="row hide">
+              <div class="field"><span class="label">Track (mp3 / wav / flac)</span><input type="file" id="audio" accept="audio/*"></div>
+              <div class="field" style="max-width:170px;min-width:140px"><span class="label">Start at (s)</span><input type="number" id="start" value="0" min="0" step="0.5"></div>
+            </div>
+            <div class="field" style="margin-top:12px"><span class="label" id="lyrLabel">Lyrics, with [Section] tags</span><textarea id="lyrics" rows="9"></textarea></div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="num">03</div>
+          <div>
+            <h3>Where</h3>
+            <p class="hint">A scene is a look and three places; the shot list moves the performer through them.</p>
+            <div class="scenes" id="scenes"></div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="num">04</div>
+          <div>
+            <h3>Format</h3>
+            <div class="row" style="gap:22px">
+              <div class="field" style="flex:none;min-width:0"><span class="label">Length</span><div class="seg" id="length"></div></div>
+              <div class="field" style="flex:none;min-width:0"><span class="label">Aspect</span>
+                <div class="seg" id="aspect"><button data-v="9:16" class="on"><i class="aspect v"></i>9:16</button><button data-v="16:9"><i class="aspect w"></i>16:9</button></div></div>
+              <div class="field" style="flex:none;min-width:0"><span class="label">Image model</span>
+                <div class="seg" id="model"><button data-v="flux2" class="on">Flux 2 Klein 9B</button><button data-v="flux3">FLUX 3 Klein</button></div></div>
+              <div class="field" style="flex:none;min-width:0"><span class="label">Direction</span>
+                <div class="seg" id="mode"><button data-v="director" class="on">Director: I choose</button><button data-v="yolo">Hands-off</button></div></div>
+            </div>
+            <div class="note" id="lenNote"></div>
+          </div>
+        </div>
+
+        <div class="go">
+          <button class="btn primary" id="goBtn" onclick="create()">Start the shift</button>
+          <span class="err" id="goErr"></span>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="card">
+          <h4 class="label">Your videos</h4>
+          <div class="vlist" id="vlist"><div class="empty">Nothing yet.</div></div>
+        </div>
+        <div class="card how" style="margin-top:16px">
+          <span class="label">What happens</span>
+          <ol>
+            <li><b>Character sheet</b> first: front, back, face. You pick it.</li>
+            <li><b>Song</b>, then beats and lyric timing, so every shot lands on a line.</li>
+            <li><b>First frames</b>, then an identity edit from the sheet, so it's the same face in every shot.</li>
+            <li><b>LTX 2.3</b> animates each shot: lip-sync, camera moves, an establishing shot.</li>
+            <li><b>Takes</b> are scored against the sheet, cut on the beat, graded.</li>
+          </ol>
+          Everything is a normal project on disk: the CLI and any agent over MCP can pick it up.
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- PROJECT -->
+  <section id="proj" class="hide">
+    <div class="proj">
+      <div class="rail">
+        <span class="label">Video</span>
+        <h2 id="pName"></h2>
+        <div class="facts" id="pFacts"></div>
+        <ul class="steps" id="pSteps"></ul>
+        <div class="ctl">
+          <button class="btn primary" id="runBtn" onclick="act('run')">Run</button>
+          <button class="btn danger hide" id="stopBtn" onclick="act('stop')">Stop</button>
+          <span class="err" id="pErr"></span>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="panel" id="nowPanel">
+          <div class="phead"><h3 id="nowTitle">Ready</h3><span class="label" id="nowSub"></span></div>
+          <div class="status"><span class="big mono" id="nowJobs"></span><div class="bar"><i id="nowBar" style="width:0"></i></div></div>
+        </div>
+        <div class="panel cp hide" id="cpPanel">
+          <div class="phead"><h3 id="cpTitle"></h3><span class="label">checkpoint</span></div>
+          <p class="hint" id="cpHint" style="color:var(--dim);margin:-6px 0 14px"></p>
+          <div id="cpBody"></div>
+          <div class="approve">
+            <textarea id="cpNotes" placeholder="Notes for the pass log (optional)"></textarea>
+            <button class="btn primary" onclick="act('continue')" id="cpGo">Approve &amp; carry on</button>
+          </div>
+        </div>
+        <div class="panel final hide" id="finalPanel">
+          <div class="phead"><h3>Finished</h3><span class="label" id="finalName"></span></div>
+          <video id="finalVid" controls playsinline></video>
+          <div class="row" style="margin-top:14px"><a class="btn" id="finalDl" download>Download</a></div>
+        </div>
+        <div class="panel">
+          <div class="phead"><h3>On the wall</h3><span class="label">latest renders</span></div>
+          <div class="wall" id="wall"><div class="empty">Renders appear here as ComfyUI finishes them.</div></div>
+        </div>
+        <div class="panel">
+          <div class="phead"><h3>Shift log</h3><span class="label">pipeline events</span></div>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="comfyDlg">
+  <h3 style="margin-top:0">ComfyUI</h3>
+  <p style="color:var(--dim);font-size:14px;margin-top:-4px">New videos render on this ComfyUI. Start it with your LTX 2.3, Flux and MiniMax Music 3 models installed (see the README).</p>
+  <div class="field"><span class="label">Address</span><input type="text" id="comfyUrl"></div>
+  <div class="mono" id="comfyInfo" style="font-size:12.5px;color:var(--dim);margin:12px 0"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="comfyDlg.close()">Close</button><button class="btn primary" onclick="saveComfy()">Check &amp; use</button></div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const STEP_NAMES = {sheets:"character sheets", song:"song", analyze:"beats + lyrics", timeline:"fit to song", stills:"first frames",
+  sheetedits:"identity edits", videos:"LTX 2.3 video", pick:"pick takes", cut:"cut", overlay:"lyric HUD", finish:"grade + finish"};
+const CP = {
+  sheets_review:["Approve the look","Pick the character sheet you want. Every frame is edited toward it and every take is scored against it."],
+  outfits_review:["Approve the outfits","The approved face, dressed for each world."],
+  song_pick:["Pick the song","Every seed MiniMax Music 3 sang, with how much of your lyric sheet it actually sings."],
+  stills_review:["First frames","Every first frame after the identity edit, ranked by how closely the face matches the sheet."],
+  takes_review:["Takes","Contact sheets of the takes; the cut already uses the best-scoring one."],
+  pass_review:["The pass","The finished pass, plus a review copy with shot numbers burned in for notes."],
+};
+let INFO = null, CUR = null, logNext = 0, timer = null, lastView = null;
+const state = {who:"woman", songSrc:"generate", aspect:"9:16", model:"flux2", mode:"director", length:"short", scene:"night-avenue"};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fileUrl = (p, f) => `/files/${encodeURIComponent(p)}/${f.split("/").map(encodeURIComponent).join("/")}`;
+async function api(path, body){
+  const r = await fetch(path, body === undefined ? {} : {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  const j = await r.json().catch(() => ({error:`HTTP ${r.status}`}));
+  if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+function seg(id, key, onchange){
+  $(id).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...$(id).children].forEach(x => x.classList.toggle("on", x === b));
+    state[key] = b.dataset.v; onchange && onchange();
+  });
+}
+seg("who","who"); seg("aspect","aspect"); seg("model","model"); seg("mode","mode");
+seg("songSrc","songSrc", () => {
+  const up = state.songSrc === "upload";
+  $("genBox").classList.toggle("hide", up); $("upBox").classList.toggle("hide", !up);
+  $("lyrLabel").textContent = up ? "Lyrics of your track, for lip-sync (leave empty for an instrumental)" : "Lyrics, with [Section] tags";
+  if (up && $("lyrics").value === INFO.default_lyrics) $("lyrics").value = "";
+  if (!up && !$("lyrics").value.trim()) $("lyrics").value = INFO.default_lyrics;
+});
+let photoData = null;
+$("photo").addEventListener("change", e => readPhoto(e.target.files[0]));
+$("photoDrop").addEventListener("dragover", e => {e.preventDefault()});
+$("photoDrop").addEventListener("drop", e => {e.preventDefault(); readPhoto(e.dataTransfer.files[0])});
+function readPhoto(f){
+  if (!f) return; const r = new FileReader();
+  r.onload = () => {photoData = {name:f.name, data:r.result}; $("photoImg").src = r.result; $("photoImg").classList.remove("hide");
+    $("photoHint").classList.add("hide"); $("photoDrop").classList.add("has")};
+  r.readAsDataURL(f);
+}
+function clearPhoto(e){e.preventDefault(); e.stopPropagation(); photoData = null; $("photo").value = ""; $("photoImg").classList.add("hide");
+  $("photoHint").classList.remove("hide"); $("photoDrop").classList.remove("has")}
+const readFile = f => new Promise((ok, no) => {const r = new FileReader(); r.onload = () => ok({name:f.name, data:r.result}); r.onerror = no; r.readAsDataURL(f)});
+
+async function init(){
+  INFO = await api("/api/info");
+  $("lyrics").value = INFO.default_lyrics;
+  $("scenes").innerHTML = Object.entries(INFO.scenes).map(([k, s]) =>
+    `<div class="scene ${k === state.scene ? "on" : ""}" data-v="${k}"><div class="sky ${k}"></div><b>${esc(s.label)}</b><small>${esc(s.blurb)}</small></div>`).join("");
+  $("scenes").addEventListener("click", e => {const c = e.target.closest(".scene"); if (!c) return;
+    state.scene = c.dataset.v; [...$("scenes").children].forEach(x => x.classList.toggle("on", x === c))});
+  $("length").innerHTML = Object.keys(INFO.lengths).map(k => `<button data-v="${k}" class="${k === state.length ? "on" : ""}">${k === "short" ? "Short" : "Medium"}</button>`).join("");
+  const lenNote = () => $("lenNote").textContent = INFO.lengths[state.length] + ". Character sheets and the song come first; you can leave it running.";
+  seg("length", "length", lenNote); lenNote();
+  $("comfyUrl").value = localGet("comfyUrl") || INFO.comfy_url;
+  checkComfy(); setInterval(checkComfy, 15000);
+  listVideos();
+  window.addEventListener("hashchange", route); route();
+}
+function localGet(k){try{return localStorage.getItem("ns." + k)}catch(e){return null}}
+function localSet(k, v){try{localStorage.setItem("ns." + k, v)}catch(e){}}
+async function checkComfy(){
+  const url = $("comfyUrl").value || INFO.comfy_url;
+  try {
+    const s = await api("/api/comfy?url=" + encodeURIComponent(url));
+    $("comfyDot").className = "dot " + (s.ok ? "ok" : "bad");
+    $("comfyText").textContent = s.ok ? `${(s.gpu || "GPU").replace(/^cuda:\d+\s*/, "").replace(/ : .*/, "")} · ${s.vram_free_gb}/${s.vram_total_gb} GB` : "ComfyUI offline";
+    $("comfyInfo").textContent = s.ok ? `connected · ComfyUI ${s.version || "?"} · ${s.queue} in queue` : `not reachable: ${s.problem}`;
+  } catch(e){ $("comfyDot").className = "dot bad"; $("comfyText").textContent = "ComfyUI ?" }
+}
+function saveComfy(){localSet("comfyUrl", $("comfyUrl").value.trim()); checkComfy()}
+async function listVideos(){
+  const {projects} = await api("/api/projects");
+  $("vlist").innerHTML = projects.length ? projects.map(p => {
+    const b = p.waiting ? `<span class="badge wait">${esc((CP[p.waiting] || [p.waiting])[0])}</span>` : p.step === "done" ? `<span class="badge done">done</span>` :
+      p.step ? `<span class="badge">${esc(STEP_NAMES[p.step] || p.step)}</span>` : `<span class="badge">new</span>`;
+    return `<div class="vitem" onclick="go('${esc(p.name)}')"><div><div class="n">${esc(p.name)}</div><div class="s">${esc(p.scene || "")} · ${esc(p.aspect || "")} · pass ${p.pass || 1}</div></div>${b}</div>`;
+  }).join("") : `<div class="empty">Nothing yet.</div>`;
+}
+
+async function create(){
+  $("goErr").textContent = ""; $("goBtn").disabled = true;
+  try {
+    const files = {};
+    if (photoData) files.photo = photoData;
+    if (state.songSrc === "upload") {
+      const f = $("audio").files[0]; if (!f) throw new Error("choose your track, or let MiniMax Music 3 write the song");
+      files.audio = await readFile(f);
+    }
+    const form = {length:state.length, aspect:state.aspect, image_model:state.model, mode:state.mode, scene:state.scene,
+      comfy_url:$("comfyUrl").value.trim() || undefined,
+      character:{noun:state.who, look:$("look").value, outfit:$("outfit").value},
+      song:{source:state.songSrc, vibe:$("vibe").value, lyrics:$("lyrics").value, start:parseFloat($("start").value) || 0}};
+    const r = await api("/api/projects", {form, files, run:true});
+    go(r.name);
+  } catch(e){ $("goErr").textContent = e.message } finally { $("goBtn").disabled = false }
+}
+
+function go(name){ location.hash = name ? "#/" + encodeURIComponent(name) : "" }
+function route(){
+  const m = location.hash.match(/^#\/(.+)$/);
+  clearInterval(timer);
+  if (!m){ CUR = null; $("home").classList.remove("hide"); $("proj").classList.add("hide"); listVideos(); return }
+  CUR = decodeURIComponent(m[1]); logNext = 0; lastView = null; $("log").innerHTML = "";
+  $("home").classList.add("hide"); $("proj").classList.remove("hide");
+  refresh(); timer = setInterval(refresh, 2500);
+}
+async function act(what){
+  $("pErr").textContent = "";
+  try {
+    const body = what === "continue" ? {notes:$("cpNotes").value} : {};
+    render(await api(`/api/projects/${encodeURIComponent(CUR)}/${what}`, body));
+    if (what === "continue") $("cpNotes").value = "";
+  } catch(e){ $("pErr").textContent = e.message }
+}
+async function pick(body){
+  try { await api(`/api/projects/${encodeURIComponent(CUR)}/pick`, body); lastView = null; refresh() } catch(e){ $("pErr").textContent = e.message }
+}
+async function refresh(){
+  if (!CUR) return;
+  try {
+    const name = CUR;
+    const [v, lg] = await Promise.all([api(`/api/projects/${encodeURIComponent(name)}`), api(`/api/projects/${encodeURIComponent(name)}/log?since=${logNext}`)]);
+    if (name !== CUR) return;
+    render(v); appendLog(lg);
+  } catch(e){ $("pErr").textContent = e.message }
+}
+function appendLog(lg){
+  if (!lg.lines.length) return;
+  const el = $("log"), stick = el.scrollTop + el.clientHeight > el.scrollHeight - 30;
+  el.insertAdjacentHTML("beforeend", lg.lines.map(l => {
+    const c = /ERROR|FAILED|LOST|WATCHDOG/.test(l) ? "e" : /CHECKPOINT|== |pass ready|approved/.test(l) ? "c" : /^\S+\s+(done|running)/.test(l) ? "d" : "";
+    return `<div class="${c}">${esc(l)}</div>`}).join(""));
+  logNext = lg.next; if (stick) el.scrollTop = el.scrollHeight;
+}
+function render(v){
+  const sig = JSON.stringify([v.step, v.waiting, v.running, v.jobs, v.renders.slice(0, 3), v.finished]);
+  $("pName").textContent = v.name;
+  const c = v.cfg;
+  $("pFacts").innerHTML = `<b>${esc(c.length || c.profile)}</b> · <b>${esc(c.aspect || "16:9")}</b><br>${esc(c.image_model === "flux3" ? "FLUX 3 Klein" : "Flux 2 Klein")} · LTX 2.3<br>
+    ${esc(c.scene || "")} · ${esc(c.mode)}<br>pass ${v.pass || 1} · ${esc(v.comfy)}`;
+  const done = new Set(v.done);
+  const steps = v.steps.filter(s => s !== "overlay");
+  $("pSteps").innerHTML = steps.map(s => {
+    let cls = done.has(s) ? "done" : "";
+    if (s === v.step && v.step !== "done") cls = v.waiting ? "wait" : v.running ? "now" : "";
+    return `<li class="${cls}">${esc(STEP_NAMES[s] || s)}</li>`}).join("");
+  $("runBtn").classList.toggle("hide", v.running || !!v.waiting || v.step === "done");
+  $("runBtn").textContent = v.step ? "Carry on" : "Run";
+  $("runBtn").disabled = v.busy_other;
+  $("stopBtn").classList.toggle("hide", !v.running);
+  // now
+  const j = v.jobs || {}, total = Object.values(j).reduce((a, b) => a + b, 0), fin = (j.done || 0) + (j.failed || 0) + (j.lost || 0);
+  $("nowTitle").textContent = v.running ? (STEP_NAMES[v.step] || v.step || "starting") : v.waiting ? "Waiting for you" :
+    v.step === "done" ? `Pass ${v.pass} done` : v.busy_other ? "The GPU is busy with another video" : "Ready";
+  $("nowSub").textContent = v.running ? "rendering on ComfyUI" : "";
+  $("nowJobs").textContent = v.running && total ? `${fin}/${total}` : "";
+  $("nowBar").style.width = (v.running && total ? Math.round(100 * fin / total) : v.step === "done" ? 100 : 0) + "%";
+  $("nowPanel").querySelector(".status").classList.toggle("hide", !(v.running && total) && v.step !== "done");
+  if (sig === lastView) return; lastView = sig;
+  // checkpoint
+  const w = v.waiting;
+  $("cpPanel").classList.toggle("hide", !w);
+  if (w) {
+    const [t, h] = CP[w.checkpoint] || [w.checkpoint, ""];
+    $("cpTitle").textContent = t; $("cpHint").textContent = h;
+    let html = "";
+    for (const ch of w.choices || []) {
+      if (ch.kind === "sheet") {
+        html += `<div class="label" style="margin:4px 0 10px">${esc(ch.char)} · ${esc(ch.world)}</div><div class="opts">` + ch.options.map(o => {
+          const on = ch.picked_file === o.file;
+          return `<div class="opt ${on ? "on" : ""}" data-f="${esc(o.file)}" onclick='pick(${JSON.stringify({kind:"sheet", char:ch.char, world:ch.world, file:o.file})}); this.parentNode.querySelectorAll(".opt").forEach(x=>x.classList.toggle("on", x===this))'>
+            <img src="${fileUrl(v.name, o.file)}" loading="lazy"><div class="meta"><span>${esc(o.file.split("/").pop())}</span><span>${o.score == null ? "" : esc(o.by) + " " + o.score}</span></div></div>`}).join("") + `</div>`;
+        if (ch.picked) html += `<div class="note">Picked: ${esc(ch.picked)}. Anything you don't pick gets the best-scoring sheet.</div>`;
+      } else if (ch.kind === "song") {
+        html += `<div class="songs">` + ch.options.map(o => `<div class="song ${ch.picked_file === o.file ? "on" : ""}"
+          onclick='pick(${JSON.stringify({kind:"song", file:o.file})}); this.parentNode.querySelectorAll(".song").forEach(x=>x.classList.toggle("on", x===this))'>
+          <div class="cov"><b>${Math.round(o.score * 100)}%</b>${esc(o.by)}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}" onclick="event.stopPropagation()"></audio>
+          <div class="cov">${esc(o.file.split("/").pop())}</div></div>`).join("") + `</div><div class="note">Click a song to choose it, then approve.</div>`;
+      }
+    }
+    if (!(w.choices || []).length) {
+      html += `<div class="packet">` + w.files.filter(f => /\.(png|jpe?g|webp|mp4)$/i.test(f)).map(f => /\.mp4$/i.test(f) ?
+        `<video controls playsinline src="${fileUrl(v.name, f)}"></video><div class="note">${esc(f)}</div>` : `<img src="${fileUrl(v.name, f)}" loading="lazy">`).join("") + `</div>`;
+    }
+    $("cpBody").innerHTML = html;
+    $("cpGo").textContent = w.checkpoint === "pass_review" ? "Approve the pass" : "Approve & carry on";
+  }
+  // final
+  const fin2 = v.finished[v.finished.length - 1];
+  $("finalPanel").classList.toggle("hide", !fin2);
+  if (fin2) { const u = fileUrl(v.name, fin2) + "?t=" + Date.now(); if (!$("finalVid").src.includes(fin2)) $("finalVid").src = u;
+    $("finalVid").className = c.aspect === "9:16" ? "v" : ""; $("finalDl").href = u; $("finalName").textContent = fin2 }
+  // wall
+  $("wall").classList.toggle("v", c.aspect === "9:16");
+  $("wall").innerHTML = v.renders.length ? v.renders.map(f => {
+    const u = fileUrl(v.name, f), n = esc(f.split("/").pop());
+    return /\.mp4$/i.test(f) ? `<div class="t"><video src="${u}#t=0.4" muted loop playsinline preload="metadata" onmouseenter="this.play()" onmouseleave="this.pause()"></video><span>${n}</span></div>` :
+      /\.(mp3|wav|flac)$/i.test(f) ? "" : `<div class="t"><img src="${u}" loading="lazy"><span>${n}</span></div>`}).join("") : `<div class="empty">Renders appear here as ComfyUI finishes them.</div>`;
+}
+init();
+</script>
+</body>
+</html>

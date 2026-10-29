@@ -28,7 +28,15 @@
     "node": "92:105",
     "input": "noise_seed"
    }
-  ]
+  ],
+  "width": {
+   "node": "131",
+   "input": "width"
+  },
+  "height": {
+   "node": "131",
+   "input": "height"
+  }
  },
  "outputs": {
   "edit": {

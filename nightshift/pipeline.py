@@ -118,7 +118,7 @@ def step_song(project, st, on_event):
     rendered = project.renders("songs", "*.mp3") + project.renders("songs", "*.wav") + project.renders("songs", "*.flac")
     if not rendered:
         seeds = project.cfg.get("song_seeds", [101, 202, 303, 404])
-        _run_jobs(project, song.build_jobs(project, seeds), on_event)
+        _run_jobs(project, song.build_jobs(project, seeds, max_seconds=project.cfg.get("song_max_seconds")), on_event)
         rendered = project.renders("songs", "*.mp3") + project.renders("songs", "*.wav") + project.renders("songs", "*.flac")
     if not rendered:
         raise RuntimeError("no songs rendered; check ComfyUI and the song workflow")
@@ -272,7 +272,8 @@ def step_pick(project, st, on_event):
     missing = [c["id"] for c in cut["shots"] if not c.get("src")]
     if missing:
         on_event(f"no clip yet for: {', '.join(missing)}")
-    _checkpoint(project, st, "pick", on_event, packet)
+    if packet:                                   # one take per shot (the short profile): nothing to choose between
+        _checkpoint(project, st, "pick", on_event, packet)
     return []
 
 

@@ -1,0 +1,56 @@
+{
+ "workflow": "edit_flux3_2image.json",
+ "kind": "edit2",
+ "description": "FLUX 3 Image Klein edit with 2 reference images (<ref_image_0> = image1, the base). Output at width x height (the project's work size).",
+ "ref_syntax": "flux3",
+ "roles": {
+  "image1": {
+   "node": "10",
+   "input": "image"
+  },
+  "image2": {
+   "node": "11",
+   "input": "image"
+  },
+  "prompt": {
+   "node": "4",
+   "input": "text"
+  },
+  "width": {
+   "node": "6",
+   "input": "width"
+  },
+  "height": {
+   "node": "6",
+   "input": "height"
+  },
+  "negative": {
+   "node": "5",
+   "input": "text"
+  },
+  "seed": [
+   {
+    "node": "7",
+    "input": "seed"
+   }
+  ],
+  "steps": {
+   "node": "7",
+   "input": "steps"
+  },
+  "cfg": {
+   "node": "7",
+   "input": "cfg"
+  },
+  "model": {
+   "node": "1",
+   "input": "unet_name"
+  }
+ },
+ "outputs": {
+  "edit": {
+   "node": "9",
+   "input": "filename_prefix"
+  }
+ }
+}

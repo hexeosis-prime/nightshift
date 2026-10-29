@@ -7,26 +7,58 @@ Nightshift turns a song idea into a finished music video with open-weight models
 [ComfyUI](https://github.com/comfyanonymous/ComfyUI):
 
 - **MiniMax Music 3** writes and sings the song from a production brief and a lyric sheet
-- **Flux 2 Klein 9B** paints the first frames and keeps the characters' faces and wardrobe consistent from shot to shot
+- **Flux 2 Klein 9B** or **FLUX 3 Image Klein** paints the first frames and keeps the characters' faces and wardrobe consistent from shot to shot
 - **LTX 2.3** animates them: lip-sync to the song, first-to-last-frame camera moves, text-to-video establishing shots
 - **Python tools** fit the shot list to the song, score every take against the character sheets, cut on the beat, grade,
   and draw a lyric HUD that steers around faces
 
-An agent runs the pipeline over [MCP](https://modelcontextprotocol.io) (Claude, or any agent that speaks MCP, including one
+**Nightshift Studio** (`nightshift app`) puts all of it behind one page in your browser: a photo, a song, a scene, a format,
+then *Start the shift*. Or an agent runs the pipeline over [MCP](https://modelcontextprotocol.io) (Claude, or any agent that speaks MCP, including one
 running on a local model), and the GPU works through the night. Direct every pass, or let it make the calls and wake up to a
 finished video.
 
 The first video made with it, while the tools were being developed at the same time: **"What Do You Want?"** (2:49, 52 shots,
 nine passes), [posted October 28, 2026](https://x.com/hexeosis/status/2115545427290489287).
 
+Entered in Comfy's [Open Source Higgsfield](https://comfy.org/open-source-higgsfield/) challenge: see [CONTEST.md](CONTEST.md)
+for what was added for it and how it meets the rules. Everything renders locally on open-weight models; no partner nodes, no
+closed APIs, no agent required.
+
 ---
+
+## Nightshift Studio
+
+```bash
+nightshift app --comfy-dir C:/ComfyUI_windows_portable/ComfyUI      # or --comfy-url http://<gpu-box>:8188 for ComfyUI elsewhere
+```
+
+opens `http://127.0.0.1:8189` with four questions:
+
+1. **Who's in it**: a photo (yourself, or someone who agreed) and/or a few words: look, outfit. The character sheet is
+   made from the photo, or from the words.
+2. **The song**: MiniMax Music 3 writes and sings it from a vibe and your lyrics, or upload your own track (it's trimmed to
+   the length; paste its lyrics for lip-sync, or leave them out for an instrumental).
+3. **Where**: a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn), a look plus three places that the shot
+   list moves the performer through.
+4. **Format**: short (30-40 s, 8 shots, about an hour on a 3090) or medium (60-75 s, 14 shots), 9:16 or 16:9, Flux 2 Klein or
+   FLUX 3 Klein, and *Director* (stop at every checkpoint) or *Hands-off* (approve the look, then it runs to the end).
+
+The pass then runs on your ComfyUI. The page shows each step, the jobs, a wall of the latest renders and the log, and stops
+at the checkpoints: pick the character sheet, pick the song, look over the first frames and takes, watch the pass.
+Projects land in ComfyUI's `output/nightshift/`, so renders appear in place. Each one is an ordinary Nightshift project
+that the CLI and the MCP server can open too. The same form from the command line:
+
+```bash
+nightshift new my-video --scene desert-highway --aspect 9:16 --image-model flux3 --who man \
+  --look "early thirties, short dark curly hair" --outfit "a rust corduroy jacket, white t-shirt" --photo me.jpg
+```
 
 ## What you need
 
 | | |
 |---|---|
 | GPU | NVIDIA with 24 GB VRAM. Built and tested on an RTX 3090. LTX 2.3 (22B, quantized) uses most of it, so nothing else should share the card while a pass renders. |
-| ComfyUI | a recent build (LTX 2.3 and MiniMax Music 3 nodes are in core), plus the custom node packs and model files listed in [docs/workflows.md](docs/workflows.md) |
+| ComfyUI | a recent build (LTX 2.3 and MiniMax Music 3 nodes are in core; 0.41+ for FLUX 3 Klein), plus the custom node packs and model files listed in [docs/workflows.md](docs/workflows.md) |
 | Python | 3.10+ with `pip install -e .` (numpy, opencv, librosa, faster-whisper, mcp) |
 | ffmpeg | on the PATH (cutting, grading, review copies) |
 | Node 18+ | only for the lyric/HUD overlay (headless Chromium via playwright-core) |
@@ -42,11 +74,12 @@ git clone https://github.com/hexeosis-prime/nightshift
 cd nightshift
 pip install -e .
 python scripts/get_models.py                        # face detection + recognition models (~40 MB)
+python scripts/get_comfy_models.py --comfy-dir ~/ComfyUI   # the ComfyUI model files (~120 GB; --set core flux3 adds FLUX 3 Klein)
 (cd nightshift/overlay/web && npm install)          # only if you want the HUD overlay
 ```
 
-In ComfyUI: install the custom nodes and models from [docs/workflows.md](docs/workflows.md), open each file in `workflows/`
-once to check it loads, then:
+In ComfyUI: install the custom nodes and models from [docs/workflows.md](docs/workflows.md), then either open the app
+(`nightshift app --comfy-dir <your ComfyUI folder>`) or set up a project by hand:
 
 ```bash
 nightshift init ~/ComfyUI/output/nightshift/my-video --comfy-dir ~/ComfyUI
@@ -78,6 +111,15 @@ nightshift next-pass       # notes on the finished pass? fix, next pass, run aga
 
 nightshift run --yolo      # or: no stops after the character looks are approved (none at all with sheets.approve false)
 ```
+
+## Profiles
+
+`project.json` picks a preset for the pass and can still override any single setting:
+
+- `"profile"`: `full` (the first video: 121-frame clips, best-of-4 on complex shots, 4 song seeds) or `short` (97-frame clips,
+  one take, 2 song seeds, a 40 s song, no HUD)
+- `"aspect"`: `16:9` (1280×768 renders, 1920×1080 delivery) or `9:16` (768×1280 renders, 1080×1920 delivery)
+- `"image_model"`: `flux2` (Flux 2 Klein 9B) or `flux3` (FLUX 3 Image Klein for sheets, stills and identity edits)
 
 ## How a pass works
 
@@ -141,6 +183,7 @@ Swap in your own graph by exporting it and writing its map, or by titling its no
 | LTX 2.3 clip (2-8 s) | ~3-4 min typical, up to ~8.5 min for the longest first/last-frame shots |
 | MiniMax Music 3 song | up to ~30 min per seed |
 | one full pass, ~50 shots, best-of-4 on the hard ones | ~6.5-7 hours: one night |
+| one `short` pass from the app (8 shots, 40 s song, 2 song seeds) | about an hour |
 
 Everything runs locally; the cost is electricity and, if you use one, the agent's subscription. The first video was
 directed by hexeosis/Erik and orchestrated by Claude on a $20/month plan; the heaviest week reached about 85% of the plan's weekly
@@ -148,6 +191,7 @@ usage. In principle a self-hosted agent (Hermes, for example) can run the same l
 
 ## Docs
 
+- [CONTEST.md](CONTEST.md): the Open Source Higgsfield entry, rules and prize categories
 - [docs/pipeline.md](docs/pipeline.md): the pass step by step, files, commands
 - [docs/shots.md](docs/shots.md): every shot field and what it does
 - [docs/techniques.md](docs/techniques.md): the craft that made the difference (rescue first/last-frame, self-consistent last frames, relighting, whip-pan arrivals, fly-overs, best-of-N)
@@ -167,7 +211,7 @@ usage. In principle a self-hosted agent (Hermes, for example) can run the same l
 Made by Erik (hexeosis) and Claude: [hexeosis.com](https://hexeosis.com) · [erikbuth.com](https://erikbuth.com).
 The prompting guides are by Zero (HEXEBOTZERO), an OpenClaw agent at hexeosis inc., with Gemini Argon (MiniMax Music 3)
 and Erik (LTX 2.3), reviewed and edited by Claude Opus 5.5.
-Models by Black Forest Labs (Flux 2), Lightricks (LTX 2.3) and MiniMax (Music 3); ComfyUI and the custom node authors listed
+Models by Black Forest Labs (Flux 2, FLUX 3), Lightricks (LTX 2.3) and MiniMax (Music 3); ComfyUI and the custom node authors listed
 in docs/workflows.md made the graphs possible.
 
 Code: Apache License 2.0, copyright 2026 hexeosis inc. (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). The models are not

@@ -77,7 +77,15 @@
     "input": "noise_seed",
     "offset": 2
    }
-  ]
+  ],
+  "width": {
+   "node": "5013:5167",
+   "input": "value"
+  },
+  "height": {
+   "node": "5013:5168",
+   "input": "value"
+  }
  },
  "outputs": {
   "video": {

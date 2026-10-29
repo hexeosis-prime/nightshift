@@ -17,6 +17,18 @@ you can point any job at your own graph.
 | `t2v` | `vid_ltx_t2v` | LTX 2.3 text to video |
 | `song` | `song_minimax_m3` | MiniMax Music 3 text to song |
 
+With `"image_model": "flux3"` in `project.json` (the FLUX 3 Klein button in the app) these jobs switch to FLUX 3 Image Klein
+graphs, all core ComfyUI nodes (0.41+), no custom node packs:
+
+| job | file | what it does |
+|---|---|---|
+| `still` | `still_flux3` | text to image from one caption the builder writes (shot, person, outfit, action, setting, the world's `style`) |
+| `sheet_text` / `sheet_image` | `sheet_from_text_flux3` / `sheet_from_image_flux3` | the same three-view character sheet, from the description or from a picture |
+| `edit2` / `edit3` | `edit_flux3_2image` / `edit_flux3_3image` | multi-reference edits through `Set Reference Multi Latent`; prompts written for Flux 2's "[reference_image2]" / "image 2" are rewritten to `<ref_image_1>` automatically |
+
+They load the step-distilled int8 checkpoint (16 steps, cfg 1). For the 50-step base checkpoint set the roles `model`,
+`steps` and `cfg` (e.g. in a project-level copy of the graph, or by editing the defaults in the `.json`).
+
 Video-to-video and an image glitch utility were tried during the first video and left out for now (see ROADMAP.md).
 
 ## Custom nodes
@@ -42,8 +54,10 @@ A recent ComfyUI has the LTX 2.3, MiniMax Music 3, seed and switch nodes in core
 
 ## Model files
 
-File names as the graphs load them (`nightshift workflows --models` prints this from the graphs themselves). ComfyUI Manager's
-model search or Hugging Face finds most of them by name.
+File names as the graphs load them (`nightshift workflows --models` prints this from the graphs themselves).
+`python scripts/get_comfy_models.py --comfy-dir <ComfyUI>` downloads every missing one into the right `models/` folder
+(`--set core flux3` adds FLUX 3 Klein; `--list` prints the files with their Hugging Face links). Black Forest Labs' repos are
+gated: accept the license on Hugging Face and set `HF_TOKEN` first. Any copy with the same file name works.
 
 **Flux 2 Klein 9B** (stills, edits): `flux-2-klein-base-9b-fp8.safetensors` (diffusion model), `qwen_3_8b_fp8mixed.safetensors`
 (text encoder), `full_encoder_small_decoder.safetensors` (VAE); still graph also `lenovo_flux_klein9b.safetensors` (LoRA).
@@ -58,6 +72,11 @@ model search or Hugging Face finds most of them by name.
   `LTX2.3_Crisp_Enhance.safetensors`, `LTX2.3_Soft_Enhance.safetensors`, `LTX-2.3-OmniNFT-RL-Lora_bf16.safetensors`,
   `ltx-2-19b-ic-lora-detailer.safetensors`
 - `MelBandRoformer_fp32.safetensors` (vocal separation for lip-sync)
+
+**FLUX 3 Image Klein** (optional, `image_model: flux3`), from
+[black-forest-labs/flux-3-image-klein-comfy](https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy) (gated: accept the
+license first): `diffusion_models/flux3-image-klein-int8-convrot.safetensors` (or `flux3-image-klein-base-int8-convrot.safetensors`),
+`text_encoders/qwen3vl_4b_int8_convrot.safetensors`, `vae/flux2-vae.safetensors`.
 
 **MiniMax Music 3** (song): `minimax_music3_dit_fp16.safetensors`, `minimax_music3_text_encoder_pruned_int8_convrot.safetensors`,
 `minimax_music3_dav.safetensors`.
@@ -91,9 +110,9 @@ model search or Hugging Face finds most of them by name.
 
 **Roles the builder uses**, by job: `still`: `person outfit action location female_count male_count switch.<name> long_edge short_edge
 vertical seed negative` (or just `prompt seed negative` for a plain text-to-image graph); `sheet_text`: `description negative seed`; `sheet_image`: `image1 prompt seed`; `edit2`/`edit3`: `image1 image2 [image3] prompt
-seed`; `ff`: `image prompt negative frames seed`; `fflf`: `image last_image prompt negative seconds audio audio_start
-audio_end audio_seconds first_strength last_strength arrive_frame seed`; `lipsync`: `image prompt negative audio audio_start
-audio_seconds seed`; `t2v`: `prompt negative frames width height seed`; `song`: `caption lyrics max_seconds seed`.
+width height seed`; `ff`: `image prompt negative frames width height seed`; `fflf`: `image last_image prompt negative seconds audio audio_start
+audio_end audio_seconds first_strength last_strength arrive_frame width height seed`; `lipsync`: `image prompt negative audio audio_start
+audio_seconds width height long_edge seed`; `t2v`: `prompt negative frames width height seed`; `song`: `caption lyrics max_seconds seed`.
 
 **No map?** Title the nodes in ComfyUI `ns:prompt`, `ns:seed`, `ns:image`, `ns:output:video` ... and the roles are found by
 title. **Using your own graph:** Workflow menu > Export (API), save it as `workflows/<name>.json` (or in the project's own

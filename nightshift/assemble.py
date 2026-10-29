@@ -56,6 +56,8 @@ class Cut:
         self.cw, self.ch = c.get("crop", [1280, 720])
         cy = c.get("crop_y")
         self.cy = (self.H - self.ch) // 2 if cy is None else int(cy)
+        cx = c.get("crop_x")
+        self.cx = (self.W - self.cw) // 2 if cx is None else int(cx)
         self.final = c.get("final_size", [1920, 1080])
         self.song = self.P(c["song"])
         self.start = float(c.get("start", 0.0))
@@ -86,7 +88,7 @@ class Cut:
 
     def vf(self):
         return (f"fps={self.fps},scale={self.W}:{self.H}:force_original_aspect_ratio=increase,crop={self.W}:{self.H},setsar=1,"
-                f"crop={self.cw}:{self.ch}:0:{self.cy}" + (f",scale={self.final[0]}:{self.final[1]}:flags=lanczos" if self.final else "")
+                f"crop={self.cw}:{self.ch}:{self.cx}:{self.cy}" + (f",scale={self.final[0]}:{self.final[1]}:flags=lanczos" if self.final else "")
                 + ",format=yuv420p")
 
     def segname(self, i, s, n):

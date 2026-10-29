@@ -1,0 +1,44 @@
+{
+ "workflow": "sheet_from_image_flux3.json",
+ "kind": "sheet_image",
+ "description": "FLUX 3 Image Klein character sheet made from a picture of the character.",
+ "ref_syntax": "flux3",
+ "roles": {
+  "image1": {
+   "node": "10",
+   "input": "image"
+  },
+  "prompt": {
+   "node": "4",
+   "input": "text"
+  },
+  "negative": {
+   "node": "5",
+   "input": "text"
+  },
+  "seed": [
+   {
+    "node": "7",
+    "input": "seed"
+   }
+  ],
+  "steps": {
+   "node": "7",
+   "input": "steps"
+  },
+  "cfg": {
+   "node": "7",
+   "input": "cfg"
+  },
+  "model": {
+   "node": "1",
+   "input": "unet_name"
+  }
+ },
+ "outputs": {
+  "sheet": {
+   "node": "9",
+   "input": "filename_prefix"
+  }
+ }
+}

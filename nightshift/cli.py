@@ -294,6 +294,25 @@ def cmd_next_pass(a):
     _show(pipeline.new_pass(_p(a)))
 
 
+def cmd_app(a):
+    from . import app
+    comfy_dir = os.path.abspath(os.path.expanduser(a.comfy_dir)) if a.comfy_dir else None
+    root = a.root or (os.path.join(comfy_dir, "output", "nightshift") if comfy_dir else os.path.join(os.path.expanduser("~"), "nightshift-projects"))
+    app.serve(root, a.comfy_url, comfy_dir, a.host, a.port, not a.no_browser)
+
+
+def cmd_new(a):
+    from . import studio
+    form = {"name": a.name or os.path.basename(os.path.abspath(a.dir)), "length": a.length, "aspect": a.aspect,
+            "image_model": a.image_model, "scene": a.scene, "mode": a.mode, "comfy_url": a.comfy_url, "comfy_dir": a.comfy_dir,
+            "character": {"noun": a.who, "look": a.look, "outfit": a.outfit, "photo": a.photo},
+            "song": {"source": "upload" if a.track else "generate", "vibe": a.vibe, "audio": a.track, "start": a.track_start,
+                     "lyrics": open(a.lyrics, encoding="utf-8").read() if a.lyrics else None}}
+    p = studio.create(a.dir, form)
+    print(f"project '{p.name}' at {p.root}: {p.cfg['length']}, {p.cfg['aspect']}, {p.cfg['image_model']}, scene {p.cfg['scene']}")
+    print("next: nightshift doctor, then nightshift run (or nightshift app)")
+
+
 def cmd_mcp(a):
     from . import mcp_server
     mcp_server.main(a.http, a.host, a.port, a.project_root)
@@ -371,6 +390,23 @@ def main(argv=None):
     s.add_argument("--from", dest="start"); s.add_argument("--until"); s.add_argument("--yolo", action="store_true"); s.set_defaults(f=cmd_run)
     s = sub.add_parser("continue", help="approve the checkpoint and carry on"); s.add_argument("--notes"); s.add_argument("--no-run", action="store_true"); s.set_defaults(f=cmd_continue)
     s = sub.add_parser("next-pass", help="start pass N+1 (keeps renders and picks)"); s.set_defaults(f=cmd_next_pass)
+
+    s = sub.add_parser("app", help="Nightshift Studio: the app in your browser (make a video from a photo, a song and a scene)")
+    s.add_argument("--root", help="folder for projects (default: <comfy-dir>/output/nightshift, or ~/nightshift-projects)")
+    s.add_argument("--comfy-url", default="http://127.0.0.1:8188"); s.add_argument("--comfy-dir", help="your ComfyUI folder, when it runs on this machine")
+    s.add_argument("--host", default="127.0.0.1"); s.add_argument("--port", type=int, default=8189); s.add_argument("--no-browser", action="store_true")
+    s.set_defaults(f=cmd_app)
+
+    from .studio import SCENES, LENGTHS
+    s = sub.add_parser("new", help="new project from a scene preset (what the app's form does)")
+    s.add_argument("dir"); s.add_argument("--name"); s.add_argument("--scene", choices=list(SCENES), default="night-avenue")
+    s.add_argument("--length", choices=list(LENGTHS), default="short"); s.add_argument("--aspect", choices=["16:9", "9:16"], default="16:9")
+    s.add_argument("--image-model", choices=["flux2", "flux3"], default="flux2"); s.add_argument("--mode", choices=["director", "yolo"], default="director")
+    s.add_argument("--who", choices=["woman", "man", "person"], default="woman"); s.add_argument("--look"); s.add_argument("--outfit")
+    s.add_argument("--photo", help="a picture of the performer (yourself, or someone who agreed)")
+    s.add_argument("--vibe", help="extra words for the song brief"); s.add_argument("--lyrics", help="lyrics file with [Section] tags")
+    s.add_argument("--track", help="your own song instead of MiniMax Music 3"); s.add_argument("--track-start", type=float, default=0.0)
+    s.add_argument("--comfy-url"); s.add_argument("--comfy-dir"); s.set_defaults(f=cmd_new)
 
     s = sub.add_parser("mcp", help="MCP server for agents (stdio, or --http for agents on another machine)")
     s.add_argument("--http", action="store_true"); s.add_argument("--host", default="127.0.0.1"); s.add_argument("--port", type=int, default=8765)

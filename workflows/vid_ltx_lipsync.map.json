@@ -32,7 +32,19 @@
     "node": "32",
     "input": "noise_seed"
    }
-  ]
+  ],
+  "width": {
+   "node": "33",
+   "input": "resize_type.width"
+  },
+  "height": {
+   "node": "33",
+   "input": "resize_type.height"
+  },
+  "long_edge": {
+   "node": "30",
+   "input": "longer_edge"
+  }
  },
  "outputs": {
   "video": {

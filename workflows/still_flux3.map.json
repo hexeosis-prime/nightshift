@@ -1,0 +1,48 @@
+{
+ "workflow": "still_flux3.json",
+ "kind": "still",
+ "description": "FLUX 3 Image Klein text to image (open weights, native ComfyUI 0.41+). One caption prompt; the builder writes it from canon.json and the shot. Distilled int8 by default (16 steps, cfg 1); set roles model/steps/cfg for the base checkpoint.",
+ "prompt_style": "caption",
+ "roles": {
+  "prompt": {
+   "node": "4",
+   "input": "text"
+  },
+  "width": {
+   "node": "6",
+   "input": "width"
+  },
+  "height": {
+   "node": "6",
+   "input": "height"
+  },
+  "negative": {
+   "node": "5",
+   "input": "text"
+  },
+  "seed": [
+   {
+    "node": "7",
+    "input": "seed"
+   }
+  ],
+  "steps": {
+   "node": "7",
+   "input": "steps"
+  },
+  "cfg": {
+   "node": "7",
+   "input": "cfg"
+  },
+  "model": {
+   "node": "1",
+   "input": "unet_name"
+  }
+ },
+ "outputs": {
+  "flux": {
+   "node": "9",
+   "input": "filename_prefix"
+  }
+ }
+}
