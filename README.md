@@ -78,6 +78,10 @@ python scripts/get_comfy_models.py --comfy-dir ~/ComfyUI   # the ComfyUI model f
 (cd nightshift/overlay/web && npm install)          # only if you want the HUD overlay
 ```
 
+**Windows:** double-click `setup_windows.bat` (a private Python in `.venv` via uv or your Python, the face and speech
+models, ffmpeg through winget if it's missing; ComfyUI's own Python is never touched), then `studio.bat` opens the app. Put
+your ComfyUI folder in `studio.local.bat` (`set "COMFY_DIR=C:\ComfyUI_windows_portable\ComfyUI"`) so renders land in place.
+
 In ComfyUI: install the custom nodes and models from [docs/workflows.md](docs/workflows.md), then either open the app
 (`nightshift app --comfy-dir <your ComfyUI folder>`) or set up a project by hand:
 
@@ -117,7 +121,7 @@ nightshift run --yolo      # or: no stops after the character looks are approved
 `project.json` picks a preset for the pass and can still override any single setting:
 
 - `"profile"`: `full` (the first video: 121-frame clips, best-of-4 on complex shots, 4 song seeds) or `short` (97-frame clips,
-  one take, 2 song seeds, a 40 s song, no HUD)
+  one take, 4 song seeds, a 40 s song, no HUD)
 - `"aspect"`: `16:9` (1280×768 renders, 1920×1080 delivery) or `9:16` (768×1280 renders, 1080×1920 delivery)
 - `"image_model"`: `flux2` (Flux 2 Klein 9B) or `flux3` (FLUX 3 Image Klein for sheets, stills and identity edits)
 
@@ -183,7 +187,7 @@ Swap in your own graph by exporting it and writing its map, or by titling its no
 | LTX 2.3 clip (2-8 s) | ~3-4 min typical, up to ~8.5 min for the longest first/last-frame shots |
 | MiniMax Music 3 song | up to ~30 min per seed |
 | one full pass, ~50 shots, best-of-4 on the hard ones | ~6.5-7 hours: one night |
-| one `short` pass from the app (8 shots, 40 s song, 2 song seeds) | about an hour |
+| one `short` pass from the app (8 shots, 40 s song, 4 song seeds) | about an hour |
 
 Everything runs locally; the cost is electricity and, if you use one, the agent's subscription. The first video was
 directed by hexeosis/Erik and orchestrated by Claude on a $20/month plan; the heaviest week reached about 85% of the plan's weekly

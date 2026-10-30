@@ -54,7 +54,7 @@ Director mode stops at each checkpoint in the app so you can choose. Hands-off m
 
 | | `full` (the first video) | `short` (the app default) | `short`, medium length |
 |---|---|---|---|
-| song | 2-3 min, 4 seeds | 40 s, 2 seeds | 75 s, 2 seeds |
+| song | 2-3 min, 4 seeds | 40 s, 4 seeds | 75 s, 4 seeds |
 | shots | ~50, hand-written | 8, from a scene preset | 14, from a scene preset |
 | takes | best-of-4 on complex shots | 1 | 1 |
 | RTX 3090 | ~6.5-7 hours | about an hour | about two hours |

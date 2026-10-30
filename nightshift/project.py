@@ -58,7 +58,7 @@ PROFILES = {
         "video_frames": 97,
         "takes": {"default": 1, "complex": 1},
         "sheets": {"candidates": 2},
-        "song_seeds": [101, 202],
+        "song_seeds": [101, 202, 303, 404],         # a 40 s song renders in about a minute: take the best of four
         "song_max_seconds": 40,
         "timeline": {"min_seconds": 1.5, "max_seconds": 6.0, "max_fit_seconds": 8.0},
         "yolo_variants": False,
