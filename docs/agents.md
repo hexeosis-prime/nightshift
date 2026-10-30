@@ -65,7 +65,8 @@ change anything else", don't.
 ## Yolo mode
 
 `pipeline_run(yolo=true)` or `"mode": "yolo"` in `project.json`. Character sheets are made from the written descriptions
-(the text graph), and the run stops once for the human to approve the looks unless `sheets.approve` is false. After that,
+(the text graph), and the run stops once for the human to approve the looks unless `sheets.approve` is false (projects made in Studio
+or with `create_from_plan` set it false, so hands-off never pauses). After that,
 no checkpoints: the song with the best lyric coverage, the
 identity edit with the best face match (seed x wording grid), the best-scoring take per shot. A good yolo agent still
 checks its own work between steps: `cut_report` for identity drift, takes sheets for extra limbs and text, and re-rolls what

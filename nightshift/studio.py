@@ -412,7 +412,8 @@ def create(root, form):
         "scene": scene, "song_max_seconds": length["seconds"],
         "grade": {"look": form.get("grade") if form.get("grade") in GRADES else sc["grade"], "lifts": []},
         "overlay": overlay_cfg(lyrics, form.get("name"), form.get("overlay"), form.get("aspect") or "16:9"),
-        "sheets": {"approve": form.get("approve_looks", True) is not False, "yolo_source": "image" if photo else "text"},
+        "sheets": {"approve": form.get("approve_looks", False) is True,   # hands-off never pauses; director mode stops for the look anyway
+                   "yolo_source": "image" if photo else "text"},
     })
     if upload:
         src = song["audio"]

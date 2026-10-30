@@ -267,7 +267,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
           <div class="num">01</div>
           <div>
             <h3>Who's in it</h3>
-            <p class="hint">A photo makes the character sheet from the picture; without one it's built from your description. You approve the look before anything else renders.</p>
+            <p class="hint">A photo makes the character sheet from the picture; without one it's built from your description. In director mode you approve the look before anything else renders.</p>
             <div class="row">
               <label class="drop" id="photoDrop"><input type="file" accept="image/*" id="photo" hidden>
                 <span id="photoHint">Drop a photo<br>or click<br><small>(optional)</small></span><img id="photoImg" class="hide" alt="">
@@ -370,7 +370,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
               <div class="dir on" data-v="director"><b>Director mode: I check in</b>
                 <span>Nightshift stops at checkpoints (the song takes, the first frames, the video takes, the finished pass), shows you what it made, and waits for your picks and notes before it goes on.</span></div>
               <div class="dir" data-v="yolo"><b>Hands-off mode: run to the end</b>
-                <span><span id="yoloStops">Never pauses for feedback.</span> You get a complete video, and some shots may look wrong to a human eye. Watch it, then run a second pass or keep the weirdness: that call is yours.</span></div>
+                <span>Never pauses for feedback, not even for the character's look. You get a complete video, and some shots may look wrong to a human eye. Watch it, then run a second pass or keep the weirdness: that call is yours.</span></div>
             </div>
           </div>
         </div>
@@ -392,7 +392,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
         <div class="card how" style="margin-top:16px">
           <span class="label">What happens</span>
           <ol>
-            <li><b>Character sheet</b> first: front, back, face. You pick it.</li>
+            <li><b>Character sheet</b> first: front, back, face. In director mode you pick it.</li>
             <li><b>Song</b>, then beats and lyric timing, so every shot lands on a line.</li>
             <li><b>First frames</b>, then an identity edit from the sheet, so it's the same face in every shot.</li>
             <li><b>LTX 2.3</b> animates each shot: lip-sync, camera moves, an establishing shot.</li>
@@ -528,7 +528,7 @@ function tabUi(){
   $("fmtNum").textContent = ag ? "02" : "04"; $("dirNum").textContent = ag ? "03" : "05";
   $("fmtTitle").textContent = ag ? "Format" : "Format and look";
   $("lookRow").classList.toggle("hide", ag);
-  $("yoloStops").textContent = ag ? "Never pauses for feedback." : "Pauses once, so you can approve the character's look, then never again."; $("agentLook").classList.toggle("hide", !ag);
+  $("agentLook").classList.toggle("hide", !ag);
   $("goBtn").textContent = ag ? "Plan it" : "Start the shift";
   $("handBtn").classList.toggle("hide", !ag);
   $("planBox").classList.add("hide"); $("goErr").textContent = "";

@@ -44,7 +44,7 @@ opens `http://127.0.0.1:8189`. **Interactive Mode** asks five things:
 4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full, 9:16 or
    16:9, a colour grade, and the animated lyric HUD (16:9).
 5. **How much you're involved**: *Director mode* stops at each checkpoint and waits for your picks and notes. *Hands-off
-   mode* stops once to approve the character's look, then runs to the end.
+   mode* never pauses, not even for the character's look: it runs to the end.
 
 **About hands-off mode:** it always makes a complete video, and there is a good chance some shots come out wrong to a human
 eye: a hand with too many fingers, a face that drifts, a stray word painted on a wall. Nightshift catches some of this
