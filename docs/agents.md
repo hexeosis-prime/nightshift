@@ -32,6 +32,12 @@ model) and let it drive the GPU box over the network.
 | jobs | `build_jobs`, `make_takes`, `identity_variants`, `edit_image`, `submit_jobs`, `watch_jobs`, `queue_status`, `cancel_jobs`, `comfy_health`, `workflows_list` |
 | review | `rank_images`, `rank_takes`, `takes_sheet`, `cut_report`, `pick_take` |
 | finishing | `assemble_cut`, `overlay_build`, `finish_video`, `review_copy` |
+| plans | `plan_format` (the plan JSON shape and rules), `create_from_plan` (a whole project from a plan: lyrics, song brief, cast, worlds, shots) |
+
+`read_doc` returns the file's raw text (JSON files included: parse it yourself), and `write_doc` replaces the whole file, so
+read, change, write back. In `project.json` the project's name is `"name"`; keys starting with `_` are notes. To make a video
+from an idea: `plan_format` → write the plan with your own model → `create_from_plan` → `pipeline_run` → poll
+`pipeline_status`. In yolo mode nothing waits for a human; in director mode call `pipeline_continue` when the human approves.
 
 Long steps (a pass, song analysis, assembly, overlay, finishing) return a task id immediately; `task_status` shows the log.
 `view_image` hands contact sheets, stills and video frames to agents that can see.
