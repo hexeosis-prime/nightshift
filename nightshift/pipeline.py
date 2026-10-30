@@ -51,7 +51,10 @@ def _watch(project, on_event):
 
 
 def state(project):
-    return project.load("state.json", {"pass": 1, "done": [], "waiting": None, "history": []})
+    st = project.load("state.json", None) or {}
+    for k, v in (("pass", 1), ("done", []), ("waiting", None), ("history", [])):
+        st.setdefault(k, v)        # a state.json written by hand or by an older run may lack any of these
+    return st
 
 
 def save_state(project, st):
