@@ -48,34 +48,39 @@ def _frames(clip, n):
 
 
 def text_lines(frame):
-    """Subtitle-like text boxes in one frame: [(x, y, w, h)] in 0-1 frame units."""
+    """Text in one frame that looks burned in: {"sub": [...], "big": [...]} boxes (x, y, w, h) in 0-1 frame units.
+    sub: a subtitle line (wide, short, across the middle, below the top third).
+    big: title-size letters (LTX sometimes paints giant garbled words), word-shaped: at least twice as wide as tall."""
     import cv2
     H, W = frame.shape[:2]
     boxes, conf = _detector().detect(frame)
-    out = []
+    out = {"sub": [], "big": []}
     for b in boxes:
-        pts = np.array(b, dtype=np.float32)
-        x, y, w, h = cv2.boundingRect(pts)
-        if w < 0.18 * W or w < 3.0 * h or h < 0.015 * H:      # a line of words: wide, short, not a speck
-            continue
+        x, y, w, h = cv2.boundingRect(np.array(b, dtype=np.float32))
+        box = (round(x / W, 3), round(y / H, 3), round(w / W, 3), round(h / H, 3))
         cx, cy = (x + w / 2) / W, (y + h / 2) / H
-        if not 0.15 < cx < 0.85 or cy < 0.3:                  # subtitles sit across the middle and low, not at an edge or the top
-            continue
-        out.append((round(x / W, 3), round(y / H, 3), round(w / W, 3), round(h / H, 3)))
+        if w >= 0.18 * W and w >= 3.0 * h and h >= 0.015 * H and 0.15 < cx < 0.85 and cy >= 0.3:
+            out["sub"].append(box)
+        elif h >= 0.1 * H and w >= 0.15 * W and w >= 2.0 * h:
+            out["big"].append(box)
     return out
 
 
-def burned_text(clip, n=6, min_frames=2):
-    """{"text": bool, "frames": k of n frames with a subtitle-like line, "boxes": [...]}"""
+def burned_text(clip, n=6, min_frames=2, min_big_frames=4):
+    """{"text": bool, "frames": k of n frames with subtitle-like text, "big": k with giant words, "boxes": [...]}
+    A subtitle on 2 of 6 sampled frames, or giant words on 4 of 6 (they persist; a window or a poster that merely looks
+    text-like rarely does), flags the take."""
     if not available():
         return {"text": False, "frames": 0, "boxes": [], "skipped": "no text_det.onnx (python scripts/get_models.py)"}
-    hits, boxes = 0, []
+    subs = bigs = 0
+    boxes = []
     for fr in _frames(clip, n):
-        b = text_lines(fr)
-        if b:
-            hits += 1
-            boxes.append(b)
-    return {"text": hits >= min_frames, "frames": hits, "of": n, "boxes": boxes[:3]}
+        t = text_lines(fr)
+        subs += bool(t["sub"])
+        bigs += bool(t["big"])
+        if t["sub"] or t["big"]:
+            boxes.append(t["sub"] + t["big"])
+    return {"text": subs >= min_frames or bigs >= min_big_frames, "frames": subs, "big": bigs, "of": n, "boxes": boxes[:3]}
 
 
 def flagged(project):
