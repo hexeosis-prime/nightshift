@@ -25,7 +25,9 @@ function candidates() {      // any Chromium a Playwright install left behind, t
         out.push(resolve(r, d, exe));
   }
   return out.concat(["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome",
-                     "C:/Program Files/Google/Chrome/Application/chrome.exe", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]);
+                     "C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+                     "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
+                     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]);
 }
 let browser;
 try { browser = await chromium.launch(opts); }
