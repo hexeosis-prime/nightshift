@@ -22,7 +22,7 @@ from . import build as B
 from . import comfy as C
 from .project import Project
 
-STEPS = ["sheets", "song", "analyze", "timeline", "stills", "sheetedits", "videos", "pick", "cut", "overlay", "finish"]
+STEPS = ["sheets", "song", "analyze", "timeline", "stills", "sheetedits", "videos", "check", "pick", "cut", "overlay", "finish"]
 CHECKPOINTS = {"song": "song_pick", "sheetedits": "stills_review", "pick": "takes_review", "finish": "pass_review"}
 LOOKS = ("sheets_review", "outfits_review")      # character looks: approved once, kept across passes
 
@@ -256,6 +256,48 @@ def step_videos(project, st, on_event):
     return jobs
 
 
+def step_check(project, st, on_event):
+    """Burned-in text: every take is checked before the cut; a shot with no clean take gets a new take with a new seed
+    (project.json qc.retakes, default 2). Flagged takes are never cut in while a clean one exists."""
+    from . import qc
+    from . import takes as T
+    if not project.cfg.get("qc", {}).get("text", True):
+        return []
+    if not qc.available():
+        on_event("WARN text check skipped: models/text_det.onnx missing (python scripts/get_models.py)")
+        return []
+    res = project.load("review/qc.json", {}) or {}
+    retakes = int(project.cfg.get("qc", {}).get("retakes", 2))
+    b = B.Builder(project)
+    for rnd in range(retakes + 1):
+        bad = []
+        for s in b.shots:
+            if s.get("dropped") or s["mode"] not in ("ff", "fflf", "lipsync", "t2v"):
+                continue
+            clips = project.renders("clips", f"{s['id']}_*.mp4")
+            for c in clips:
+                k = os.path.basename(c)
+                if k not in res:
+                    res[k] = qc.burned_text(c)
+                    if res[k]["text"]:
+                        on_event(f"text check: burned-in text in {k}")
+            if clips and all(res[os.path.basename(c)]["text"] for c in clips):
+                bad.append(s)
+        project.save("review/qc.json", res)
+        if not bad or rnd == retakes:
+            break
+        on_event(f"text check: new take for {', '.join(s['id'] for s in bad)}")
+        jobs = []
+        for s in bad:
+            jp = project.path("jobs", f"{s['id']}_video.json")
+            if os.path.exists(jp):
+                jobs += T.takes(project, jp, 1, base_seed=int(s["seed"]) + 7000 + 1000 * rnd, tag=f"q{rnd}")
+        _run_jobs(project, jobs, on_event)
+    if bad:
+        on_event(f"WARN text still burned into {', '.join(s['id'] for s in bad)} after {retakes} new take(s): look at them in the takes review")
+    return []
+
+
 def step_pick(project, st, on_event):
     from . import review, score, timeline
     if not os.path.exists(project.path("cut.json")):
@@ -274,16 +316,20 @@ def step_pick(project, st, on_event):
         clips = project.renders("clips", f"{c['id']}_*.mp4")
         if not clips:
             continue
+        from .qc import flagged
+        bad = flagged(project)
+        clean = [f for f in clips if os.path.basename(f) not in bad] or clips
         seen = f"{len(clips)}:{os.path.basename(clips[-1])}"
         if c.get("src") and c.get("takes_seen") == seen and os.path.exists(project.path(c["src"])):
             continue                     # same takes as last time: keep the pick
         c["takes_seen"] = seen
-        if s.get("chars") and len(clips) > 1:
-            ranked = score.rank_takes(project, c["id"])
+        if s.get("chars") and len(clean) > 1:
+            keep = {project.rel(f) for f in clean}
+            ranked = [r for r in score.rank_takes(project, c["id"]) if r["file"] in keep]
             c["src"] = ranked[0]["file"]
             c["score"] = ranked[0]["face"]
         else:
-            c["src"] = project.rel(clips[-1])
+            c["src"] = project.rel(clean[-1])
         if len(clips) > 1 and project.cfg.get("mode") != "yolo":
             packet.append(project.rel(review.takes_sheet(project, c["id"])))
     if json.dumps(cut, sort_keys=True) != before:     # untouched cut keeps its mtime, so cut/finish can skip
@@ -360,7 +406,7 @@ def step_finish(project, st, on_event):
 
 
 FUNCS = {"sheets": step_sheets, "song": step_song, "analyze": step_analyze, "timeline": step_timeline, "stills": step_stills,
-         "sheetedits": step_sheetedits, "videos": step_videos, "pick": step_pick, "cut": step_cut,
+         "sheetedits": step_sheetedits, "videos": step_videos, "check": step_check, "pick": step_pick, "cut": step_cut,
          "overlay": step_overlay, "finish": step_finish}
 
 

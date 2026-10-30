@@ -58,8 +58,8 @@ def text_lines(frame):
         x, y, w, h = cv2.boundingRect(pts)
         if w < 0.18 * W or w < 3.0 * h or h < 0.015 * H:      # a line of words: wide, short, not a speck
             continue
-        cx = (x + w / 2) / W
-        if not 0.15 < cx < 0.85:                              # subtitles sit across the middle, not at an edge
+        cx, cy = (x + w / 2) / W, (y + h / 2) / H
+        if not 0.15 < cx < 0.85 or cy < 0.3:                  # subtitles sit across the middle and low, not at an edge or the top
             continue
         out.append((round(x / W, 3), round(y / H, 3), round(w / W, 3), round(h / H, 3)))
     return out
@@ -76,3 +76,8 @@ def burned_text(clip, n=6, min_frames=2):
             hits += 1
             boxes.append(b)
     return {"text": hits >= min_frames, "frames": hits, "of": n, "boxes": boxes[:3]}
+
+
+def flagged(project):
+    """Clip file names the check found burned-in text in."""
+    return {k for k, v in (project.load("review/qc.json", {}) or {}).items() if v.get("text")}
