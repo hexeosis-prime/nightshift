@@ -312,6 +312,10 @@ def step_overlay(project, st, on_event):
     from . import overlay as O
     if not project.cfg.get("overlay", {}).get("enabled"):
         return []
+    import shutil
+    if not (shutil.which("node") and shutil.which("npm")):
+        on_event("WARN lyric HUD skipped: Node.js (node + npm) not found; install it from nodejs.org to get the overlay")
+        return []
     pn = _pass_name(st)
     edl = project.path("out", f"{pn}_cut_edl.csv")
     O.track(project, on_event=on_event)
@@ -332,6 +336,8 @@ def step_finish(project, st, on_event):
     out = project.path("out", f"{pn}.mp4")
     fcfg, gcfg = project.cfg["finish"], project.cfg["grade"]
     ov = project.path("overlay", pn, "ov_%02d.webm") if project.cfg.get("overlay", {}).get("enabled") else None
+    if ov and not os.path.exists(ov % 0):
+        ov = None                                   # the HUD was skipped or failed: finish without it
     ht = fcfg.get("halftone")
     if ht == "auto":
         ht = project.path("overlay", "halftone.png")
