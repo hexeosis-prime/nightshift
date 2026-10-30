@@ -13,3 +13,6 @@ projects/*/
 *.webm
 *.mp3
 *.wav
+
+# projects made inside the repo folder
+runs/

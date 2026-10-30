@@ -274,10 +274,7 @@ def create(root, form):
         lyrics = DEFAULT_LYRICS if length["seconds"] < 60 else DEFAULT_LYRICS_LONG
     instrumental = upload and not lyric_lines(lyrics)
     p = P.init(root, form.get("name") or os.path.basename(root), form.get("comfy_url"), form.get("comfy_dir"),
-               mode=form.get("mode") or "director")
-    for junk in ("refs/README.md", "README.md"):          # the starter's notes describe its own example, not this video
-        if os.path.exists(p.path(junk)):
-            os.remove(p.path(junk))
+               mode=form.get("mode") or "director", skip=("refs/README.md", "README.md"))   # the starter's notes are about its own example
     ch = character(form.get("character") or {})
     photo = (form.get("character") or {}).get("photo")
     if photo:

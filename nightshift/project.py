@@ -265,7 +265,7 @@ class Project:
         return hits[-1]
 
 
-def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="director"):
+def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="director", skip=()):
     """Create a project folder from the starter template."""
     root = os.path.abspath(root)
     starter = template or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "projects", "starter"))
@@ -276,6 +276,8 @@ def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="d
         rel = os.path.relpath(dirpath, starter)
         os.makedirs(os.path.join(root, rel), exist_ok=True)
         for f in files:
+            if os.path.normpath(os.path.join(rel, f)).replace(os.sep, "/") in skip:
+                continue
             dst = os.path.join(root, rel, f)
             if not os.path.exists(dst):
                 shutil.copyfile(os.path.join(dirpath, f), dst)
