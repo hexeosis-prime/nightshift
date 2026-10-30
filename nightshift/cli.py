@@ -277,7 +277,7 @@ def cmd_run(a):
     p = _p(a)
     if a.yolo:
         p.cfg["mode"] = "yolo"
-    _show(pipeline.run(p, a.start, a.until))
+    _show(pipeline.run(p, a.start, a.until, seconds=a.seconds))
 
 
 def cmd_continue(a):
@@ -387,7 +387,8 @@ def main(argv=None):
     s.add_argument("--edl"); s.add_argument("--first", type=int, default=0); s.add_argument("--last", type=int); s.add_argument("--out"); s.set_defaults(f=cmd_overlay)
 
     s = sub.add_parser("run", help="run the pass (stops at checkpoints in director mode)")
-    s.add_argument("--from", dest="start"); s.add_argument("--until"); s.add_argument("--yolo", action="store_true"); s.set_defaults(f=cmd_run)
+    s.add_argument("--from", dest="start"); s.add_argument("--until"); s.add_argument("--yolo", action="store_true")
+    s.add_argument("--seconds", type=float, help="stop cleanly after about this long while jobs render (run again to carry on)"); s.set_defaults(f=cmd_run)
     s = sub.add_parser("continue", help="approve the checkpoint and carry on"); s.add_argument("--notes"); s.add_argument("--no-run", action="store_true"); s.set_defaults(f=cmd_continue)
     s = sub.add_parser("next-pass", help="start pass N+1 (keeps renders and picks)"); s.set_defaults(f=cmd_next_pass)
 

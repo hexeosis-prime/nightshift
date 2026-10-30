@@ -31,6 +31,25 @@ class Stop(Exception):
     pass
 
 
+class Paused(Exception):
+    """run(..., seconds=N) ran out of time while ComfyUI still has jobs: run again to carry on."""
+
+
+_DEADLINE = {}
+
+
+def _remaining(project):
+    d = _DEADLINE.get(project.root)
+    return None if d is None else max(1.0, d - time.time())
+
+
+def _watch(project, on_event):
+    res = C.watch(project, timeout_s=_remaining(project), on_event=on_event)
+    if res.get("open"):
+        raise Paused(f"{len(res['open'])} job(s) still rendering")
+    return res
+
+
 def state(project):
     return project.load("state.json", {"pass": 1, "done": [], "waiting": None, "history": []})
 
@@ -48,7 +67,7 @@ def _run_jobs(project, paths, on_event):
         return
     on_event(f"rendering {len(paths)} job(s)")
     C.submit(project, paths)
-    res = C.watch(project, on_event=on_event)
+    res = _watch(project, on_event)
     if res["failed"]:
         on_event(f"{len(res['failed'])} job(s) failed: " + "; ".join(f"{f['job']}: {f['error']}" for f in res["failed"][:5]))
 
@@ -339,11 +358,27 @@ FUNCS = {"sheets": step_sheets, "song": step_song, "analyze": step_analyze, "tim
          "overlay": step_overlay, "finish": step_finish}
 
 
-def run(project: Project, start=None, until=None, on_event=print):
+def run(project: Project, start=None, until=None, on_event=print, seconds=None):
+    """seconds: stop (cleanly, nothing lost) after about this long while ComfyUI is still rendering; run again to carry on."""
     st = state(project)
     if st.get("waiting"):
         on_event(f"waiting at checkpoint {st['waiting']['checkpoint']}: run `nightshift continue` (or approve) first")
         return st
+    if seconds:
+        _DEADLINE[project.root] = time.time() + seconds
+    try:
+        return _run(project, st, start, until, on_event)
+    except Paused as e:
+        on_event(f"paused: {e}; run again to carry on")
+        return state(project)
+    finally:
+        _DEADLINE.pop(project.root, None)
+
+
+def _run(project, st, start, until, on_event):
+    if any(j["status"] in ("queued", "running") for j in C.load_state(project)["jobs"]):
+        on_event("picking up jobs already queued on ComfyUI")       # a restarted run never queues the same work twice
+        _watch(project, on_event)
     steps = STEPS[STEPS.index(start):] if start else STEPS
     if until:
         steps = steps[:steps.index(until) + 1]
@@ -357,6 +392,9 @@ def run(project: Project, start=None, until=None, on_event=print):
             return state(project)
         st.setdefault("history", []).append({"step": name, "t": time.strftime("%Y-%m-%d %H:%M:%S")})
         save_state(project, st)
+    if until and until != STEPS[-1]:
+        on_event(f"stopped after {until}")
+        return st
     st["step"] = "done"
     save_state(project, st)
     on_event(f"{_pass_name(st)} done")
