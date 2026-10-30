@@ -254,8 +254,11 @@ class Project:
 
     # ---- renders on disk -------------------------------------------------------------------------------
     def renders(self, kind, pattern="*"):
-        """Rendered files in stills/, clips/ or songs/, oldest first; ignores LTX's separate -audio.mp4 files."""
-        hits = [p for p in glob.glob(self.path(kind, pattern)) if not p.endswith("-audio.mp4")]
+        """Rendered files in stills/, clips/ or songs/, oldest first. VideoHelperSuite may save a clip twice (x.mp4 and
+        x-audio.mp4): the -audio copy is used only when it is the only one (newer VHS builds save just that)."""
+        found = glob.glob(self.path(kind, pattern))
+        names = set(found)
+        hits = [p for p in found if not (p.endswith("-audio.mp4") and p[:-10] + ".mp4" in names)]
         return sorted(hits, key=os.path.getmtime)
 
     def latest_still(self, sid, model):
