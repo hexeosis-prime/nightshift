@@ -12,11 +12,11 @@ where uv >nul 2>nul && set "UV=uv"
 if not defined UV if exist "%USERPROFILE%\.local\bin\uv.exe" set "UV=%USERPROFILE%\.local\bin\uv.exe"
 
 if defined UV (
-  echo  [1/4] Python environment with uv
+  echo  [1/5] Python environment with uv
   if not exist .venv\Scripts\python.exe "%UV%" venv .venv --python 3.12 || goto :fail
   "%UV%" pip install --python .venv\Scripts\python.exe -e . || goto :fail
 ) else (
-  echo  [1/4] Python environment with the Python on your PATH
+  echo  [1/5] Python environment with the Python on your PATH
   if not exist .venv\Scripts\python.exe (
     py -3 -m venv .venv 2>nul || python -m venv .venv || goto :nopython
   )
@@ -24,17 +24,29 @@ if defined UV (
   .venv\Scripts\python.exe -m pip install -e . || goto :fail
 )
 
-echo  [2/4] Face detection and recognition models (~40 MB)
+echo  [2/5] Face detection and recognition models (~40 MB)
 .venv\Scripts\python.exe scripts\get_models.py || goto :fail
 
-echo  [3/4] Speech model for lyric timing (faster-whisper small.en, ~480 MB, once)
+echo  [3/5] Speech model for lyric timing (faster-whisper small.en, ~480 MB, once)
 .venv\Scripts\python.exe -c "from faster_whisper import WhisperModel; from nightshift.lyrics import whisper_model; WhisperModel(whisper_model('small.en'), device='cpu', compute_type='int8'); print('       ok')" || goto :whisperfail
 
-echo  [4/4] ffmpeg
+echo  [4/5] ffmpeg
 where ffmpeg >nul 2>nul && (echo        ok) || (
   echo        not found: installing it with winget
   winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements
   echo        close this window and open a new one so ffmpeg is on the PATH
+)
+
+echo  [5/5] Node.js for the lyric HUD (optional)
+where node >nul 2>nul && (echo        ok) || (
+  echo        not found: installing Node.js LTS with winget
+  winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
+  echo        close this window and open a new one so node is on the PATH
+)
+where node >nul 2>nul && (
+  pushd nightshift\overlay\web
+  if not exist node_modules\playwright-core call npm install --no-audit --no-fund
+  popd
 )
 
 echo.
