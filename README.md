@@ -40,7 +40,7 @@ opens `http://127.0.0.1:8189` with four questions:
    the length; paste its lyrics for lip-sync, or leave them out for an instrumental).
 3. **Where**: a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn), a look plus three places that the shot
    list moves the performer through.
-4. **Format**: short (30-40 s, 8 shots, about an hour on a 3090) or medium (60-75 s, 14 shots), 9:16 or 16:9, Flux 2 Klein or
+4. **Format**: short (30-40 s, 8 shots, under an hour on a 3090) or medium (60-75 s, 14 shots), 9:16 or 16:9, Flux 2 Klein or
    FLUX 3 Klein, and *Director* (stop at every checkpoint) or *Hands-off* (approve the look, then it runs to the end).
 
 The pass then runs on your ComfyUI. The page shows each step, the jobs, a wall of the latest renders and the log, and stops
@@ -187,7 +187,7 @@ Swap in your own graph by exporting it and writing its map, or by titling its no
 | LTX 2.3 clip (2-8 s) | ~3-4 min typical, up to ~8.5 min for the longest first/last-frame shots |
 | MiniMax Music 3 song | up to ~30 min per seed |
 | one full pass, ~50 shots, best-of-4 on the hard ones | ~6.5-7 hours: one night |
-| one `short` pass from the app (8 shots, 40 s song, 4 song seeds) | about an hour |
+| one `short` pass from the app (8 shots, 30-40 s song, 4 song seeds) | ~45 min of GPU time (measured, in minutes: sheets 2, songs ~1 each, stills ~1 each, identity edits ~2.7 each, LTX clips 2.3-3.3 each) |
 
 Everything runs locally; the cost is electricity and, if you use one, the agent's subscription. The first video was
 directed by hexeosis/Erik and orchestrated by Claude on a $20/month plan; the heaviest week reached about 85% of the plan's weekly

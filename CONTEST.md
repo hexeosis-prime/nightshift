@@ -4,7 +4,7 @@ Nightshift was built before the [Comfy "Open Source Higgsfield" challenge](https
 announced: the first commit in this repo is the pipeline as it was used to make "What Do You Want?", a 2:49 music
 video. The commits after it (dated October 29, 2026) adapt it to the challenge's brief, *"build a working app that makes it
 easy for someone else to create their own"*. They add an app, a profile that finishes in about an hour instead of a
-night, vertical video, your-own-track input, and FLUX 3 Image Klein as an image model option.
+night (measured: ~45 minutes of GPU time on an RTX 3090), vertical video, your-own-track input, and FLUX 3 Image Klein as an image model option.
 
 ## What the entry is
 
@@ -57,7 +57,7 @@ Director mode stops at each checkpoint in the app so you can choose. Hands-off m
 | song | 2-3 min, 4 seeds | 40 s, 4 seeds | 75 s, 4 seeds |
 | shots | ~50, hand-written | 8, from a scene preset | 14, from a scene preset |
 | takes | best-of-4 on complex shots | 1 | 1 |
-| RTX 3090 | ~6.5-7 hours | about an hour | about two hours |
+| RTX 3090 | ~6.5-7 hours | ~45 min of GPU time (measured) | about 1.5 hours |
 
 The aspect (`16:9` or `9:16`) and the image model (`flux2` or `flux3`) work with any profile. They go in `project.json`:
 `"profile": "short", "aspect": "9:16", "image_model": "flux3"`.

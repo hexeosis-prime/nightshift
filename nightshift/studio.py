@@ -15,8 +15,8 @@ import subprocess
 from . import project as P
 
 LENGTHS = {
-    "short": {"profile": "short", "seconds": 40, "shots": 8, "label": "30-40 s, 8 shots, about an hour on a 3090"},
-    "medium": {"profile": "short", "seconds": 75, "shots": 14, "label": "60-75 s, 14 shots, about two hours on a 3090"},
+    "short": {"profile": "short", "seconds": 40, "shots": 8, "label": "30-40 s, 8 shots, under an hour on a 3090"},
+    "medium": {"profile": "short", "seconds": 75, "shots": 14, "label": "60-75 s, 14 shots, about 1.5 hours on a 3090"},
 }
 
 # A scene preset is a look and three places. The shot pattern below moves the performer through them.
