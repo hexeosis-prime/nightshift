@@ -298,7 +298,7 @@ def cmd_app(a):
     from . import app
     comfy_dir = os.path.abspath(os.path.expanduser(a.comfy_dir)) if a.comfy_dir else None
     root = a.root or (os.path.join(comfy_dir, "output", "nightshift") if comfy_dir else os.path.join(os.path.expanduser("~"), "nightshift-projects"))
-    app.serve(root, a.comfy_url, comfy_dir, a.host, a.port, not a.no_browser)
+    app.serve(root, a.comfy_url, comfy_dir, a.host, a.port, not a.no_browser, mcp_port=a.mcp_port)
 
 
 def cmd_new(a):
@@ -315,7 +315,7 @@ def cmd_new(a):
 
 def cmd_mcp(a):
     from . import mcp_server
-    mcp_server.main(a.http, a.host, a.port, a.project_root)
+    mcp_server.main(a.http, a.host, a.port, a.project_root, a.comfy_url, a.comfy_dir)
 
 
 def main(argv=None):
@@ -396,6 +396,7 @@ def main(argv=None):
     s.add_argument("--root", help="folder for projects (default: <comfy-dir>/output/nightshift, or ~/nightshift-projects)")
     s.add_argument("--comfy-url", default="http://127.0.0.1:8188"); s.add_argument("--comfy-dir", help="your ComfyUI folder, when it runs on this machine")
     s.add_argument("--host", default="127.0.0.1"); s.add_argument("--port", type=int, default=8189); s.add_argument("--no-browser", action="store_true")
+    s.add_argument("--mcp-port", type=int, default=0, help="also serve MCP over HTTP on this port (0.0.0.0) so an agent on another machine can drive Nightshift")
     s.set_defaults(f=cmd_app)
 
     from .studio import SCENES, LENGTHS
@@ -411,7 +412,8 @@ def main(argv=None):
 
     s = sub.add_parser("mcp", help="MCP server for agents (stdio, or --http for agents on another machine)")
     s.add_argument("--http", action="store_true"); s.add_argument("--host", default="127.0.0.1"); s.add_argument("--port", type=int, default=8765)
-    s.add_argument("--project-root", help="folder that holds projects (agents address them by name)"); s.set_defaults(f=cmd_mcp)
+    s.add_argument("--project-root", help="folder that holds projects (agents address them by name)")
+    s.add_argument("--comfy-url", help="ComfyUI for projects made over MCP"); s.add_argument("--comfy-dir"); s.set_defaults(f=cmd_mcp)
 
     a = ap.parse_args(argv)
     return a.f(a) or 0

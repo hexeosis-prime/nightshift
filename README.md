@@ -53,6 +53,20 @@ nightshift new my-video --scene desert-highway --aspect 9:16 --image-model flux3
   --look "early thirties, short dark curly hair" --outfit "a rust corduroy jacket, white t-shirt" --photo me.jpg
 ```
 
+### Agent mode
+
+The **Agent** tab is one box: describe the video with as few or as many details as you like (the story, the places, who is
+in it, what the song is about). Then either:
+
+- **Plan it**: an agent model writes the lyrics, the song brief, one or two characters, the worlds and every shot, and the
+  app shows you the plan before anything renders. Any OpenAI-compatible server works: LM Studio or Ollama on another machine
+  (don't share the GPU that renders), OpenRouter, or a closed model. With an open-weights model nothing in the loop is closed.
+- **Hand off to my agent**: the idea goes to *your* agent (OpenClaw, Hermes, Claude ...) with a brief that tells it how to
+  drive Nightshift on this machine over MCP: read `plan_format`, write the plan with its own model, `create_from_plan`,
+  `pipeline_run`, poll, report back. Set the agent's webhook in the app, or paste the brief into its chat. Start the app
+  with `--mcp-port 8765` (in `studio.local.bat`: `set "NIGHTSHIFT_ARGS=--host 0.0.0.0 --mcp-port 8765"`) so the agent can
+  reach it; the project shows up in the app and you watch it render.
+
 ## What you need
 
 | | |

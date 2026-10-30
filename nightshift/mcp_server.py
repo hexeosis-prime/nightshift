@@ -36,6 +36,7 @@ seed, still ('edit' = identity-edited from the character sheet), takes (best-of-
 Read docs/techniques.md in the repo for the craft (rescue first/last-frame, self-consistent last frames, relight edits)."""
 
 ROOT = os.environ.get("NIGHTSHIFT_HOME")
+COMFY = {"url": os.environ.get("NIGHTSHIFT_COMFY_URL") or None, "dir": os.environ.get("NIGHTSHIFT_COMFY_DIR") or None}
 server = _Server("nightshift", instructions=INSTRUCTIONS)
 
 
@@ -100,8 +101,37 @@ def projects() -> list:
 def project_init(project: str, mode: str = "director", comfy_url: str = "", comfy_dir: str = "") -> dict:
     """Create a project from the starter template. mode: director | yolo."""
     path = os.path.join(ROOT, project) if ROOT else project
-    p = init_project(path, os.path.basename(path), comfy_url or None, comfy_dir or None, mode=mode)
+    p = init_project(path, os.path.basename(path), comfy_url or COMFY["url"], comfy_dir or COMFY["dir"], mode=mode)
     return {"root": p.root, "output_subdir": p.output_subdir, "next": "fill canon.json, shots.json, song/caption.md, song/lyrics.txt"}
+
+
+@server.tool()
+def plan_format() -> str:
+    """The production-plan format and rules for create_from_plan: read this first when you plan a video from an idea."""
+    from . import agent
+    return agent.SYSTEM
+
+
+@server.tool()
+def create_from_plan(plan: dict, name: str = "", length: str = "medium", aspect: str = "16:9", image_model: str = "flux2",
+                     grade: str = "A2_portra_dusk_plus", overlay: bool = False, mode: str = "yolo") -> dict:
+    """Make a whole project from a plan in plan_format's JSON shape (characters, worlds, song caption + lyrics, shots).
+    length: short | medium | full. aspect: 16:9 | 9:16. image_model: flux2 | flux3. mode: yolo (runs to the end) | director
+    (stops at checkpoints for the human in Nightshift Studio). Then call pipeline_run(project)."""
+    from . import agent, studio
+    if not ROOT:
+        raise ValueError("start the server with --project-root")
+    pl = agent.normalize(plan, length)
+    nm = studio.slug(name or pl.get("title"))
+    base, k = nm, 2
+    while os.path.exists(os.path.join(ROOT, nm)):
+        nm, k = f"{base}-{k}", k + 1
+    p = agent.create_from_plan(os.path.join(ROOT, nm), pl, {"aspect": aspect, "image_model": image_model, "grade": grade,
+                               "overlay": overlay, "mode": mode, "comfy_url": COMFY["url"], "comfy_dir": COMFY["dir"]})
+    with open(p.path("studio.log"), "a", encoding="utf-8") as f:
+        f.write(f"{time.strftime('%H:%M:%S')}  project planned by an agent over MCP: \"{pl.get('title')}\", {len(pl['shots'])} shots\n")
+    return {"project": nm, "title": pl.get("title"), "shots": len(pl["shots"]), "characters": list(pl["characters"]),
+            "next": f"pipeline_run(project='{nm}'), then poll pipeline_status every few minutes"}
 
 
 @server.tool()
@@ -476,10 +506,14 @@ def overlay_build(project: str, edl: str) -> dict:
     return {"task_id": tid, "chunks": "overlay/chunks/ov_%02d.webm"}
 
 
-def main(http=False, host="127.0.0.1", port=8765, project_root=None):
+def main(http=False, host="127.0.0.1", port=8765, project_root=None, comfy_url=None, comfy_dir=None):
     global ROOT
     if project_root:
         ROOT = os.path.abspath(os.path.expanduser(project_root))
+    if comfy_url:
+        COMFY["url"] = comfy_url
+    if comfy_dir:
+        COMFY["dir"] = os.path.abspath(os.path.expanduser(comfy_dir))
     if not http:
         server.run("stdio")
         return

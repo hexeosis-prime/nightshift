@@ -23,6 +23,11 @@ your track), a scene and a format. It then directs a complete music video:
 6. **Pick, cut, grade.** The best take is chosen by face match, cut on the beat and graded, giving a finished
    1080×1920 or 1920×1080 video.
 
+Or skip the form: in the **Agent** tab you describe the idea in one box, and an agent model writes the lyrics, the song brief,
+the cast, the locations and every shot of a full-length video (any OpenAI-compatible model, open-weights ones included).
+You can also hand the idea to your own agent (OpenClaw, Hermes, Claude), which drives Nightshift on the GPU machine over MCP
+while you watch in the app.
+
 Director mode stops at each checkpoint in the app so you can choose. Hands-off mode stops once, to approve the look.
 
 ## How it meets the requirements

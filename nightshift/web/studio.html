@@ -334,6 +334,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
 
         <div class="go">
           <button class="btn primary" id="goBtn" onclick="go1()">Plan it</button>
+          <button class="btn" id="handBtn" onclick="handOff()">Hand off to my agent</button>
           <span class="err" id="goErr"></span>
         </div>
 
@@ -422,6 +423,12 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
   <div class="field" style="margin-top:10px"><span class="label">Model</span><input type="text" id="agentModel" list="agentModels"><datalist id="agentModels"></datalist></div>
   <div class="field" style="margin-top:10px"><span class="label">API key</span><input type="password" id="agentKey"></div>
   <div class="mono" id="agentCheck" style="font-size:12.5px;color:var(--dim);margin:12px 0"></div>
+  <h3 style="margin:18px 0 4px">Your own agent</h3>
+  <p style="color:var(--dim);font-size:14px;margin-top:0">"Hand off to my agent" sends your idea and a brief to an agent (OpenClaw, Hermes, ...)
+    that then drives Nightshift on this machine over MCP. Give its webhook here, or leave it empty and paste the brief into its chat.</p>
+  <div class="field"><span class="label">Agent webhook (optional)</span><input type="text" id="hookUrl" placeholder="http://10.0.1.x:18789/hooks/agent"></div>
+  <div class="field" style="margin-top:10px"><span class="label">Webhook token</span><input type="password" id="hookToken"></div>
+  <div class="mono" id="mcpInfo" style="font-size:12.5px;color:var(--dim);margin:12px 0"></div>
   <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="agentDlg.close()">Close</button><button class="btn primary" onclick="saveAgent()">Save &amp; check</button></div>
 </dialog>
 
@@ -475,6 +482,7 @@ function tabUi(){
   $("agentMode").classList.toggle("hide", !ag); $("formMode").classList.toggle("hide", ag);
   $("fmtNum").textContent = ag ? "02" : "04";
   $("goBtn").textContent = ag ? "Plan it" : "Start the shift";
+  $("handBtn").classList.toggle("hide", !ag);
   $("planBox").classList.add("hide"); $("goErr").textContent = "";
   lenUi();
 }
@@ -541,14 +549,17 @@ async function agentInfo(){
   const a = await api("/api/agent/settings");
   $("agentUrl").value = a.base_url; $("agentModel").value = a.model;
   $("agentKey").placeholder = a.has_key ? "saved (leave empty to keep)" : "only if the server needs one";
+  $("hookUrl").value = a.hook_url || ""; $("hookToken").placeholder = a.has_hook_token ? "saved (leave empty to keep)" : "if the webhook needs one";
+  $("mcpInfo").textContent = a.mcp_url ? `Your agent reaches Nightshift at ${a.mcp_url}` : "MCP for agents is off: start the app with --mcp-port 8765";
   $("agentInfo").innerHTML = `Agent model: <b>${esc(a.model || "not set")}</b> at ${esc(a.base_url)} · <a href="#" onclick="agentDlg.showModal();return false">change</a>. ` +
     `An open-weights model (LM Studio, Ollama, OpenRouter) keeps every step open; Claude or GPT work too.`;
 }
 async function saveAgent(){
   $("agentCheck").textContent = "saving...";
   try {
-    await api("/api/agent/settings", {base_url:$("agentUrl").value.trim(), model:$("agentModel").value.trim(), api_key:$("agentKey").value.trim()});
-    $("agentKey").value = "";
+    await api("/api/agent/settings", {base_url:$("agentUrl").value.trim(), model:$("agentModel").value.trim(), api_key:$("agentKey").value.trim(),
+      hook_url:$("hookUrl").value.trim(), hook_token:$("hookToken").value.trim()});
+    $("agentKey").value = ""; $("hookToken").value = "";
     const m = await api("/api/agent/models");
     $("agentCheck").textContent = m.ok ? `reachable · ${m.models.length} model(s)` : `not reachable: ${m.problem}`;
     if (m.ok) $("agentModels").innerHTML = m.models.map(x => `<option value="${esc(x)}">`).join("");
@@ -566,6 +577,20 @@ async function listVideos(){
 const opts = () => ({aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade, overlay:state.hud === "on",
   comfy_url:$("comfyUrl").value.trim() || undefined});
 function go1(){ return state.tab === "agent" ? planIt() : create() }
+async function handOff(){
+  $("goErr").textContent = ""; $("handBtn").disabled = true;
+  try {
+    const r = await api("/api/agent/handoff", {idea:$("idea").value, length:state.length, opts:opts()});
+    const box = $("planBox"); box.classList.remove("hide");
+    box.innerHTML = `<span class="label">${r.sent ? "Sent to your agent" : "The brief for your agent"}</span>
+      <h2>${r.sent ? "Your agent has it" : "Paste this into your agent's chat"}</h2>
+      <p style="color:var(--dim);margin:6px 0 12px">${r.sent ? "It plans the video with its own model and drives Nightshift on this machine. The project appears under Your videos when it starts."
+        : "No webhook is set, so copy the brief to your agent (OpenClaw, Hermes, Claude ...). The project appears under Your videos when it starts."}</p>
+      <pre class="sample" style="max-height:340px">${esc(r.brief)}</pre>
+      <div class="go"><button class="btn" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(r.brief))}).then(()=>this.textContent='Copied')">Copy the brief</button></div>`;
+    box.scrollIntoView({behavior:"smooth", block:"start"});
+  } catch(e){ $("goErr").textContent = e.message } finally { $("handBtn").disabled = false }
+}
 
 async function planIt(){
   $("goErr").textContent = ""; $("goBtn").disabled = true;
@@ -629,7 +654,7 @@ function go(name){ location.hash = name ? "#/" + encodeURIComponent(name) : "" }
 function route(){
   const m = location.hash.match(/^#\/(.+)$/);
   clearInterval(timer);
-  if (!m){ CUR = null; $("home").classList.remove("hide"); $("proj").classList.add("hide"); listVideos(); return }
+  if (!m){ CUR = null; $("home").classList.remove("hide"); $("proj").classList.add("hide"); listVideos(); timer = setInterval(listVideos, 6000); return }
   CUR = decodeURIComponent(m[1]); logNext = 0; lastView = null; $("log").innerHTML = "";
   $("home").classList.add("hide"); $("proj").classList.remove("hide");
   refresh(); timer = setInterval(refresh, 2500);
@@ -677,12 +702,12 @@ function render(v){
   $("runBtn").classList.toggle("hide", v.running || !!v.waiting || v.step === "done");
   $("runBtn").textContent = v.step ? "Carry on" : "Run";
   $("runBtn").disabled = v.busy_other;
-  $("stopBtn").classList.toggle("hide", !v.running);
+  $("stopBtn").classList.toggle("hide", !v.running || v.by_agent);
   // now
   const j = v.jobs || {}, total = Object.values(j).reduce((a, b) => a + b, 0), fin = (j.done || 0) + (j.failed || 0) + (j.lost || 0);
   $("nowTitle").textContent = v.running ? (STEP_NAMES[v.step] || v.step || "starting") : v.waiting ? "Waiting for you" :
     v.step === "done" ? `Pass ${v.pass} done` : v.busy_other ? "The GPU is busy with another video" : "Ready";
-  $("nowSub").textContent = v.running ? "rendering on ComfyUI" : "";
+  $("nowSub").textContent = v.running ? (v.by_agent ? "driven by your agent" : "rendering on ComfyUI") : "";
   $("nowJobs").textContent = v.running && total ? `${fin}/${total}` : "";
   $("nowBar").style.width = (v.running && total ? Math.round(100 * fin / total) : v.step === "done" ? 100 : 0) + "%";
   $("nowPanel").querySelector(".status").classList.toggle("hide", !(v.running && total) && v.step !== "done");

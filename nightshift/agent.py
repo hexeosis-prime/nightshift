@@ -97,7 +97,7 @@ def settings_path(root):
 
 
 def load_settings(root):
-    s = {"base_url": "http://127.0.0.1:1234/v1", "model": "", "api_key": ""}
+    s = {"base_url": "http://127.0.0.1:1234/v1", "model": "", "api_key": "", "hook_url": "", "hook_token": ""}
     try:
         s.update(json.load(open(settings_path(root), encoding="utf-8")))
     except (OSError, ValueError):
@@ -112,7 +112,7 @@ def load_settings(root):
 
 
 def save_settings(root, s):
-    keep = {k: s.get(k, "") for k in ("base_url", "model", "api_key")}
+    keep = {k: s.get(k, "") for k in ("base_url", "model", "api_key", "hook_url", "hook_token")}
     with open(settings_path(root), "w", encoding="utf-8") as f:
         json.dump(keep, f, indent=1)
     return keep
@@ -340,3 +340,51 @@ def create_from_plan(root, plan, opts=None):
     p.save("project.json", cfg)
     p.log("agent_plan", title=plan.get("title"), shots=len(plan["shots"]), characters=list(chars), length=plan.get("length"))
     return P.Project(p.root)
+
+
+HANDOFF = """NIGHTSHIFT STUDIO HANDOFF. The user started a music video in Nightshift Studio and asked you, their agent, to direct it.
+Drive Nightshift on their GPU machine through its MCP server and make the whole video.
+
+The user's idea:
+{idea}
+
+Their settings: length {length} (about {seconds} s, about {shots} shots), aspect {aspect}, image model {image_model},
+colour grade {grade}, lyric HUD {overlay}, direction {mode}.
+
+How:
+1. Connect to the Nightshift MCP server at {mcp_url} (streamable HTTP, no auth, on their local network).
+2. Call plan_format and follow it exactly: write the lyrics, the song brief, the characters, the worlds and every shot.
+   You write the creative plan with your own model; do not run a model on the GPU machine.
+3. Call create_from_plan with your plan and these settings: length="{length}", aspect="{aspect}", image_model="{image_model}",
+   grade="{grade}", overlay={overlay_py}, mode="{mode}".
+4. Call pipeline_run(project=<the project it returns>). It renders for {hours}. Poll pipeline_status every 5-10 minutes.
+   In director mode the user approves checkpoints in the Studio app ({studio_url}); in yolo mode it runs to the end.
+5. Tell the user the project name now, and again when out/pass01.mp4 is ready. If a step fails, read the log lines in
+   pipeline_status, fix the project files (read_doc / write_doc / patch_shot) and run again: finished renders are kept.
+"""
+
+
+def handoff_brief(idea, length, opts, mcp_url, studio_url):
+    L = LENGTHS[length]
+    return HANDOFF.format(idea=idea.strip(), length=length, seconds=L["seconds"], shots=L["shots"],
+                          aspect=opts.get("aspect") or "16:9", image_model=opts.get("image_model") or "flux2",
+                          grade=opts.get("grade") or "A2_portra_dusk_plus", overlay="on" if opts.get("overlay") else "off",
+                          overlay_py="true" if opts.get("overlay") else "false", mode=opts.get("mode") or "yolo",
+                          mcp_url=mcp_url, studio_url=studio_url,
+                          hours={"short": "under an hour", "medium": "about 1.5 hours", "full": "several hours"}[length])
+
+
+def send_handoff(settings, brief, payload):
+    """POST the brief to the user's agent (an OpenClaw / Hermes webhook, or anything that takes JSON)."""
+    body = dict(payload, message=brief, text=brief)
+    headers = {"Content-Type": "application/json"}
+    if settings.get("hook_token"):
+        headers["Authorization"] = f"Bearer {settings['hook_token']}"
+    req = urllib.request.Request(settings["hook_url"], data=json.dumps(body).encode(), headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return {"status": r.status, "reply": r.read(2000).decode("utf-8", "replace")}
+    except urllib.error.HTTPError as e:
+        raise PlanError(f"your agent's webhook answered {e.code}: {e.read(300).decode('utf-8', 'replace')}") from None
+    except urllib.error.URLError as e:
+        raise PlanError(f"your agent's webhook is not reachable ({e.reason})") from None

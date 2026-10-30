@@ -44,6 +44,7 @@ class Studio:
         self.run = None            # {"project", "thread", "started", "cancel"}
         self.events = {}           # project -> [lines]
         self.plans = {}            # plan id -> {"status", "events", "plan", "error"}
+        self.mcp_port, self.port = 0, 8189
 
     # ---- projects -------------------------------------------------------------------------------
     def project(self, name):
@@ -111,10 +112,32 @@ class Studio:
     def agent_settings(self, update=None):
         s = agent.load_settings(self.root)
         if update is not None:
-            if not update.get("api_key"):
-                update = dict(update, api_key=s.get("api_key", ""))      # an empty key field keeps the saved key
+            for secret in ("api_key", "hook_token"):
+                if not update.get(secret):
+                    update = dict(update, **{secret: s.get(secret, "")})      # an empty field keeps the saved secret
             s = agent.save_settings(self.root, {**s, **update})
-        return {"base_url": s["base_url"], "model": s["model"], "has_key": bool(s.get("api_key"))}
+        return {"base_url": s["base_url"], "model": s["model"], "has_key": bool(s.get("api_key")),
+                "hook_url": s.get("hook_url", ""), "has_hook_token": bool(s.get("hook_token")),
+                "mcp_url": self.mcp_url(), "studio_url": self.studio_url()}
+
+    def mcp_url(self):
+        return f"http://{lan_ip()}:{self.mcp_port}/mcp" if self.mcp_port else None
+
+    def studio_url(self):
+        return f"http://{lan_ip()}:{self.port}/"
+
+    def handoff(self, idea, length, opts):
+        if not (idea or "").strip():
+            raise ValueError("describe your idea first")
+        if not self.mcp_port:
+            raise ValueError("start the app with --mcp-port 8765 (studio.bat: set \"NIGHTSHIFT_ARGS=--host 0.0.0.0 --mcp-port 8765\") so your agent can reach Nightshift")
+        brief = agent.handoff_brief(idea, length, opts, self.mcp_url(), self.studio_url())
+        s = agent.load_settings(self.root)
+        if not s.get("hook_url"):
+            return {"sent": False, "brief": brief}
+        r = agent.send_handoff(s, brief, {"source": "nightshift-studio", "idea": idea, "length": length, "settings": opts,
+                                          "mcp_url": self.mcp_url(), "studio_url": self.studio_url()})
+        return {"sent": True, "brief": brief, "reply": r}
 
     def agent_models(self):
         try:
@@ -221,8 +244,10 @@ class Studio:
                       "choices": self.choices(p, w["checkpoint"])}
         outs = sorted([f for f in os.listdir(p.path("out")) if re.match(r"pass\d+\.mp4$", f)]) if os.path.isdir(p.path("out")) else []
         busy = self.busy()
+        ext = external_run(p, st)
         return {
-            "name": name, "running": bool(busy and busy["project"] == name), "busy_other": bool(busy and busy["project"] != name),
+            "name": name, "running": bool(busy and busy["project"] == name) or ext, "by_agent": ext,
+            "busy_other": bool(busy and busy["project"] != name),
             "cfg": {k: p.cfg.get(k) for k in ("mode", "profile", "length", "aspect", "image_model", "scene", "song", "work_size", "final_size")},
             "comfy": p.cfg["comfy"]["url"],
             "pass": st.get("pass"), "step": st.get("step"), "done": [h["step"] for h in st.get("history", [])],
@@ -294,6 +319,30 @@ class Studio:
                     "queue": len(q.get("running", [])) + len(q.get("pending", []))}
         except Exception as e:
             return {"ok": False, "problem": str(e)[:200]}
+
+
+def lan_ip():
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("10.255.255.255", 1))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except OSError:
+        return "127.0.0.1"
+
+
+def external_run(p, st):
+    """A pass started by an agent over MCP (a background `nightshift run` process) that is still alive."""
+    tid = st.get("task")
+    if not tid or st.get("step") == "done":
+        return False
+    t = p.load(f"tasks/{tid}.json")
+    if not t:
+        return False
+    from .mcp_server import _alive
+    return _alive(t["pid"])
 
 
 def _step_started(st):
@@ -430,6 +479,8 @@ def handler(app):
                     return self._json(app.agent_settings(body))
                 if parts == ["api", "agent", "plan"]:
                     return self._json({"id": app.start_plan(body.get("idea"), body.get("length") or "medium")})
+                if parts == ["api", "agent", "handoff"]:
+                    return self._json(app.handoff(body.get("idea"), body.get("length") or "medium", body.get("opts") or {}))
                 if parts == ["api", "agent", "create"]:
                     return self._json({"name": app.create_from_plan(body["plan"], body.get("opts") or {}, body.get("run", True))})
                 if parts == ["api", "projects"]:
@@ -458,8 +509,19 @@ def handler(app):
     return H
 
 
-def serve(root, comfy_url, comfy_dir=None, host="127.0.0.1", port=8189, open_browser=True):
+def serve(root, comfy_url, comfy_dir=None, host="127.0.0.1", port=8189, open_browser=True, mcp_port=0):
     app = Studio(root, comfy_url, comfy_dir)
+    app.port = port
+    if mcp_port:
+        import atexit
+        import subprocess
+        import sys
+        cmd = [sys.executable, "-m", "nightshift", "mcp", "--http", "--host", "0.0.0.0", "--port", str(mcp_port),
+               "--project-root", app.root, "--comfy-url", comfy_url] + (["--comfy-dir", comfy_dir] if comfy_dir else [])
+        proc = subprocess.Popen(cmd)
+        atexit.register(proc.terminate)
+        app.mcp_port = mcp_port
+        print(f"MCP server for agents on http://{lan_ip()}:{mcp_port}/mcp (your local network only; there is no login)")
     srv = ThreadingHTTPServer((host, port), handler(app))
     url = f"http://{'127.0.0.1' if host in ('0.0.0.0', '') else host}:{port}/"
     print(f"Nightshift Studio on {url}  (projects in {app.root}; ComfyUI at {comfy_url})")
