@@ -218,7 +218,9 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000):
             key = (mode, framing) if (mode, framing) in ACTIONS else ("ff", "wide")
             act, expr = ACTIONS[key]
             obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((ch or {}).get("pronoun"), ("them", "their"))
-            s.update(chars=["lead"], still="edit", expr=expr, action=act, location=sc["places"][place],
+            if mode == "lipsync":
+                s["no_lyric"] = True                 # quoted lyrics can burn in as subtitles; the song audio drives the mouth
+            s.update(chars=["lead"], still="edit", wording="C", expr=expr, action=act, location=sc["places"][place],
                      video=VIDEO[key].replace("{pr}", obj).replace("{po}", pos))
         out.append(s)
     return {"_readme": "Written by Nightshift Studio from a scene preset. Song-agnostic: lip-sync shots start on the lyric line in "
