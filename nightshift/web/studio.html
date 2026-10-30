@@ -169,6 +169,32 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
 .empty{color:var(--faint);font-size:13.5px}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line2);border-radius:14px;padding:22px;width:min(460px,92vw)}
 dialog::backdrop{background:rgba(0,0,0,.6)}
+.tabs{display:flex;gap:6px;margin:-4px 0 6px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:transparent;color:var(--dim);padding:10px 14px 12px;cursor:pointer;font:600 15px/1 var(--sans);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--amber)}
+pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);border:1px dashed var(--line2);border-radius:8px;padding:10px 12px;margin:0;white-space:pre-wrap;max-height:220px;overflow:auto}
+.scene.custom .sky{background:repeating-linear-gradient(135deg,#141725 0 10px,#191d2d 10px 20px)}
+.grades{display:flex;gap:8px;flex-wrap:wrap}
+.grade{width:92px;cursor:pointer;border:1px solid var(--line2);border-radius:9px;overflow:hidden;background:var(--bg)}
+.grade i{display:block;height:42px}
+.grade span{display:block;font:11px/1.2 var(--mono);color:var(--dim);padding:6px 7px}
+.grade.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}.grade.on span{color:var(--amber)}
+.g-A2_portra_dusk_plus{background:linear-gradient(110deg,#0f2a33 0%,#2e4f57 40%,#c98a52 75%,#f2c48d 100%)}
+.g-A_portra_dusk{background:linear-gradient(110deg,#203a42 0%,#46636a 40%,#d3a57b 75%,#efd2b0 100%)}
+.g-B_cinestill_night{background:linear-gradient(110deg,#03161c 0%,#0c3a45 45%,#ff7a2e 80%,#ffc07a 100%)}
+.g-C_faded_pastel{background:linear-gradient(110deg,#7e9396 0%,#a9b9b5 40%,#e9c3b0 75%,#f6e3d6 100%)}
+.g-none{background:linear-gradient(110deg,#111 0%,#555 45%,#aaa 75%,#eee 100%)}
+.plan{margin-top:22px;padding-top:22px;border-top:1px solid var(--line)}
+.plan h2{margin:0;font:600 26px/1.15 var(--sans)}.plan .log{height:auto;max-height:160px}
+.plan .cast{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin:14px 0}
+.plan .who{border:1px solid var(--line2);border-radius:10px;padding:12px;background:var(--bg);font-size:13.5px;color:var(--dim)}
+.plan .who b{color:var(--ink);font-size:15px;display:block;margin-bottom:4px}
+.plan table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.plan td,.plan th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.plan th{font:500 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.plan td.m{font:12px/1.3 var(--mono);color:var(--amber);white-space:nowrap}
+.plan .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:18px;margin-top:10px}
+@media (max-width:980px){.plan .cols{grid-template-columns:1fr}}
 .hide{display:none!important}
 @media (max-width:980px){
   .home,.proj{grid-template-columns:1fr}.rail{position:static}
@@ -197,13 +223,32 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <section id="home">
     <div class="hero">
       <div>
-        <h1>A music video of you,<br>made overnight <em>on your own GPU.</em></h1>
-        <p>Give it a face, a song and a place. Nightshift writes or takes the song, locks the character's look, paints every first
-          frame, animates them with lip-sync on LTX&nbsp;2.3, cuts on the beat and grades it, all in your local ComfyUI with open-weight models.</p>
+        <h1>A whole music video,<br>directed overnight <em>on your own GPU.</em></h1>
+        <p>Describe an idea and an agent writes the song, casts the characters and plans every shot, or build it step by step.
+          Nightshift locks each character's look, paints every first frame, animates them with lip-sync on LTX&nbsp;2.3, cuts on
+          the beat and grades it, all in your local ComfyUI with open-weight models.</p>
       </div>
     </div>
     <div class="home">
       <div class="card">
+        <div class="tabs" id="tabs"><button data-v="agent" class="on">Agent: describe it</button><button data-v="form">Step by step</button></div>
+
+        <!-- AGENT MODE -->
+        <div id="agentMode">
+          <div class="step">
+            <div class="num">01</div>
+            <div>
+              <h3>Your idea</h3>
+              <p class="hint">As few or as many details as you like: the story, the places, who is in it, what the song is about.
+                The agent writes the lyrics, the song brief, the characters and every shot, then Nightshift renders it.</p>
+              <textarea id="idea" rows="9" placeholder="Example (type your own): A duet between two night-shift workers in a city that never sleeps. She runs a 24-hour laundromat, he drives the last bus. They keep missing each other: the laundromat window, the bus stop in the rain, a rooftop at dawn, the empty bus depot. Synth pop with a heartbeat kick, bittersweet but hopeful. She has a short silver bob and a yellow raincoat; he has a beard and a navy driver's jacket."></textarea>
+              <div class="note" id="agentInfo"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM MODE -->
+        <div id="formMode" class="hide">
         <div class="step">
           <div class="num">01</div>
           <div>
@@ -217,6 +262,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
                 <div class="seg" id="who"><button data-v="woman" class="on">Woman</button><button data-v="man">Man</button><button data-v="person">Person</button></div>
                 <input type="text" id="look" placeholder="Look: late twenties, curly red hair, freckles, green eyes">
                 <input type="text" id="outfit" placeholder="Outfit: a cropped denim jacket, white tank top, black jeans">
+                <div class="note" style="margin-top:0">The grey text is only an example: type your own. Two performers or more places? Use the Agent tab.</div>
               </div>
             </div>
             <div class="note">Only use a photo of yourself or of someone who said yes. No celebrities.</div>
@@ -227,16 +273,23 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
           <div class="num">02</div>
           <div>
             <h3>The song</h3>
-            <p class="hint">MiniMax Music 3 writes and sings it from your words (open weights, running in ComfyUI), or bring your own track.</p>
-            <div class="seg" id="songSrc" style="margin-bottom:14px"><button data-v="generate" class="on">Write it for me</button><button data-v="upload">Use my track</button></div>
-            <div id="genBox" class="row">
-              <div class="field"><span class="label">Vibe (added to the scene's genre)</span><input type="text" id="vibe" placeholder="e.g. bittersweet, a big singalong hook, a whistled melody"></div>
+            <p class="hint">MiniMax Music 3 composes and sings it from your lyrics (open weights, running in ComfyUI), or bring your own track.</p>
+            <div class="seg" id="songSrc" style="margin-bottom:14px"><button data-v="generate" class="on">MiniMax Music 3 makes it</button><button data-v="upload">Use my track</button></div>
+            <div id="genBox">
+              <div class="field" style="margin-bottom:14px"><span class="label">Vibe (added to the scene's genre)</span><input type="text" id="vibe" placeholder="e.g. bittersweet, a big singalong hook, a whistled melody"></div>
+              <span class="label">Lyrics</span>
+              <div class="seg" id="lyrSrc" style="margin:8px 0 10px"><button data-v="sample" class="on">Use the sample lyrics</button><button data-v="own">Write my own</button></div>
             </div>
-            <div id="upBox" class="row hide">
-              <div class="field"><span class="label">Track (mp3 / wav / flac)</span><input type="file" id="audio" accept="audio/*"></div>
-              <div class="field" style="max-width:170px;min-width:140px"><span class="label">Start at (s)</span><input type="number" id="start" value="0" min="0" step="0.5"></div>
+            <div id="upBox" class="hide">
+              <div class="row">
+                <div class="field"><span class="label">Track (mp3 / wav / flac)</span><input type="file" id="audio" accept="audio/*"></div>
+                <div class="field" style="max-width:170px;min-width:140px"><span class="label">Start at (s)</span><input type="number" id="start" value="0" min="0" step="0.5"></div>
+              </div>
+              <span class="label" style="display:block;margin-top:14px">Lyrics</span>
+              <div class="seg" id="upLyr" style="margin:8px 0 10px"><button data-v="own" class="on">Paste its lyrics (for lip-sync)</button><button data-v="none">Instrumental</button></div>
             </div>
-            <div class="field" style="margin-top:12px"><span class="label" id="lyrLabel">Lyrics, with [Section] tags</span><textarea id="lyrics" rows="9"></textarea></div>
+            <pre class="sample" id="sampleLyr"></pre>
+            <textarea id="lyrics" rows="9" class="hide" placeholder="[Verse]&#10;Your first line&#10;Your second line&#10;&#10;[Chorus]&#10;..."></textarea>
           </div>
         </div>
 
@@ -244,15 +297,22 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
           <div class="num">03</div>
           <div>
             <h3>Where</h3>
-            <p class="hint">A scene is a look and three places; the shot list moves the performer through them.</p>
+            <p class="hint">A scene is a look and three places; the shot list moves the performer through them. Or type your own.</p>
             <div class="scenes" id="scenes"></div>
+            <div id="customBox" class="row hide" style="margin-top:12px;align-items:flex-end">
+              <div class="field" style="min-width:280px"><span class="label">Your location</span><input type="text" id="customPlace" placeholder="e.g. an abandoned greenhouse with broken glass panes and overgrown ferns"></div>
+              <div class="seg" id="cDay"><button data-v="night" class="on">Night</button><button data-v="day">Day</button></div>
+              <div class="seg" id="cIn"><button data-v="out" class="on">Outdoors</button><button data-v="in">Indoors</button></div>
+            </div>
           </div>
         </div>
+        </div>
 
+        <!-- SHARED -->
         <div class="step">
-          <div class="num">04</div>
+          <div class="num" id="fmtNum">02</div>
           <div>
-            <h3>Format</h3>
+            <h3>Format and look</h3>
             <div class="row" style="gap:22px">
               <div class="field" style="flex:none;min-width:0"><span class="label">Length</span><div class="seg" id="length"></div></div>
               <div class="field" style="flex:none;min-width:0"><span class="label">Aspect</span>
@@ -262,14 +322,22 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
               <div class="field" style="flex:none;min-width:0"><span class="label">Direction</span>
                 <div class="seg" id="mode"><button data-v="director" class="on">Director: I choose</button><button data-v="yolo">Hands-off</button></div></div>
             </div>
+            <div class="row" style="gap:22px;margin-top:16px">
+              <div class="field" style="flex:none;min-width:0"><span class="label">Colour grade</span><div class="grades" id="grades"></div></div>
+              <div class="field" style="flex:none;min-width:0"><span class="label">Lyric HUD</span>
+                <div class="seg" id="hud"><button data-v="off" class="on">Off</button><button data-v="on">Animated lyrics + HUD</button></div>
+                <span class="note" id="hudNote" style="margin-top:2px"></span></div>
+            </div>
             <div class="note" id="lenNote"></div>
           </div>
         </div>
 
         <div class="go">
-          <button class="btn primary" id="goBtn" onclick="create()">Start the shift</button>
+          <button class="btn primary" id="goBtn" onclick="go1()">Plan it</button>
           <span class="err" id="goErr"></span>
         </div>
+
+        <div class="plan hide" id="planBox"></div>
       </div>
 
       <aside class="side">
@@ -346,6 +414,17 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="comfyDlg.close()">Close</button><button class="btn primary" onclick="saveComfy()">Check &amp; use</button></div>
 </dialog>
 
+<dialog id="agentDlg">
+  <h3 style="margin-top:0">Agent model</h3>
+  <p style="color:var(--dim);font-size:14px;margin-top:-4px">Any server with the OpenAI chat API: LM Studio (http://&lt;machine&gt;:1234/v1), Ollama
+    (http://&lt;machine&gt;:11434/v1), OpenRouter (https://openrouter.ai/api/v1). Don't run it on the GPU that renders.</p>
+  <div class="field"><span class="label">Address</span><input type="text" id="agentUrl"></div>
+  <div class="field" style="margin-top:10px"><span class="label">Model</span><input type="text" id="agentModel" list="agentModels"><datalist id="agentModels"></datalist></div>
+  <div class="field" style="margin-top:10px"><span class="label">API key</span><input type="password" id="agentKey"></div>
+  <div class="mono" id="agentCheck" style="font-size:12.5px;color:var(--dim);margin:12px 0"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="agentDlg.close()">Close</button><button class="btn primary" onclick="saveAgent()">Save &amp; check</button></div>
+</dialog>
+
 <script>
 const $ = id => document.getElementById(id);
 const STEP_NAMES = {sheets:"character sheets", song:"song", analyze:"beats + lyrics", timeline:"fit to song", stills:"first frames",
@@ -359,7 +438,9 @@ const CP = {
   pass_review:["The pass","The finished pass, plus a review copy with shot numbers burned in for notes."],
 };
 let INFO = null, CUR = null, logNext = 0, timer = null, lastView = null;
-const state = {who:"woman", songSrc:"generate", aspect:"9:16", model:"flux2", mode:"director", length:"short", scene:"night-avenue"};
+const state = {tab:"agent", who:"woman", songSrc:"generate", lyrSrc:"sample", upLyr:"own", aspect:"9:16", model:"flux2", mode:"director",
+  length:"short", scene:"night-avenue", grade:"A2_portra_dusk_plus", hud:"off", cDay:"night", cIn:"out"};
+let PLAN = null;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fileUrl = (p, f) => `/files/${encodeURIComponent(p)}/${f.split("/").map(encodeURIComponent).join("/")}`;
 async function api(path, body){
@@ -370,19 +451,44 @@ async function api(path, body){
 }
 function seg(id, key, onchange){
   $(id).addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
+    const b = e.target.closest("button"); if (!b || b.disabled) return;
     [...$(id).children].forEach(x => x.classList.toggle("on", x === b));
     state[key] = b.dataset.v; onchange && onchange();
   });
 }
-seg("who","who"); seg("aspect","aspect"); seg("model","model"); seg("mode","mode");
-seg("songSrc","songSrc", () => {
+function setSeg(id, key, v){ state[key] = v; [...$(id).children].forEach(x => x.classList.toggle("on", x.dataset.v === v)) }
+function lyricsUi(){
   const up = state.songSrc === "upload";
   $("genBox").classList.toggle("hide", up); $("upBox").classList.toggle("hide", !up);
-  $("lyrLabel").textContent = up ? "Lyrics of your track, for lip-sync (leave empty for an instrumental)" : "Lyrics, with [Section] tags";
-  if (up && $("lyrics").value === INFO.default_lyrics) $("lyrics").value = "";
-  if (!up && !$("lyrics").value.trim()) $("lyrics").value = INFO.default_lyrics;
-});
+  const own = up ? state.upLyr === "own" : state.lyrSrc === "own";
+  $("sampleLyr").classList.toggle("hide", up || own);
+  $("lyrics").classList.toggle("hide", !own);
+}
+function hudUi(){
+  const v = state.aspect === "9:16";
+  $("hud").children[1].disabled = v;
+  if (v && state.hud === "on") setSeg("hud", "hud", "off");
+  $("hudNote").textContent = v ? "16:9 only for now" : "word-by-word lyrics that steer around faces";
+}
+function tabUi(){
+  const ag = state.tab === "agent";
+  $("agentMode").classList.toggle("hide", !ag); $("formMode").classList.toggle("hide", ag);
+  $("fmtNum").textContent = ag ? "02" : "04";
+  $("goBtn").textContent = ag ? "Plan it" : "Start the shift";
+  $("planBox").classList.add("hide"); $("goErr").textContent = "";
+  lenUi();
+}
+function lenUi(){
+  const labels = state.tab === "agent" ? INFO.agent_lengths : INFO.lengths;
+  if (!labels[state.length]) state.length = "short";
+  $("length").innerHTML = Object.keys(labels).map(k => `<button data-v="${k}" class="${k === state.length ? "on" : ""}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("");
+  $("lenNote").textContent = (state.tab === "agent" ? `${labels[state.length]}. ` : `${labels[state.length]}. `) +
+    (state.length === "full" ? "A full song renders overnight." : "Character sheets and the song come first; you can leave it running.");
+}
+seg("tabs", "tab", tabUi);
+seg("who","who"); seg("model","model"); seg("mode","mode"); seg("hud","hud"); seg("cDay","cDay"); seg("cIn","cIn");
+seg("aspect","aspect", hudUi); seg("length","length", lenUi);
+seg("songSrc","songSrc", lyricsUi); seg("lyrSrc","lyrSrc", lyricsUi); seg("upLyr","upLyr", lyricsUi);
 let photoData = null;
 $("photo").addEventListener("change", e => readPhoto(e.target.files[0]));
 $("photoDrop").addEventListener("dragover", e => {e.preventDefault()});
@@ -399,16 +505,23 @@ const readFile = f => new Promise((ok, no) => {const r = new FileReader(); r.onl
 
 async function init(){
   INFO = await api("/api/info");
-  $("lyrics").value = INFO.default_lyrics;
-  $("scenes").innerHTML = Object.entries(INFO.scenes).map(([k, s]) =>
-    `<div class="scene ${k === state.scene ? "on" : ""}" data-v="${k}"><div class="sky ${k}"></div><b>${esc(s.label)}</b><small>${esc(s.blurb)}</small></div>`).join("");
+  $("sampleLyr").textContent = INFO.default_lyrics;
+  const scenes = Object.entries(INFO.scenes).map(([k, s]) =>
+    `<div class="scene ${k === state.scene ? "on" : ""}" data-v="${k}"><div class="sky ${k}"></div><b>${esc(s.label)}</b><small>${esc(s.blurb)}</small></div>`);
+  scenes.push(`<div class="scene custom" data-v="custom"><div class="sky"></div><b>Your own place</b><small>Type a location: one place, seen three ways.</small></div>`);
+  $("scenes").innerHTML = scenes.join("");
+  $("scenes").style.gridTemplateColumns = "repeat(5,minmax(0,1fr))";
   $("scenes").addEventListener("click", e => {const c = e.target.closest(".scene"); if (!c) return;
-    state.scene = c.dataset.v; [...$("scenes").children].forEach(x => x.classList.toggle("on", x === c))});
-  $("length").innerHTML = Object.keys(INFO.lengths).map(k => `<button data-v="${k}" class="${k === state.length ? "on" : ""}">${k === "short" ? "Short" : "Medium"}</button>`).join("");
-  const lenNote = () => $("lenNote").textContent = INFO.lengths[state.length] + ". Character sheets and the song come first; you can leave it running.";
-  seg("length", "length", lenNote); lenNote();
+    state.scene = c.dataset.v; [...$("scenes").children].forEach(x => x.classList.toggle("on", x === c));
+    $("customBox").classList.toggle("hide", state.scene !== "custom")});
+  $("grades").innerHTML = Object.entries(INFO.grades).map(([k, label]) =>
+    `<div class="grade ${k === state.grade ? "on" : ""}" data-v="${k}"><i class="g-${k}"></i><span>${esc(label)}</span></div>`).join("");
+  $("grades").addEventListener("click", e => {const c = e.target.closest(".grade"); if (!c) return;
+    state.grade = c.dataset.v; [...$("grades").children].forEach(x => x.classList.toggle("on", x === c))});
+  lyricsUi(); hudUi(); tabUi();
   $("comfyUrl").value = localGet("comfyUrl") || INFO.comfy_url;
   checkComfy(); setInterval(checkComfy, 15000);
+  agentInfo();
   listVideos();
   window.addEventListener("hashchange", route); route();
 }
@@ -424,6 +537,24 @@ async function checkComfy(){
   } catch(e){ $("comfyDot").className = "dot bad"; $("comfyText").textContent = "ComfyUI ?" }
 }
 function saveComfy(){localSet("comfyUrl", $("comfyUrl").value.trim()); checkComfy()}
+async function agentInfo(){
+  const a = await api("/api/agent/settings");
+  $("agentUrl").value = a.base_url; $("agentModel").value = a.model;
+  $("agentKey").placeholder = a.has_key ? "saved (leave empty to keep)" : "only if the server needs one";
+  $("agentInfo").innerHTML = `Agent model: <b>${esc(a.model || "not set")}</b> at ${esc(a.base_url)} · <a href="#" onclick="agentDlg.showModal();return false">change</a>. ` +
+    `An open-weights model (LM Studio, Ollama, OpenRouter) keeps every step open; Claude or GPT work too.`;
+}
+async function saveAgent(){
+  $("agentCheck").textContent = "saving...";
+  try {
+    await api("/api/agent/settings", {base_url:$("agentUrl").value.trim(), model:$("agentModel").value.trim(), api_key:$("agentKey").value.trim()});
+    $("agentKey").value = "";
+    const m = await api("/api/agent/models");
+    $("agentCheck").textContent = m.ok ? `reachable · ${m.models.length} model(s)` : `not reachable: ${m.problem}`;
+    if (m.ok) $("agentModels").innerHTML = m.models.map(x => `<option value="${esc(x)}">`).join("");
+    agentInfo();
+  } catch(e){ $("agentCheck").textContent = e.message }
+}
 async function listVideos(){
   const {projects} = await api("/api/projects");
   $("vlist").innerHTML = projects.length ? projects.map(p => {
@@ -432,20 +563,63 @@ async function listVideos(){
     return `<div class="vitem" onclick="go('${esc(p.name)}')"><div><div class="n">${esc(p.name)}</div><div class="s">${esc(p.scene || "")} · ${esc(p.aspect || "")} · pass ${p.pass || 1}</div></div>${b}</div>`;
   }).join("") : `<div class="empty">Nothing yet.</div>`;
 }
+const opts = () => ({aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade, overlay:state.hud === "on",
+  comfy_url:$("comfyUrl").value.trim() || undefined});
+function go1(){ return state.tab === "agent" ? planIt() : create() }
+
+async function planIt(){
+  $("goErr").textContent = ""; $("goBtn").disabled = true;
+  const box = $("planBox"); box.classList.remove("hide");
+  box.innerHTML = `<span class="label">The agent is planning</span><div class="log" id="planLog" style="margin-top:10px">sending your idea...</div>`;
+  try {
+    const {id} = await api("/api/agent/plan", {idea:$("idea").value, length:state.length});
+    while (true) {
+      await new Promise(r => setTimeout(r, 1500));
+      const j = await api(`/api/agent/plan/${id}`);
+      $("planLog").textContent = j.events.join("\n") || "thinking...";
+      if (j.status === "failed") throw new Error(j.error);
+      if (j.status === "ready") { PLAN = j.plan; showPlan(); break }
+    }
+  } catch(e){ $("goErr").textContent = e.message; box.classList.add("hide") } finally { $("goBtn").disabled = false }
+}
+function showPlan(){
+  const p = PLAN, box = $("planBox");
+  const cast = Object.entries(p.characters).map(([k, c]) => `<div class="who"><b>${esc(c.name)}</b>${esc(c.person)}<br><i>${esc(c.outfit.wide)}</i></div>`).join("");
+  const rows = p.shots.map((s, i) => `<tr><td class="m">${String(i + 1).padStart(2, "0")}</td><td class="m">${esc(s.mode)}</td>
+    <td>${esc((s.chars || []).concat(s.add ? [s.add.char] : []).map(k => p.characters[k]?.name || k).join(" + ") || "·")}</td>
+    <td>${esc(s.framing || "")}</td><td>${esc(s.anchor ? "“" + s.anchor + "…”" : "")}</td><td>${esc((s.location || s.video || "").slice(0, 90))}</td></tr>`).join("");
+  box.innerHTML = `<span class="label">The plan</span><h2>${esc(p.title)}</h2><p style="color:var(--dim);margin:6px 0 0">${esc(p.logline)}</p>
+    <div class="cast">${cast}</div>
+    <div class="cols"><div><span class="label">Lyrics</span><pre class="sample" style="max-height:420px;margin-top:8px">${esc(p.song.lyrics)}</pre></div>
+    <div><span class="label">${p.shots.length} shots</span><table><tr><th>#</th><th>mode</th><th>who</th><th>frame</th><th>starts on</th><th>where</th></tr>${rows}</table></div></div>
+    <div class="go"><button class="btn primary" onclick="startPlan(this)">Start the shift</button><button class="btn" onclick="planIt()">Plan again</button>
+    <span class="note" style="margin:0">Everything is editable later: it becomes a normal project folder.</span><span class="err" id="planErr"></span></div>`;
+  box.scrollIntoView({behavior:"smooth", block:"start"});
+}
+async function startPlan(btn){
+  btn.disabled = true;
+  try { const r = await api("/api/agent/create", {plan:PLAN, opts:opts(), run:true}); go(r.name) }
+  catch(e){ $("planErr").textContent = e.message; btn.disabled = false }
+}
 
 async function create(){
   $("goErr").textContent = ""; $("goBtn").disabled = true;
   try {
     const files = {};
     if (photoData) files.photo = photoData;
-    if (state.songSrc === "upload") {
-      const f = $("audio").files[0]; if (!f) throw new Error("choose your track, or let MiniMax Music 3 write the song");
+    const up = state.songSrc === "upload";
+    if (up) {
+      const f = $("audio").files[0]; if (!f) throw new Error("choose your track, or let MiniMax Music 3 make the song");
       files.audio = await readFile(f);
     }
-    const form = {length:state.length, aspect:state.aspect, image_model:state.model, mode:state.mode, scene:state.scene,
-      comfy_url:$("comfyUrl").value.trim() || undefined,
+    const own = up ? state.upLyr === "own" : state.lyrSrc === "own";
+    const lyrics = own ? $("lyrics").value : (up ? "" : INFO.default_lyrics);
+    if (own && !lyrics.trim() && !up) throw new Error("write your lyrics, or use the sample");
+    if (state.scene === "custom" && !$("customPlace").value.trim()) throw new Error("type your location");
+    const form = Object.assign(opts(), {length:state.length, scene:state.scene,
+      custom_place:$("customPlace").value, custom_daytime:state.cDay === "day", custom_indoor:state.cIn === "in",
       character:{noun:state.who, look:$("look").value, outfit:$("outfit").value},
-      song:{source:state.songSrc, vibe:$("vibe").value, lyrics:$("lyrics").value, start:parseFloat($("start").value) || 0}};
+      song:{source:state.songSrc, vibe:$("vibe").value, lyrics, start:parseFloat($("start").value) || 0}});
     const r = await api("/api/projects", {form, files, run:true});
     go(r.name);
   } catch(e){ $("goErr").textContent = e.message } finally { $("goBtn").disabled = false }

@@ -21,7 +21,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import __version__
-from . import pipeline, studio
+from . import agent, pipeline, studio
 from .project import Project
 
 WEB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
@@ -43,6 +43,7 @@ class Studio:
         self.lock = threading.Lock()
         self.run = None            # {"project", "thread", "started", "cancel"}
         self.events = {}           # project -> [lines]
+        self.plans = {}            # plan id -> {"status", "events", "plan", "error"}
 
     # ---- projects -------------------------------------------------------------------------------
     def project(self, name):
@@ -104,6 +105,52 @@ class Studio:
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
         self.emit(name, f"project created: {p.cfg['length']} / {p.cfg['aspect']} / {p.cfg['image_model']} / scene {p.cfg['scene']}")
+        return name
+
+    # ---- agent mode -------------------------------------------------------------------------------
+    def agent_settings(self, update=None):
+        s = agent.load_settings(self.root)
+        if update is not None:
+            if not update.get("api_key"):
+                update = dict(update, api_key=s.get("api_key", ""))      # an empty key field keeps the saved key
+            s = agent.save_settings(self.root, {**s, **update})
+        return {"base_url": s["base_url"], "model": s["model"], "has_key": bool(s.get("api_key"))}
+
+    def agent_models(self):
+        try:
+            return {"ok": True, "models": agent.models(agent.load_settings(self.root))}
+        except Exception as e:
+            return {"ok": False, "problem": str(e)[:200]}
+
+    def start_plan(self, idea, length):
+        if not (idea or "").strip():
+            raise ValueError("describe your idea first")
+        pid = f"p{int(time.time() * 1000)}"
+        job = {"status": "planning", "events": [], "plan": None, "error": None, "idea": idea, "length": length}
+        self.plans[pid] = job
+
+        def work():
+            try:
+                job["plan"] = agent.plan(idea, agent.load_settings(self.root), length,
+                                         on_event=lambda m: job["events"].append(f"{time.strftime('%H:%M:%S')}  {m}"))
+                job["status"] = "ready"
+            except Exception as e:
+                job["error"], job["status"] = str(e), "failed"
+        threading.Thread(target=work, daemon=True, name=pid).start()
+        return pid
+
+    def create_from_plan(self, plan, opts, run=True):
+        plan = agent.normalize(plan, plan.get("length") or "medium") if "characters" in plan and "_validated" not in plan else plan
+        name = studio.slug(opts.get("name") or plan.get("title"))
+        base, k = name, 2
+        while os.path.exists(os.path.join(self.root, name)):
+            name, k = f"{base}-{k}", k + 1
+        opts = dict(opts, name=name, comfy_url=opts.get("comfy_url") or self.comfy_url, comfy_dir=opts.get("comfy_dir") or self.comfy_dir)
+        p = agent.create_from_plan(os.path.join(self.root, name), plan, opts)
+        self.emit(name, f"project planned by the agent: \"{plan.get('title')}\", {len(plan['shots'])} shots, "
+                        f"{', '.join(c['name'] for c in plan['characters'].values())}, {p.cfg['aspect']}, {p.cfg['image_model']}")
+        if run:
+            self.start(name)
         return name
 
     # ---- running -------------------------------------------------------------------------------
@@ -342,7 +389,18 @@ def handler(app):
                     return self._json({"version": __version__, "root": app.root, "comfy_url": app.comfy_url,
                                        "scenes": {k: {"label": v["label"], "blurb": v["blurb"]} for k, v in studio.SCENES.items()},
                                        "lengths": {k: v["label"] for k, v in studio.LENGTHS.items()},
-                                       "default_lyrics": studio.DEFAULT_LYRICS, "busy": (app.busy() or {}).get("project")})
+                                       "default_lyrics": studio.DEFAULT_LYRICS, "busy": (app.busy() or {}).get("project"),
+                                       "grades": studio.GRADES,
+                                       "agent_lengths": {k: v["label"] for k, v in agent.LENGTHS.items()}})
+                if parts == ["api", "agent", "settings"]:
+                    return self._json(app.agent_settings())
+                if parts == ["api", "agent", "models"]:
+                    return self._json(app.agent_models())
+                if len(parts) == 4 and parts[:3] == ["api", "agent", "plan"]:
+                    job = app.plans.get(parts[3])
+                    if not job:
+                        return self._json({"error": "no such plan"}, 404)
+                    return self._json({k: job[k] for k in ("status", "events", "plan", "error")})
                 if parts == ["api", "comfy"]:
                     return self._json(app.comfy_status(q.get("url")))
                 if parts == ["api", "projects"]:
@@ -368,6 +426,12 @@ def handler(app):
             parts = [x for x in urllib.parse.urlparse(self.path).path.strip("/").split("/") if x]
             try:
                 body = self._body()
+                if parts == ["api", "agent", "settings"]:
+                    return self._json(app.agent_settings(body))
+                if parts == ["api", "agent", "plan"]:
+                    return self._json({"id": app.start_plan(body.get("idea"), body.get("length") or "medium")})
+                if parts == ["api", "agent", "create"]:
+                    return self._json({"name": app.create_from_plan(body["plan"], body.get("opts") or {}, body.get("run", True))})
                 if parts == ["api", "projects"]:
                     name = app.create(body.get("form") or {}, body.get("files") or {})
                     if body.get("run"):
@@ -387,7 +451,7 @@ def handler(app):
                         return self._json({"error": f"unknown action {action}"}, 404)
                     return self._json(app.view(name))
                 return self._json({"error": "not found"}, 404)
-            except (ValueError, KeyError, FileNotFoundError, RuntimeError) as e:
+            except (ValueError, KeyError, FileNotFoundError, RuntimeError, agent.PlanError) as e:
                 return self._json({"error": str(e)}, 400)
             except Exception as e:
                 return self._json({"error": f"{type(e).__name__}: {e}", "trace": traceback.format_exc()[-1500:]}, 500)

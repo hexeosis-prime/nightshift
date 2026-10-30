@@ -17,6 +17,7 @@ from . import project as P
 LENGTHS = {
     "short": {"profile": "short", "seconds": 40, "shots": 8, "label": "30-40 s, 8 shots, under an hour on a 3090"},
     "medium": {"profile": "short", "seconds": 75, "shots": 14, "label": "60-75 s, 14 shots, about 1.5 hours on a 3090"},
+    "full": {"profile": "short", "seconds": 150, "shots": 26, "label": "2-3 min, 26 shots, overnight on a 3090"},
 }
 
 # A scene preset is a look and three places. The shot pattern below moves the performer through them.
@@ -261,12 +262,38 @@ def trim_audio(src, dst, start, seconds):
     return dst
 
 
+def custom_scene(place, daytime=False, indoor=False):
+    """A scene from one typed location: three views of it."""
+    place = (place or "").strip().rstrip(".") or "an empty city street at night"
+    light = ("soft daylight" if daytime else "night, practical lights and deep shadows") + (", indoors" if indoor else ", outdoors")
+    return {
+        "label": "Custom", "blurb": place,
+        "switches": {"bad_photo": False, "pro_photo": True, "indoor": bool(indoor), "daytime": bool(daytime), "atmosphere": True},
+        "style": f"cinematic 35mm film photograph, {light}, natural colour, gentle atmosphere",
+        "grade": "A2_portra_dusk_plus",
+        "places": [place, f"{place}, seen from a different angle", f"{place}, a quieter corner of it"],
+        "establish": f"Wide establishing shot of {place}, no people. Slow, smooth cinematic camera move.",
+        "genre": "modern cinematic pop with a steady groove and warm synths, 100 BPM, A minor, bittersweet and hopeful",
+    }
+
+
+GRADES = {
+    "A2_portra_dusk_plus": "Portra dusk +",
+    "A_portra_dusk": "Portra dusk",
+    "B_cinestill_night": "CineStill night",
+    "C_faded_pastel": "Faded pastel",
+    "none": "Ungraded",
+}
+
+
 def create(root, form):
     """form: {name, length, aspect, image_model, mode, scene, comfy_url, comfy_dir,
               character: {noun, look, outfit, shoes, never, photo (path)},
               song: {source: "generate" | "upload", vibe, lyrics, audio (path), start}}"""
     length = LENGTHS[form.get("length") or "short"]
     scene = form.get("scene") or "night-avenue"
+    if scene == "custom":
+        SCENES["custom"] = custom_scene(form.get("custom_place"), form.get("custom_daytime"), form.get("custom_indoor"))
     if scene not in SCENES:
         raise ValueError(f"unknown scene '{scene}' (one of {', '.join(SCENES)})")
     song = form.get("song") or {}
@@ -311,7 +338,8 @@ def create(root, form):
         "profile": length["profile"], "length": form.get("length") or "short",
         "aspect": form.get("aspect") or "16:9", "image_model": form.get("image_model") or "flux2",
         "scene": scene, "song_max_seconds": length["seconds"],
-        "grade": {"look": sc["grade"], "lifts": []},
+        "grade": {"look": form.get("grade") if form.get("grade") in GRADES else sc["grade"], "lifts": []},
+        "overlay": overlay_cfg(lyrics, form.get("name"), form.get("overlay"), form.get("aspect") or "16:9"),
         "sheets": {"approve": form.get("approve_looks", True) is not False, "yolo_source": "image" if photo else "text"},
     })
     if upload:
@@ -325,3 +353,35 @@ def create(root, form):
     p.log("studio_create", scene=scene, length=cfg["length"], aspect=cfg["aspect"], image_model=cfg["image_model"],
           song="upload" if upload else "generate", photo=bool(photo))
     return P.Project(p.root)
+
+
+def overlay_cfg(lyrics, title=None, enabled=False, aspect="16:9"):
+    """The lyric HUD settings for a project: sections from the lyric sheet's [tags], the most repeated line as the hero.
+    The HUD is drawn at 1920x1080, so it is 16:9 only for now."""
+    if not enabled or aspect == "9:16":
+        return {"enabled": False}
+    sections, seen, pending = [], {}, None
+    lines = []
+    for raw in (lyrics or "").splitlines():
+        t = raw.strip()
+        if not t:
+            continue
+        if t.startswith("[") and t.endswith("]"):
+            pending = re.sub(r"\s*-\s*.*$", "", t[1:-1]).strip().upper() or "SECTION"
+            continue
+        lines.append(t)
+        seen[t] = seen.get(t, 0) + 1
+        if pending:
+            sec = {"name": pending}
+            if sections:
+                sec["line"] = t
+                if seen[t] > 1:
+                    sec["occurrence"] = seen[t]
+            sections.append(sec)
+            pending = None
+    hero = max(seen, key=lambda k: (seen[k], -lines.index(k))) if seen else None
+    style = {"title": (title or "NIGHTSHIFT").upper()[:32], "label": "PASS 01", "face_label": "SUBJECT 01",
+             "ticker": ["NIGHT SHIFT", "ALL CHANNELS OPEN", "TAKE {count}"], "widgets": {}}
+    if hero and seen[hero] > 1:
+        style["hero"] = "^" + re.escape(hero.lower()).replace("\\ ", " ") + "$"
+    return {"enabled": True, "sections": sections or [{"name": "INTRO"}], "style": style}
