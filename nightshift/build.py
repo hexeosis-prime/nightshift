@@ -206,6 +206,17 @@ class Builder:
                 f"the {who}'s facial expression is {expr}. {extra} "
                 f"photorealistic, clear healthy even skin, flattering soft light on the face, plain clothing with no lettering or print, only one {who} in the image.")
 
+    def people_in(self, s, label):
+        """How many people the base still shows (faces at least 3% of the frame width). 1 if it can't tell."""
+        try:
+            from . import score
+            import cv2
+            img = cv2.imread(self.p.latest_still(s["id"], label))
+            small, fs = score.faces(img)
+            return max(1, sum(1 for f in fs if f[2] >= 0.03 * small.shape[1]))
+        except Exception:
+            return 1
+
     def sheet_job(self, s, wording=None, seed=None, tag="edit"):
         ch_key = s["chars"][0]
         world = self.world(s)
@@ -216,12 +227,25 @@ class Builder:
             wf = self.p.workflow("edit3")
             a, c = self.char(add["char"]), self.char(ch_key)
             wf.set("image3", self.sheet(add["char"], add.get("world", world)))
-            text = (f"using [reference_image1] as the base, update the appearance of the {c['noun']} to match the film character sheet from [reference_image2] "
-                    f"using accurate face, body proportions and clothing carried over exactly from the [reference_image2] and then add in the {a['noun']} character "
-                    f"from [reference_image3] so that {a['pronoun']} appears naturally and realistically added into the shot, {add.get('where', '')}. keep the outfits clothing and "
-                    f"costumes exactly the same as the reference images. keep the camera angle, framing, lighting and background of [reference_image1]. "
+            keep = (f"keep the outfits clothing and costumes exactly the same as the reference images. keep the camera angle, framing, lighting and background of [reference_image1]. "
                     f"make the {c['noun']}'s facial expression {s.get('expr') or 'natural'} and the {a['noun']}'s expression {add.get('expr', 'natural')}. "
+                    f"exactly two people in the image, each appears only once, nobody is duplicated. "
                     f"both people have clear healthy even skin. {c.get('edit_extra', '')} {a.get('edit_extra', '')}")
+            if self.people_in(s, base_label) >= 2:
+                # the base still already has two people (the plan described a two-shot): replace both instead of adding a third,
+                # which is how one character ended up in the shot twice
+                if c["noun"] != a["noun"]:
+                    who = (f"replace the {c['noun']} in [reference_image1] with the {c['noun']} from the film character sheet in [reference_image2], "
+                           f"and replace the {a['noun']} in [reference_image1] with the {a['noun']} from the film character sheet in [reference_image3]")
+                else:
+                    who = (f"replace the {c['noun']} nearest the camera in [reference_image1] with the {c['noun']} from the film character sheet in [reference_image2], "
+                           f"and replace the other {a['noun']} in [reference_image1] with the {a['noun']} from the film character sheet in [reference_image3]")
+                text = (f"using [reference_image1] as the base, {who}, carrying over accurate face, body proportions and clothing from each sheet. "
+                        f"keep both people's poses and positions from [reference_image1]. " + keep)
+            else:
+                text = (f"using [reference_image1] as the base, update the appearance of the {c['noun']} to match the film character sheet from [reference_image2] "
+                        f"using accurate face, body proportions and clothing carried over exactly from the [reference_image2] and then add in the {a['noun']} character "
+                        f"from [reference_image3] so that {a['pronoun']} appears naturally and realistically added into the shot, {add.get('where', '')}. " + keep)
         else:
             wf = self.p.workflow("edit2")
             text = self.sheet_text(s, wording or s.get("wording", "A"))

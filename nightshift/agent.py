@@ -298,7 +298,7 @@ def normalize(raw, length="medium"):
                        action=s.get("action") or "standing still, looking into the distance, 50mm lens",
                        location=s.get("location") or "an empty street at night", video=video)
             if len(cs) > 1:
-                out["add"] = {"char": cs[1], "where": "standing beside them, a little behind", "expr": "natural"}
+                out["add"] = {"char": cs[1], "where": "standing beside the other person, a little behind", "expr": "natural"}
         shots.append(out)
     if len(shots) < 3:
         raise PlanError("the shot list is missing or too short")
