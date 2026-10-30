@@ -28,7 +28,7 @@ echo  [2/4] Face detection and recognition models (~40 MB)
 .venv\Scripts\python.exe scripts\get_models.py || goto :fail
 
 echo  [3/4] Speech model for lyric timing (faster-whisper small.en, ~480 MB, once)
-.venv\Scripts\python.exe -c "from faster_whisper import WhisperModel; WhisperModel('small.en', device='cpu', compute_type='int8'); print('       ok')" || goto :fail
+.venv\Scripts\python.exe -c "from faster_whisper import WhisperModel; from nightshift.lyrics import whisper_model; WhisperModel(whisper_model('small.en'), device='cpu', compute_type='int8'); print('       ok')" || goto :whisperfail
 
 echo  [4/4] ffmpeg
 where ffmpeg >nul 2>nul && (echo        ok) || (
@@ -46,6 +46,13 @@ exit /b 0
 :nopython
 echo.
 echo  No Python found. Install uv (https://docs.astral.sh/uv/) or Python 3.10+ and run this again.
+pause
+exit /b 1
+
+:whisperfail
+echo.
+echo  The speech model could not be downloaded from Hugging Face. Put the four files of Systran/faster-whisper-small.en
+echo  (config.json, model.bin, tokenizer.json, vocabulary.txt) in models\faster-whisper-small.en and run this again.
 pause
 exit /b 1
 

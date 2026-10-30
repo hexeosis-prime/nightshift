@@ -25,10 +25,17 @@ def sheet_lines(lyrics_text):
     return out
 
 
+def whisper_model(model="small.en"):
+    """A local copy in models/faster-whisper-<name> (next to the face models) wins over a Hugging Face download."""
+    import os
+    local = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", f"faster-whisper-{model}")
+    return local if os.path.exists(os.path.join(local, "model.bin")) else model
+
+
 def transcribe(audio, out, prompt=None, model="small.en", language="en"):
     import librosa
     from faster_whisper import WhisperModel
-    m = WhisperModel(model, device="cpu", compute_type="int8")
+    m = WhisperModel(whisper_model(model), device="cpu", compute_type="int8")
     a16, _ = librosa.load(audio, sr=16000, mono=True)
     segs, _ = m.transcribe(a16.astype(np.float32), word_timestamps=True, vad_filter=True, language=language,
                            initial_prompt=prompt)
