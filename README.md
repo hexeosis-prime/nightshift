@@ -7,7 +7,8 @@ Nightshift turns a song idea into a finished music video with open-weight models
 [ComfyUI](https://github.com/comfyanonymous/ComfyUI):
 
 - **MiniMax Music 3** writes and sings the song from a production brief and a lyric sheet
-- **Flux 2 Klein 9B** or **FLUX 3 Image Klein** paints the first frames and keeps the characters' faces and wardrobe consistent from shot to shot
+- **Flux 2 Klein 9B** paints the first frames and keeps the characters' faces and wardrobe consistent from shot to shot
+  (FLUX 3 Image Klein workflows are included but not yet tested end to end, so the app doesn't offer them yet)
 - **LTX 2.3** animates them: lip-sync to the song, first-to-last-frame camera moves, text-to-video establishing shots
 - **Python tools** fit the shot list to the song, score every take against the character sheets, cut on the beat, grade,
   and draw a lyric HUD that steers around faces
@@ -32,7 +33,7 @@ closed APIs, no agent required.
 nightshift app --comfy-dir C:/ComfyUI_windows_portable/ComfyUI      # or --comfy-url http://<gpu-box>:8188 for ComfyUI elsewhere
 ```
 
-opens `http://127.0.0.1:8189` with four questions:
+opens `http://127.0.0.1:8189`. **Interactive Mode** asks five things:
 
 1. **Who's in it**: a photo (yourself, or someone who agreed) and/or a few words: look, outfit. The character sheet is
    made from the photo, or from the words.
@@ -40,8 +41,15 @@ opens `http://127.0.0.1:8189` with four questions:
    the length; paste its lyrics for lip-sync, or leave them out for an instrumental).
 3. **Where**: a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn), a look plus three places that the shot
    list moves the performer through.
-4. **Format**: short (30-40 s, 8 shots, under an hour on a 3090) or medium (60-75 s, 14 shots), 9:16 or 16:9, Flux 2 Klein or
-   FLUX 3 Klein, and *Director* (stop at every checkpoint) or *Hands-off* (approve the look, then it runs to the end).
+4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full, 9:16 or
+   16:9, a colour grade, and the animated lyric HUD (16:9).
+5. **How much you're involved**: *Director mode* stops at each checkpoint and waits for your picks and notes. *Hands-off
+   mode* stops once to approve the character's look, then runs to the end.
+
+**About hands-off mode:** it always makes a complete video, and there is a good chance some shots come out wrong to a human
+eye: a hand with too many fingers, a face that drifts, a stray word painted on a wall. Nightshift catches some of this
+itself (it re-takes shots with burned-in text and keeps the take whose face best matches the character sheet), but not
+all of it. Watching the result and deciding whether to run a second pass or keep the weirdness is the human's call.
 
 The pass then runs on your ComfyUI. The page shows each step, the jobs, a wall of the latest renders and the log, and stops
 at the checkpoints: pick the character sheet, pick the song, look over the first frames and takes, watch the pass.
@@ -55,7 +63,7 @@ nightshift new my-video --scene desert-highway --aspect 9:16 --image-model flux3
 
 ### Agent mode
 
-The **Agent** tab is one box: describe the video with as few or as many details as you like (the story, the places, who is
+**Full Agent Mode** is one box: describe the video with as few or as many details as you like (the story, the places, who is
 in it, what the song is about). Then either:
 
 - **Plan it**: an agent model writes the lyrics, the song brief, one or two characters, the worlds and every shot, and the

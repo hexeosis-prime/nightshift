@@ -38,6 +38,11 @@ JSON shape:
 {
  "title": "short title",
  "logline": "one sentence: what the video is",
+ "grade": "A2_portra_dusk_plus" | "A_portra_dusk" | "B_cinestill_night" | "C_faded_pastel" | "none",
+                                     // the colour grade: warm Portra dusk (+ is punchier), CineStill night (cool, neon
+                                     // halation), faded pastel (soft, daylight), none. Pick what suits the idea.
+ "hud": false,                       // the animated lyric HUD (word-by-word on-screen lyrics). true ONLY if the user asks
+                                     // for on-screen lyrics, captions, karaoke text or a HUD; otherwise false.
  "characters": {                     // 1 or 2 people (keys: lowercase, e.g. "maya", "theo"). No real or famous people.
    "<key>": {
      "noun": "woman" | "man" | "person",
@@ -304,14 +309,23 @@ def normalize(raw, length="medium"):
         raise PlanError("the shot list is missing or too short")
     if not any(s["mode"] == "lipsync" for s in shots):
         raise PlanError("no lip-sync shot has an anchor that matches a lyric line")
+    from .studio import GRADES
+    grade = raw.get("grade") if raw.get("grade") in GRADES else "A2_portra_dusk_plus"
+    hud = raw.get("hud") is True or str(raw.get("hud")).lower() == "true"
     return {"_validated": True, "title": raw.get("title") or "Untitled", "logline": raw.get("logline") or "", "length": length,
+            "grade": grade, "hud": hud,
             "characters": chars, "worlds": worlds, "default_world": default_world,
             "song": {"caption": caption, "lyrics": lyrics}, "shots": shots}
 
 
 def create_from_plan(root, plan, opts=None):
-    """opts: aspect, image_model, mode, grade, overlay, comfy_url, comfy_dir, approve_looks"""
+    """opts: aspect, image_model, mode, grade, overlay, comfy_url, comfy_dir, approve_looks.
+    grade and overlay left out (or None/"") use the plan's own "grade" and "hud"."""
     o = dict(opts or {})
+    if not o.get("grade"):
+        o["grade"] = plan.get("grade")
+    if o.get("overlay") is None:
+        o["overlay"] = bool(plan.get("hud"))
     L = LENGTHS[plan.get("length") or "medium"]
     p = P.init(root, o.get("name") or os.path.basename(root), o.get("comfy_url"), o.get("comfy_dir"),
                mode=o.get("mode") or "yolo", skip=("refs/README.md", "README.md"))
@@ -348,15 +362,15 @@ Drive Nightshift on their GPU machine through its MCP server and make the whole 
 The user's idea:
 {idea}
 
-Their settings: length {length} (about {seconds} s, about {shots} shots), aspect {aspect}, image model {image_model},
-colour grade {grade}, lyric HUD {overlay}, direction {mode}.
+Their settings: length {length} (about {seconds} s, about {shots} shots), aspect {aspect}, direction {mode}.
+{look}
 
 How:
 1. Connect to the Nightshift MCP server at {mcp_url} (streamable HTTP, no auth, on their local network).
 2. Call plan_format and follow it exactly: write the lyrics, the song brief, the characters, the worlds and every shot.
    You write the creative plan with your own model; do not run a model on the GPU machine.
 3. Call create_from_plan with your plan and these settings: length="{length}", aspect="{aspect}", image_model="{image_model}",
-   grade="{grade}", overlay={overlay_py}, mode="{mode}".
+   mode="{mode}"{look_args}.
 4. Call pipeline_run(project=<the project it returns>). It renders for {hours}. Poll pipeline_status every 5-10 minutes.
    In director mode the user approves checkpoints in the Studio app ({studio_url}); in yolo mode it runs to the end.
 5. Tell the user the project name now, and again when out/pass01.mp4 is ready. If a step fails, read the log lines in
@@ -366,10 +380,15 @@ How:
 
 def handoff_brief(idea, length, opts, mcp_url, studio_url):
     L = LENGTHS[length]
+    if opts.get("grade"):       # the user chose the look (interactive settings)
+        look = f"They chose the colour grade {opts['grade']} and the lyric HUD {'on' if opts.get('overlay') else 'off'}."
+        look_args = f', grade="{opts["grade"]}", overlay={"true" if opts.get("overlay") else "false"}'
+    else:                       # Full Agent Mode: the plan's "grade" and "hud" decide
+        look = "You choose the colour grade (\"grade\" in the plan) and whether to use the lyric HUD (\"hud\": only if the idea asks for on-screen lyrics)."
+        look_args = ""
     return HANDOFF.format(idea=idea.strip(), length=length, seconds=L["seconds"], shots=L["shots"],
                           aspect=opts.get("aspect") or "16:9", image_model=opts.get("image_model") or "flux2",
-                          grade=opts.get("grade") or "A2_portra_dusk_plus", overlay="on" if opts.get("overlay") else "off",
-                          overlay_py="true" if opts.get("overlay") else "false", mode=opts.get("mode") or "yolo",
+                          look=look, look_args=look_args, mode=opts.get("mode") or "yolo",
                           mcp_url=mcp_url, studio_url=studio_url,
                           hours={"short": "under an hour", "medium": "about 1.5 hours", "full": "several hours"}[length])
 

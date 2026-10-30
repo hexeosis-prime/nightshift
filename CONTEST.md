@@ -4,7 +4,7 @@ Nightshift was built before the [Comfy "Open Source Higgsfield" challenge](https
 announced: the first commit in this repo is the pipeline as it was used to make "What Do You Want?", a 2:49 music
 video. The commits after it (dated October 29, 2026) adapt it to the challenge's brief, *"build a working app that makes it
 easy for someone else to create their own"*. They add an app, a profile that finishes in about an hour instead of a
-night (measured: ~45 minutes of GPU time on an RTX 3090), vertical video, your-own-track input, and FLUX 3 Image Klein as an image model option.
+night (measured: ~45 minutes of GPU time on an RTX 3090), vertical video, your-own-track input, and FLUX 3 Image Klein workflows (included, not yet tested end to end: see below).
 
 ## What the entry is
 
@@ -12,7 +12,7 @@ night (measured: ~45 minutes of GPU time on an RTX 3090), vertical video, your-o
 of yourself, or a written description), a song (MiniMax Music 3 writes and sings it from your lyrics, or you upload
 your track), a scene and a format. It then directs a complete music video:
 
-1. **Character sheet first.** The app makes a front/back/face sheet with Flux 2 Klein or FLUX 3 Klein and you pick the look.
+1. **Character sheet first.** The app makes a front/back/face sheet with Flux 2 Klein and you pick the look.
    Every later frame is edited toward that sheet and every take is scored against it with face recognition.
 2. **Song.** MiniMax Music 3 renders a song for each seed and the app shows how much of your lyric sheet each one actually
    sings. Then the song gets a beat map and word timing from faster-whisper.
@@ -23,12 +23,13 @@ your track), a scene and a format. It then directs a complete music video:
 6. **Pick, cut, grade.** The best take is chosen by face match, cut on the beat and graded, giving a finished
    1080×1920 or 1920×1080 video.
 
-Or skip the form: in the **Agent** tab you describe the idea in one box, and an agent model writes the lyrics, the song brief,
+Or skip the form: in **Full Agent Mode** you describe the idea in one box, and an agent model writes the lyrics, the song brief,
 the cast, the locations and every shot of a full-length video (any OpenAI-compatible model, open-weights ones included).
 You can also hand the idea to your own agent (OpenClaw, Hermes, Claude), which drives Nightshift on the GPU machine over MCP
 while you watch in the app.
 
-Director mode stops at each checkpoint in the app so you can choose. Hands-off mode stops once, to approve the look.
+Either way, **Director mode** stops at each checkpoint so you can choose, and **Hands-off mode** runs to the end. Hands-off
+always makes a complete video, and some shots may look wrong to a human eye; whether to run a second pass is the human's call.
 
 ## How it meets the requirements
 
@@ -49,8 +50,9 @@ Director mode stops at each checkpoint in the app so you can choose. Hands-off m
   a local model too (see [docs/agents.md](docs/agents.md)). Licenses: [docs/licenses.md](docs/licenses.md).
 - **VFX workflow built with LTX.** LTX 2.3 is the only video model and renders every shot: lip-sync from the song,
   first/last-frame moves and text to video.
-- **Built with FLUX.** With `image_model: flux3` (the FLUX 3 Klein button in the app), FLUX 3 Image Klein makes the
-  character sheets, every first frame and every identity edit (multi-reference edits through `Set Reference Multi Latent`).
+- **Built with FLUX.** Flux 2 Klein 9B makes every character sheet, first frame and identity edit. FLUX 3 Image Klein
+  workflows are in `workflows/*_flux3.json` (`image_model: flux3`), but we couldn't download the weights and test them on
+  our machine before the deadline, so the app doesn't offer them yet and we don't claim the FLUX 3 bonus.
 - **Most Innovative.** It's a whole production pipeline, not one graph: a crew that writes the song, casts and locks the
   character, shoots, scores takes against the cast sheet and edits on the beat. It is drivable by a person in a browser
   or by any agent over MCP, overnight, on one consumer GPU.

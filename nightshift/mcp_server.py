@@ -15,6 +15,7 @@ import subprocess
 import sys
 import time
 import uuid
+from typing import Optional
 
 try:   # MCP Python SDK 2.x
     from mcp.server.mcpserver import MCPServer as _Server, Image
@@ -114,8 +115,9 @@ def plan_format() -> str:
 
 @server.tool()
 def create_from_plan(plan: dict, name: str = "", length: str = "medium", aspect: str = "16:9", image_model: str = "flux2",
-                     grade: str = "A2_portra_dusk_plus", overlay: bool = False, mode: str = "yolo") -> dict:
+                     grade: str = "", overlay: Optional[bool] = None, mode: str = "yolo") -> dict:
     """Make a whole project from a plan in plan_format's JSON shape (characters, worlds, song caption + lyrics, shots).
+    grade / overlay: leave them out to use the plan's own "grade" and "hud"; pass them to override.
     length: short | medium | full. aspect: 16:9 | 9:16. image_model: flux2 | flux3. mode: yolo (runs to the end) | director
     (stops at checkpoints for the human in Nightshift Studio). Then call pipeline_run(project)."""
     from . import agent, studio

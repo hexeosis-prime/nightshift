@@ -173,6 +173,16 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .tabs{display:flex;gap:6px;margin:-4px 0 6px;border-bottom:1px solid var(--line)}
 .tabs button{border:0;background:transparent;color:var(--dim);padding:10px 14px 12px;cursor:pointer;font:600 15px/1 var(--sans);border-bottom:2px solid transparent;margin-bottom:-1px}
 .tabs button.on{color:var(--ink);border-bottom-color:var(--amber)}
+.tabs button{text-align:left;flex:1}
+.tabs button small{display:block;font:400 12.5px/1.35 var(--sans);color:var(--faint);margin-top:5px}
+.tabs button.on small{color:var(--dim)}
+.dirs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.dir{border:1px solid var(--line2);border-radius:12px;padding:14px 16px;cursor:pointer;background:var(--bg)}
+.dir b{display:block;font:600 15px/1.2 var(--sans);margin-bottom:6px}
+.dir>span{display:block;color:var(--dim);font-size:13px;line-height:1.45}
+.dir.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+.dir.on b{color:var(--amber)}
+@media (max-width:640px){.dirs{grid-template-columns:1fr}}
 pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);border:1px dashed var(--line2);border-radius:8px;padding:10px 12px;margin:0;white-space:pre-wrap;max-height:220px;overflow:auto}
 .scene.custom .sky{background:repeating-linear-gradient(135deg,#141725 0 10px,#191d2d 10px 20px)}
 .grades{display:flex;gap:8px;flex-wrap:wrap}
@@ -232,7 +242,10 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
     </div>
     <div class="home">
       <div class="card">
-        <div class="tabs" id="tabs"><button data-v="agent" class="on">Agent: describe it</button><button data-v="form">Step by step</button></div>
+        <div class="tabs" id="tabs">
+          <button data-v="agent" class="on">Full Agent Mode<small>Describe your idea simply; the agent works out every detail.</small></button>
+          <button data-v="form">Interactive Mode<small>Set up the key creative choices yourself, step by step.</small></button>
+        </div>
 
         <!-- AGENT MODE -->
         <div id="agentMode">
@@ -328,23 +341,37 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
         <div class="step">
           <div class="num" id="fmtNum">02</div>
           <div>
-            <h3>Format and look</h3>
+            <h3 id="fmtTitle">Format and look</h3>
             <div class="row" style="gap:22px">
               <div class="field" style="flex:none;min-width:0"><span class="label">Length</span><div class="seg" id="length"></div></div>
               <div class="field" style="flex:none;min-width:0"><span class="label">Aspect</span>
                 <div class="seg" id="aspect"><button data-v="9:16" class="on"><i class="aspect v"></i>9:16</button><button data-v="16:9"><i class="aspect w"></i>16:9</button></div></div>
+              <!-- FLUX 3 Klein is wired in (workflows/*_flux3.json) but untested on this ComfyUI; the choice comes back once it is.
               <div class="field" style="flex:none;min-width:0"><span class="label">Image model</span>
-                <div class="seg" id="model"><button data-v="flux2" class="on">Flux 2 Klein 9B</button><button data-v="flux3">FLUX 3 Klein</button></div></div>
-              <div class="field" style="flex:none;min-width:0"><span class="label">Direction</span>
-                <div class="seg" id="mode"><button data-v="director" class="on">Director: I choose</button><button data-v="yolo">Hands-off</button></div></div>
+                <div class="seg" id="model"><button data-v="flux2" class="on">Flux 2 Klein 9B</button><button data-v="flux3">FLUX 3 Klein</button></div></div> -->
             </div>
-            <div class="row" style="gap:22px;margin-top:16px">
+            <div class="row" id="lookRow" style="gap:22px;margin-top:16px">
               <div class="field" style="flex:none;min-width:0"><span class="label">Colour grade</span><div class="grades" id="grades"></div></div>
               <div class="field" style="flex:none;min-width:0"><span class="label">Lyric HUD</span>
                 <div class="seg" id="hud"><button data-v="off" class="on">Off</button><button data-v="on">Animated lyrics + HUD</button></div>
                 <span class="note" id="hudNote" style="margin-top:2px"></span></div>
             </div>
             <div class="note" id="lenNote"></div>
+            <div class="note hide" id="agentLook">The agent picks the colour grade, and adds the animated lyric HUD only if your idea asks for on-screen lyrics.</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="num" id="dirNum">03</div>
+          <div>
+            <h3>How much you're involved</h3>
+            <p class="hint">Both make the whole video. The difference is whether it waits for you along the way.</p>
+            <div class="dirs" id="mode">
+              <div class="dir on" data-v="director"><b>Director mode: I check in</b>
+                <span>Nightshift stops at checkpoints (the song takes, the first frames, the video takes, the finished pass), shows you what it made, and waits for your picks and notes before it goes on.</span></div>
+              <div class="dir" data-v="yolo"><b>Hands-off mode: run to the end</b>
+                <span><span id="yoloStops">Never pauses for feedback.</span> You get a complete video, and some shots may look wrong to a human eye. Watch it, then run a second pass or keep the weirdness: that call is yours.</span></div>
+            </div>
           </div>
         </div>
 
@@ -493,10 +520,15 @@ function hudUi(){
   if (v && state.hud === "on") setSeg("hud", "hud", "off");
   $("hudNote").textContent = v ? "16:9 only for now" : "word-by-word lyrics that steer around faces";
 }
+$("mode").addEventListener("click", e => {const c = e.target.closest(".dir"); if (!c) return;
+  state.mode = c.dataset.v; [...$("mode").children].forEach(x => x.classList.toggle("on", x === c))});
 function tabUi(){
   const ag = state.tab === "agent";
   $("agentMode").classList.toggle("hide", !ag); $("formMode").classList.toggle("hide", ag);
-  $("fmtNum").textContent = ag ? "02" : "04";
+  $("fmtNum").textContent = ag ? "02" : "04"; $("dirNum").textContent = ag ? "03" : "05";
+  $("fmtTitle").textContent = ag ? "Format" : "Format and look";
+  $("lookRow").classList.toggle("hide", ag);
+  $("yoloStops").textContent = ag ? "Never pauses for feedback." : "Pauses once, so you can approve the character's look, then never again."; $("agentLook").classList.toggle("hide", !ag);
   $("goBtn").textContent = ag ? "Plan it" : "Start the shift";
   $("handBtn").classList.toggle("hide", !ag);
   $("planBox").classList.add("hide"); $("goErr").textContent = "";
@@ -510,7 +542,7 @@ function lenUi(){
     (state.length === "full" ? "A full song renders overnight." : "Character sheets and the song come first; you can leave it running.");
 }
 seg("tabs", "tab", tabUi);
-seg("who","who"); seg("model","model"); seg("mode","mode"); seg("hud","hud"); seg("cDay","cDay"); seg("cIn","cIn");
+seg("who","who"); seg("hud","hud"); seg("cDay","cDay"); seg("cIn","cIn");
 seg("aspect","aspect", hudUi); seg("length","length", lenUi);
 seg("songSrc","songSrc", lyricsUi); seg("lyrSrc","lyrSrc", lyricsUi); seg("upLyr","upLyr", lyricsUi);
 let photoData = null, photoData2 = null;
@@ -611,8 +643,10 @@ async function listVideos(){
     return `<div class="vitem" onclick="go('${esc(p.name)}')"><div><div class="n">${esc(p.name)}</div><div class="s">${esc(p.scene || "")} · ${esc(p.aspect || "")} · pass ${p.pass || 1}</div></div>${b}</div>`;
   }).join("") : `<div class="empty">Nothing yet.</div>`;
 }
-const opts = () => ({aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade, overlay:state.hud === "on",
-  comfy_url:$("comfyUrl").value.trim() || undefined});
+const opts = () => state.tab === "agent"
+  ? {aspect:state.aspect, image_model:state.model, mode:state.mode, comfy_url:$("comfyUrl").value.trim() || undefined}   // the agent picks grade + HUD
+  : {aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade, overlay:state.hud === "on",
+     comfy_url:$("comfyUrl").value.trim() || undefined};
 function go1(){ return state.tab === "agent" ? planIt() : create() }
 async function handOff(){
   $("goErr").textContent = ""; $("handBtn").disabled = true;
@@ -655,6 +689,8 @@ function showPlan(){
     <td>${esc((s.chars || []).concat(s.add ? [s.add.char] : []).map(k => p.characters[k]?.name || k).join(" + ") || "·")}</td>
     <td>${esc(s.framing || "")}</td><td>${esc(s.anchor ? "“" + s.anchor + "…”" : "")}</td><td>${esc((s.location || s.video || "").slice(0, 90))}</td></tr>`).join("");
   box.innerHTML = `<span class="label">The plan</span><h2>${esc(p.title)}</h2><p style="color:var(--dim);margin:6px 0 0">${esc(p.logline)}</p>
+    <p class="note" style="margin-top:6px">The agent's look: <b>${esc(INFO.grades[p.grade] || p.grade || "Portra dusk +")}</b> grade · lyric HUD
+      <b>${p.hud ? (state.aspect === "16:9" ? "on" : "asked for, but 16:9 only for now") : "off"}</b></p>
     <div class="cast">${cast}</div>
     <div class="cols"><div><span class="label">Lyrics</span><pre class="sample" style="max-height:420px;margin-top:8px">${esc(p.song.lyrics)}</pre></div>
     <div><span class="label">${p.shots.length} shots</span><table><tr><th>#</th><th>mode</th><th>who</th><th>frame</th><th>starts on</th><th>where</th></tr>${rows}</table></div></div>
