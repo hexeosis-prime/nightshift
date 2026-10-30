@@ -376,11 +376,14 @@ def handoff_brief(idea, length, opts, mcp_url, studio_url):
 
 def send_handoff(settings, brief, payload):
     """POST the brief to the user's agent (an OpenClaw / Hermes webhook, or anything that takes JSON)."""
-    body = dict(payload, message=brief, text=brief)
-    headers = {"Content-Type": "application/json"}
+    url = settings["hook_url"]
+    if url.rstrip("/").endswith("/notes"):              # a plain-text drop box the agent polls (e.g. a LAN notes endpoint)
+        data, headers = brief.encode(), {"Content-Type": "text/plain; charset=utf-8"}
+    else:                                               # an agent webhook: OpenClaw /hooks/agent takes {"message"}, wake takes {"text"}
+        data, headers = json.dumps(dict(payload, message=brief, text=brief)).encode(), {"Content-Type": "application/json"}
     if settings.get("hook_token"):
         headers["Authorization"] = f"Bearer {settings['hook_token']}"
-    req = urllib.request.Request(settings["hook_url"], data=json.dumps(body).encode(), headers=headers, method="POST")
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             return {"status": r.status, "reply": r.read(2000).decode("utf-8", "replace")}
