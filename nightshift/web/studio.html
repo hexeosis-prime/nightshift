@@ -737,7 +737,7 @@ function render(v){
   $("pFacts").innerHTML = `<b>${esc(c.length || c.profile)}</b> · <b>${esc(c.aspect || "16:9")}</b><br>${esc(c.image_model === "flux3" ? "FLUX 3 Klein" : "Flux 2 Klein")} · LTX 2.3<br>
     ${esc(c.scene || "")} · ${esc(c.mode)}<br>pass ${v.pass || 1} · ${esc(v.comfy)}`;
   const done = new Set(v.done);
-  const steps = v.steps.filter(s => s !== "overlay");
+  const steps = v.steps.filter(s => s !== "overlay" || c.hud);
   $("pSteps").innerHTML = steps.map(s => {
     let cls = done.has(s) ? "done" : "";
     if (s === v.step && v.step !== "done") cls = v.waiting ? "wait" : v.running ? "now" : "";

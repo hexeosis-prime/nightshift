@@ -251,7 +251,8 @@ class Studio:
         return {
             "name": name, "running": bool(busy and busy["project"] == name) or ext, "by_agent": ext,
             "busy_other": bool(busy and busy["project"] != name),
-            "cfg": {k: p.cfg.get(k) for k in ("mode", "profile", "length", "aspect", "image_model", "scene", "song", "work_size", "final_size")},
+            "cfg": dict({k: p.cfg.get(k) for k in ("mode", "profile", "length", "aspect", "image_model", "scene", "song", "work_size", "final_size")},
+                        hud=bool((p.cfg.get("overlay") or {}).get("enabled"))),
             "comfy": p.cfg["comfy"]["url"],
             "pass": st.get("pass"), "step": st.get("step"), "done": [h["step"] for h in st.get("history", [])],
             "steps": pipeline.STEPS, "jobs": counts, "waiting": packet,
