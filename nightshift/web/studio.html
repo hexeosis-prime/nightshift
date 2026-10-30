@@ -104,6 +104,7 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
 .go{display:flex;align-items:center;gap:16px;margin-top:6px;padding-top:22px;border-top:1px solid var(--line)}
 .go .btn.primary{padding:15px 26px;font-size:16px}
 .err{color:var(--red);font-size:13.5px}
+.ok{color:var(--green);font-size:14px;font-weight:500}
 .side h4{margin:0 0 12px}
 .vlist{display:flex;flex-direction:column;gap:8px}
 .vitem{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:var(--bg)}
@@ -566,8 +567,15 @@ async function saveAgent(){
     agentInfo();
   } catch(e){ $("agentCheck").textContent = e.message }
 }
+let WAITING = null;
 async function listVideos(){
   const {projects} = await api("/api/projects");
+  if (WAITING) {
+    const fresh = projects.find(p => !WAITING.known.has(p.name));
+    const mins = Math.round((Date.now() - WAITING.since) / 60000);
+    if (fresh) { WAITING = null; $("goErr").className = "ok"; $("goErr").innerHTML = `✓ Your agent started <a href="#/${esc(fresh.name)}">${esc(fresh.name)}</a>`; }
+    else if (state.tab === "agent") $("goErr").textContent = `✓ Sent to your agent. Waiting for it to start the video (${mins} min)...`;
+  }
   $("vlist").innerHTML = projects.length ? projects.map(p => {
     const b = p.waiting ? `<span class="badge wait">${esc((CP[p.waiting] || [p.waiting])[0])}</span>` : p.step === "done" ? `<span class="badge done">done</span>` :
       p.step ? `<span class="badge">${esc(STEP_NAMES[p.step] || p.step)}</span>` : `<span class="badge">new</span>`;
@@ -580,7 +588,11 @@ function go1(){ return state.tab === "agent" ? planIt() : create() }
 async function handOff(){
   $("goErr").textContent = ""; $("handBtn").disabled = true;
   try {
+    $("goErr").className = "ok"; $("goErr").textContent = "sending to your agent...";
     const r = await api("/api/agent/handoff", {idea:$("idea").value, length:state.length, opts:opts()});
+    $("goErr").textContent = r.sent ? `✓ Sent to your agent at ${new Date().toLocaleTimeString()}. Waiting for it to start the video...`
+                                   : "No agent webhook set: copy the brief below into your agent's chat.";
+    WAITING = r.sent ? {since: Date.now(), known: new Set((await api("/api/projects")).projects.map(p => p.name))} : null;
     const box = $("planBox"); box.classList.remove("hide");
     box.innerHTML = `<span class="label">${r.sent ? "Sent to your agent" : "The brief for your agent"}</span>
       <h2>${r.sent ? "Your agent has it" : "Paste this into your agent's chat"}</h2>
@@ -589,7 +601,7 @@ async function handOff(){
       <pre class="sample" style="max-height:340px">${esc(r.brief)}</pre>
       <div class="go"><button class="btn" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(r.brief))}).then(()=>this.textContent='Copied')">Copy the brief</button></div>`;
     box.scrollIntoView({behavior:"smooth", block:"start"});
-  } catch(e){ $("goErr").textContent = e.message } finally { $("handBtn").disabled = false }
+  } catch(e){ $("goErr").className = "err"; $("goErr").textContent = e.message } finally { $("handBtn").disabled = false }
 }
 
 async function planIt(){
