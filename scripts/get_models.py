@@ -2,6 +2,7 @@
 
   yunet.onnx   face detection, used for scoring and for the overlay's face tracks (OpenCV Zoo, MIT)
   sface.onnx   face recognition embeddings, used to score faces against character sheets (OpenCV Zoo, Apache 2.0)
+  text_det.onnx  text detection (PP-OCRv3 DB), catches subtitles burned into a take before the cut (OpenCV Zoo, Apache 2.0)
 """
 import os
 import sys
@@ -11,6 +12,7 @@ DEST = os.environ.get("NIGHTSHIFT_MODELS", os.path.join(os.path.dirname(os.path.
 FILES = {
     "yunet.onnx": "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
     "sface.onnx": "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx",
+    "text_det.onnx": "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/text_detection_ppocr/text_detection_en_ppocrv3_2023may.onnx",
 }
 
 os.makedirs(DEST, exist_ok=True)
