@@ -95,12 +95,15 @@ class Studio:
             song = dict(form.get("song") or {})
             if files.get("photo"):
                 ch["photo"] = _write_upload(tmp, files["photo"])
+            ch2 = dict(form.get("character2") or {}) if form.get("character2") else None
+            if ch2 is not None and files.get("photo2"):
+                ch2["photo"] = _write_upload(tmp, files["photo2"], "p2_")
             if files.get("audio"):
                 song["audio"] = _write_upload(tmp, files["audio"])
                 song["source"] = "upload"
             elif song.get("source") == "upload":
                 raise ValueError("choose a track to upload, or let MiniMax Music 3 write the song")
-            form = dict(form, character=ch, song=song, name=name,
+            form = dict(form, character=ch, character2=ch2, song=song, name=name,
                         comfy_url=form.get("comfy_url") or self.comfy_url, comfy_dir=form.get("comfy_dir") or self.comfy_dir)
             p = studio.create(os.path.join(self.root, name), form)
         finally:
@@ -360,8 +363,8 @@ def _inside(root, path):
     return os.path.commonpath([root, path]) == root
 
 
-def _write_upload(tmp, up):
-    name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(up.get("name") or "upload.bin"))[-80:]
+def _write_upload(tmp, up, prefix=""):
+    name = prefix + re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(up.get("name") or "upload.bin"))[-80:]
     path = os.path.join(tmp, name)
     data = up["data"]
     if "," in data[:100]:

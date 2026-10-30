@@ -192,9 +192,44 @@ def character(form_char):
     return c
 
 
-def shots(scene, lyrics, n_shots, ch=None, seed0=1000):
+def voice_label(c, other=None):
+    """The singer name used in lyric section tags and the caption's casting note."""
+    v = {"woman": "Female Singer", "man": "Male Singer"}.get(c["noun"], "Singer")
+    if other is not None and voice_label(other) == v:            # two women, two men, two people: number them
+        v = "First " + v if c.get("_first") else "Second " + v
+    return v
+
+
+def tag_duet(lyrics, ch, ch2):
+    """Name a singer in every section tag (alternating, starting with the lead) unless the tags already name one.
+    Returns (tagged lyrics, {lyric line index: "lead" | "partner"})."""
+    v1, v2 = voice_label(ch, ch2), voice_label(ch2, ch)
+    out, owner, who, k, li = [], {}, None, 0, 0
+    for raw in (lyrics or "").splitlines():
+        t = raw.strip()
+        if t.startswith("[") and t.endswith("]"):
+            name, _, tag_singer = t[1:-1].partition(" - ")
+            if tag_singer:
+                low = tag_singer.lower()
+                who = "partner" if (v2.lower() in low or (v2 != v1 and v2.split()[0].lower() in low)) else "lead"
+            else:
+                who = "lead" if k % 2 == 0 else "partner"
+                t = f"[{name.strip()} - {v1 if who == 'lead' else v2}]"
+            k += 1
+            out.append(t)
+            continue
+        if t:
+            owner[li] = who or "lead"
+            li += 1
+        out.append(raw)
+    return "\n".join(out), owner
+
+
+def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None):
     sc = SCENES[scene]
     lines = lyric_lines(lyrics)
+    owner = owner or {}
+    n_ff = 0
     pattern = [PATTERN[0]] + [PATTERN[1 + (i % 6)] for i in range(n_shots - 2)] + [PATTERN[-1]]
     sung = [i for i, p in enumerate(pattern) if p[4]]
     anchors = pick_anchors(lines, len(sung))
@@ -210,19 +245,31 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000):
                      video=f"A wide shot of the empty place where the video began: {sc['places'][place]}. The camera glides slowly "
                            f"forward and rises as the light fades.")
         else:
+            who = "lead"
             if sings and i in sung and sung.index(i) < len(anchors):
                 s["anchor"] = anchors[sung.index(i)]
+                if ch2:
+                    who = owner.get(lines.index(s["anchor"]), "lead")
             else:
+                if ch2:
+                    who = "lead" if n_ff % 2 == 0 else "partner"
+                    n_ff += 1
                 mode = s["mode"] = "ff" if mode == "lipsync" else mode
                 if framing == "close":
                     s["framing"] = framing = "medium"
             key = (mode, framing) if (mode, framing) in ACTIONS else ("ff", "wide")
             act, expr = ACTIONS[key]
-            obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((ch or {}).get("pronoun"), ("them", "their"))
+            c = ch2 if who == "partner" else ch
+            obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((c or {}).get("pronoun"), ("them", "their"))
             if mode == "lipsync":
                 s["no_lyric"] = True                 # quoted lyrics can burn in as subtitles; the song audio drives the mouth
-            s.update(chars=["lead"], still="edit", wording="C", expr=expr, action=act, location=sc["places"][place],
-                     video=VIDEO[key].replace("{pr}", obj).replace("{po}", pos))
+            s.update(chars=[who], still="edit", wording="C", expr=expr, action=act, location=sc["places"][place],
+                     video=VIDEO[key].replace("{pr}", obj).replace("{po}", pos).replace("{lead}", "{" + who + "}"))
+            if ch2 and mode == "ff" and framing == "wide" and not any(x.get("add") for x in out):
+                other = "partner" if who == "lead" else "lead"
+                s["add"] = {"char": other, "where": "standing a few steps away, facing them", "expr": "natural"}
+                s["video"] = (f"Wide shot of {{{who}}} and {{{other}}} together, a few steps apart, the wind moving their hair. "
+                              f"The camera pushes in slowly.")
         out.append(s)
     return {"_readme": "Written by Nightshift Studio from a scene preset. Song-agnostic: lip-sync shots start on the lyric line in "
                        "\"anchor\". Edit freely; fields: docs/shots.md.", "shots": out}
@@ -232,11 +279,18 @@ def _ts(sec):
     return f"{int(sec) // 60}:{int(sec) % 60:02d}"
 
 
-def caption(scene, vibe, noun, seconds, instrumental=False):
+def caption(scene, vibe, noun, seconds, instrumental=False, duet=None):
     sc = SCENES[scene]
     voice = {"woman": "One female lead vocal", "man": "One male lead vocal", "person": "One lead vocal"}[noun]
     vocal = "Instrumental, no vocals." if instrumental else (
         f"{voice}: close and sincere, every word clear, doubled softly in the chorus. No other voices.")
+    cast = ""
+    if duet and not instrumental:
+        v1, v2 = duet
+        cast = (f"THIS SONG HAS TWO DIFFERENT VOCALISTS. A {v1.upper()} sings only the sections tagged {v1}. A {v2.upper()} "
+                f"sings only the sections tagged {v2}. They never sing or double each other's lines.\n\n")
+        vocal = (f"Two lead vocals with clearly different voices: the {v1.lower()} close and sincere, the {v2.lower()} warm and "
+                 f"lower. Every word clear. Each sings only their own tagged sections.")
     if seconds < 60:
         a, b = round(seconds * 0.2), round(seconds * 0.8)
         arr = (f"{_ts(0)}-{_ts(a)} Intro: the first line sung over a sparse bed.\n"
@@ -248,7 +302,7 @@ def caption(scene, vibe, noun, seconds, instrumental=False):
                f"{_ts(b)}-{_ts(c)} Chorus: everything opens up, the hook sung twice.\n"
                f"{_ts(c)}-{_ts(seconds)} Outro: the last line, a natural decay. No hard ending.\n")
     return (f"# Song brief (the MiniMax Music 3 caption)\n<!-- Written by Nightshift Studio. Headings and comments are stripped "
-            f"before the text goes to the model. See docs/prompting.md. -->\n\n## Global metadata\nGenre: {sc['genre']}."
+            f"before the text goes to the model. See docs/prompting.md. -->\n\n{cast}## Global metadata\nGenre: {sc['genre']}."
             + (f" {vibe.strip().rstrip('.')}." if vibe and vibe.strip() else "") +
             f"\nA short song of about {seconds} seconds with a real ending.\n\n## Vocal details\n{vocal}\n\n## Arrangement\n" + arr)
 
@@ -306,16 +360,34 @@ def create(root, form):
                mode=form.get("mode") or "director", skip=("refs/README.md", "README.md"))   # the starter's notes are about its own example
     ch = character(form.get("character") or {})
     photo = (form.get("character") or {}).get("photo")
+    f2 = form.get("character2") or {}
+    ch2 = character(f2) if f2 else None
+    owner = {}
+    if ch2:
+        ch["_first"] = True
+        if ch2["name"] == ch["name"]:
+            ch2["name"] = "Partner"
+        if lyric_lines(lyrics):
+            lyrics, owner = tag_duet(lyrics, ch, ch2)
     if photo:
         ext = os.path.splitext(photo)[1].lower() or ".png"
         os.makedirs(p.path("refs"), exist_ok=True)
         shutil.copyfile(photo, p.path("refs", "lead" + ext))
         ch["reference"] = f"refs/lead{ext}"
+    if ch2 and f2.get("photo"):
+        ext = os.path.splitext(f2["photo"])[1].lower() or ".png"
+        os.makedirs(p.path("refs"), exist_ok=True)
+        shutil.copyfile(f2["photo"], p.path("refs", "partner" + ext))
+        ch2["reference"] = f"refs/partner{ext}"
+    duet = (voice_label(ch, ch2), voice_label(ch2, ch)) if ch2 else None
+    for c in (ch, ch2):
+        if c:
+            c.pop("_first", None)
     sc = SCENES[scene]
     canon = {
         "_readme": "Written by Nightshift Studio. Who is in the video and what never changes; identity words are copied by the "
                    "builder into every job.",
-        "characters": {"lead": ch},
+        "characters": {"lead": ch, **({"partner": ch2} if ch2 else {})},
         "worlds": {"real": {"still_model": "flux", "switches": sc["switches"], "style": sc["style"]}},
         "default_world": "real",
         "location": sc["places"][0],
@@ -325,10 +397,10 @@ def create(root, form):
         "negatives": {},
     }
     p.save("canon.json", canon)
-    p.save("shots.json", shots(scene, lyrics, length["shots"], ch))
+    p.save("shots.json", shots(scene, lyrics, length["shots"], ch, ch2=ch2, owner=owner))
     os.makedirs(p.path("song"), exist_ok=True)
     with open(p.path("song", "caption.md"), "w", encoding="utf-8") as f:
-        f.write(caption(scene, song.get("vibe"), ch["noun"], length["seconds"], instrumental))
+        f.write(caption(scene, song.get("vibe"), ch["noun"], length["seconds"], instrumental, duet))
     with open(p.path("song", "lyrics.txt"), "w", encoding="utf-8") as f:
         f.write((lyrics or "[Instrumental]") + "\n")
     cfg = p.load("project.json")

@@ -263,7 +263,22 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
                 <div class="seg" id="who"><button data-v="woman" class="on">Woman</button><button data-v="man">Man</button><button data-v="person">Person</button></div>
                 <input type="text" id="look" placeholder="Look: late twenties, curly red hair, freckles, green eyes">
                 <input type="text" id="outfit" placeholder="Outfit: a cropped denim jacket, white tank top, black jeans">
-                <div class="note" style="margin-top:0">The grey text is only an example: type your own. Two performers or more places? Use the Agent tab.</div>
+                <div class="note" style="margin-top:0">The grey text is only an example: type your own.</div>
+              </div>
+            </div>
+            <button class="btn ghost" id="addP2" style="margin-top:14px" onclick="toggleP2(true)">+ Add a second performer (duet)</button>
+            <div id="p2" class="hide" style="margin-top:16px">
+              <span class="label" style="display:block;margin-bottom:10px">Second performer · sings every other section</span>
+              <div class="row">
+                <label class="drop" id="photoDrop2"><input type="file" accept="image/*" id="photo2" hidden>
+                  <span id="photoHint2">Drop a photo<br>or click<br><small>(optional)</small></span><img id="photoImg2" class="hide" alt="">
+                  <button class="x" type="button" onclick="clearPhoto2(event)">✕</button></label>
+                <div class="field" style="min-width:260px">
+                  <div class="seg" id="who2"><button data-v="woman">Woman</button><button data-v="man" class="on">Man</button><button data-v="person">Person</button></div>
+                  <input type="text" id="look2" placeholder="Look: early thirties, short black beard, warm brown eyes">
+                  <input type="text" id="outfit2" placeholder="Outfit: a navy work jacket, grey hoodie, dark jeans">
+                  <button class="btn ghost" style="align-self:flex-start;padding:6px 10px;font-size:13px" onclick="toggleP2(false)">Remove</button>
+                </div>
               </div>
             </div>
             <div class="note">Only use a photo of yourself or of someone who said yes. No celebrities.</div>
@@ -498,7 +513,21 @@ seg("tabs", "tab", tabUi);
 seg("who","who"); seg("model","model"); seg("mode","mode"); seg("hud","hud"); seg("cDay","cDay"); seg("cIn","cIn");
 seg("aspect","aspect", hudUi); seg("length","length", lenUi);
 seg("songSrc","songSrc", lyricsUi); seg("lyrSrc","lyrSrc", lyricsUi); seg("upLyr","upLyr", lyricsUi);
-let photoData = null;
+let photoData = null, photoData2 = null;
+state.who2 = "man"; state.duet = false;
+seg("who2", "who2");
+function toggleP2(on){ state.duet = on; $("p2").classList.toggle("hide", !on); $("addP2").classList.toggle("hide", on) }
+$("photo2").addEventListener("change", e => readPhoto2(e.target.files[0]));
+$("photoDrop2").addEventListener("dragover", e => {e.preventDefault()});
+$("photoDrop2").addEventListener("drop", e => {e.preventDefault(); readPhoto2(e.dataTransfer.files[0])});
+function readPhoto2(f){
+  if (!f) return; const r = new FileReader();
+  r.onload = () => {photoData2 = {name:f.name, data:r.result}; $("photoImg2").src = r.result; $("photoImg2").classList.remove("hide");
+    $("photoHint2").classList.add("hide"); $("photoDrop2").classList.add("has")};
+  r.readAsDataURL(f);
+}
+function clearPhoto2(e){e.preventDefault(); e.stopPropagation(); photoData2 = null; $("photo2").value = ""; $("photoImg2").classList.add("hide");
+  $("photoHint2").classList.remove("hide"); $("photoDrop2").classList.remove("has")}
 $("photo").addEventListener("change", e => readPhoto(e.target.files[0]));
 $("photoDrop").addEventListener("dragover", e => {e.preventDefault()});
 $("photoDrop").addEventListener("drop", e => {e.preventDefault(); readPhoto(e.dataTransfer.files[0])});
@@ -644,6 +673,7 @@ async function create(){
   try {
     const files = {};
     if (photoData) files.photo = photoData;
+    if (state.duet && photoData2) files.photo2 = photoData2;
     const up = state.songSrc === "upload";
     if (up) {
       const f = $("audio").files[0]; if (!f) throw new Error("choose your track, or let MiniMax Music 3 make the song");
@@ -656,6 +686,7 @@ async function create(){
     const form = Object.assign(opts(), {length:state.length, scene:state.scene,
       custom_place:$("customPlace").value, custom_daytime:state.cDay === "day", custom_indoor:state.cIn === "in",
       character:{noun:state.who, look:$("look").value, outfit:$("outfit").value},
+      character2: state.duet ? {noun:state.who2, look:$("look2").value, outfit:$("outfit2").value} : undefined,
       song:{source:state.songSrc, vibe:$("vibe").value, lyrics, start:parseFloat($("start").value) || 0}});
     const r = await api("/api/projects", {form, files, run:true});
     go(r.name);
