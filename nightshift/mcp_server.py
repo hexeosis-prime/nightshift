@@ -178,10 +178,10 @@ def patch_shot(project: str, shot_id: str, fields: dict, file: str = "shots.json
 
 
 @server.tool()
-def list_files(project: str, pattern: str = "clips/*.mp4") -> list:
-    """Files in the project matching a glob, oldest first."""
+def list_files(project: str, pattern: str = "clips/*.mp4", path: str = "") -> list:
+    """Files in the project matching a glob (pattern, or path: "out/*.mp4", "stills/s02_*"), oldest first."""
     p = _project(project)
-    return [p.rel(f) for f in sorted(glob.glob(_safe(p, pattern)), key=os.path.getmtime)]
+    return [p.rel(f) for f in sorted(glob.glob(_safe(p, path or pattern)), key=os.path.getmtime)]
 
 
 @server.tool()

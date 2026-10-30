@@ -37,7 +37,8 @@ model) and let it drive the GPU box over the network.
 `read_doc` returns the file's raw text (JSON files included: parse it yourself), and `write_doc` replaces the whole file, so
 read, change, write back. In `project.json` the project's name is `"name"`; keys starting with `_` are notes. To make a video
 from an idea: `plan_format` → write the plan with your own model → `create_from_plan` → `pipeline_run` → poll
-`pipeline_status`. In yolo mode nothing waits for a human; in director mode call `pipeline_continue` when the human approves.
+`pipeline_status`. In yolo mode nothing waits for a human; in director mode call `pipeline_continue` when the human approves. `list_files(project, "out/*.mp4")` finds the finished pass. When Nightshift Studio is running, every project file is also
+served over HTTP at `http://<gpu-box>:8189/files/<project>/<path>` (range requests work), handy for checking a video.
 
 Long steps (a pass, song analysis, assembly, overlay, finishing) return a task id immediately; `task_status` shows the log.
 `view_image` hands contact sheets, stills and video frames to agents that can see.
