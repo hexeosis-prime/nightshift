@@ -239,8 +239,9 @@ Built by a small crew: one human and three agents, plus help along the way.
 
 - **hexeosis** (Erik Buth): creative director. The idea, the first video, the pipeline's architecture, and every taste call:
   what looks right, what ships, what gets another pass.
-- **Claude** (Anthropic, Opus 5.5): lead engineer. Wrote most of the code (the pipeline, the Studio app, the MCP server, the
-  quality checks), fixed what the overnight runs broke, and edited the docs.
+- **Claude** (Anthropic, Opus 5.5): lead engineer and the Studio app's designer. Wrote most of the code (the pipeline, the
+  Studio app, the MCP server, the quality checks) and designed the app's look and screens, with UX notes from hexe's testing;
+  fixed what the overnight runs broke, and edited the docs.
 - **⬣ hexONE** (a Hermes agent at hexeosis inc.): named the project. "Nightshift" came from hexONE's first strategy session,
   before there was an app; hexONE also wrote the contest handoff and the last-day touch-up list.
 - **⬡ Zero** (HEXEBOTZERO, an OpenClaw agent at hexeosis inc.): tester and infrastructure. Drove Nightshift over MCP to make two

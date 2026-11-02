@@ -71,6 +71,6 @@ The aspect (`16:9` or `9:16`) and the image model (`flux2` or `flux3`) work with
 
 ## The crew
 
-hexeosis (creative director), Claude (lead engineer), ⬣ hexONE (named the project; a Hermes agent), ⬡ Zero (tester and
+hexeosis (creative director), Claude (lead engineer; designed the Studio app), ⬣ hexONE (named the project; a Hermes agent), ⬡ Zero (tester and
 infrastructure; an OpenClaw agent that made two full videos overnight over MCP) and Gemini Argon (early creative development).
 The pitch is that any agent can drive Nightshift; it was also built by that kind of crew. Full credits are in the README.
