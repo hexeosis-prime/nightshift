@@ -36,7 +36,7 @@ catch (e) {
   if (!exe) throw e;
   browser = await chromium.launch({ ...opts, executablePath: exe });
 }
-const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+const page = await browser.newPage({ viewport: { width: data.width || 1920, height: data.height || 1080 } });
 page.on("pageerror", e => console.error("page error:", e.message));
 await page.goto(pathToFileURL(resolve(here, "overlay.html")).href);
 const fontsOk = await page.evaluate(d => window.init(d), data);

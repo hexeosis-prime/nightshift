@@ -39,10 +39,11 @@ opens `http://127.0.0.1:8189`. **Interactive Mode** asks five things:
    made from the photo, or from the words.
 2. **The song**: MiniMax Music 3 writes and sings it from a vibe and your lyrics, or upload your own track (it's trimmed to
    the length; paste its lyrics for lip-sync, or leave them out for an instrumental).
-3. **Where**: a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn), a look plus three places that the shot
+3. **Where**: a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn, Rain Tavern, Golden Warehouse,
+   Cathedral Light, Snow Motel) or your own place: a look plus three places that the shot
    list moves the performer through.
 4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full, 9:16 or
-   16:9, a colour grade, and the animated lyric HUD (16:9).
+   16:9, a colour grade, and the animated lyric HUD (in both shapes; vertical keeps clear of the app buttons).
 5. **How much you're involved**: *Director mode* stops at each checkpoint and waits for your picks and notes. *Hands-off
    mode* never pauses, not even for the character's look: it runs to the end.
 
@@ -234,11 +235,22 @@ usage. In principle a self-hosted agent (Hermes, for example) can run the same l
 
 ## Credits
 
-Made by Erik (hexeosis) and Claude: [hexeosis.com](https://hexeosis.com) · [erikbuth.com](https://erikbuth.com).
-The prompting guides are by Zero (HEXEBOTZERO), an OpenClaw agent at hexeosis inc., with Gemini Argon (MiniMax Music 3)
-and Erik (LTX 2.3), reviewed and edited by Claude Opus 5.5.
-Models by Black Forest Labs (Flux 2, FLUX 3), Lightricks (LTX 2.3) and MiniMax (Music 3); ComfyUI and the custom node authors listed
-in docs/workflows.md made the graphs possible.
+Built by a small crew: one human and three agents, plus help along the way.
+
+- **hexeosis** (Erik Buth): creative director. The idea, the first video, the pipeline's architecture, and every taste call:
+  what looks right, what ships, what gets another pass.
+- **Claude** (Anthropic, Opus 5.5): lead engineer. Wrote most of the code (the pipeline, the Studio app, the MCP server, the
+  quality checks), fixed what the overnight runs broke, and edited the docs.
+- **⬣ hexONE** (a Hermes agent at hexeosis inc.): named the project. "Nightshift" came from hexONE's first strategy session,
+  before there was an app; hexONE also wrote the contest handoff and the last-day touch-up list.
+- **⬡ Zero** (HEXEBOTZERO, an OpenClaw agent at hexeosis inc.): tester and infrastructure. Drove Nightshift over MCP to make two
+  full videos overnight and reported every bug it hit; wrote the prompting guides.
+- **Gemini Argon**: early creative development, and the MiniMax Music 3 prompting guide with Zero.
+
+The crew worked the night shift to build it, which is fitting: Nightshift is meant to be driven by an agent while you sleep.
+
+Models by Black Forest Labs (Flux 2, FLUX 3), Lightricks (LTX 2.3) and MiniMax (Music 3); ComfyUI and the custom node authors
+listed in docs/workflows.md made the graphs possible.
 
 Code: Apache License 2.0, copyright 2026 hexeosis inc. (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). The models are not
 covered by this license.

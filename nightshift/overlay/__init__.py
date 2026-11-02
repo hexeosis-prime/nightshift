@@ -167,7 +167,8 @@ def prep(project, edl, faces_json, out=None, seconds=None):
     ocfg = project.cfg.get("overlay", {})
     people = sorted({s["id"] for s in project.shots("shots_resolved.json" if os.path.exists(project.path("shots_resolved.json")) else "shots.json") if s.get("chars")})
     faces_all = json.load(open(faces_json))["faces"]
-    data = {"bpm": round(bm["tempo_bpm_detected"]), "fps": fps, "frames": nf, "seconds": secs, "lines": lines,
+    FW, FH = project.cfg["final_size"]
+    data = {"bpm": round(bm["tempo_bpm_detected"]), "fps": fps, "frames": nf, "seconds": secs, "lines": lines, "width": FW, "height": FH,
             "rms": [round(float(v), 3) for v in rms], "beats": [x for x in bm["beats"] if x < secs],
             "downbeats": [x for x in bm["downbeats"] if x < secs], "shots": shots, "faces": faces_all[:nf], "people": people,
             "sections": _sections(ocfg.get("sections"), lines, secs), "style": ocfg.get("style", {})}

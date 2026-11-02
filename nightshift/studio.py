@@ -82,6 +82,66 @@ SCENES = {
                      "pink light on the horizon. Smooth, cinematic camera movement.",
         "genre": "dreamy indie folk pop with fingerpicked guitar, soft piano and brushed drums, 88 BPM, D major, tender and hopeful",
     },
+    "rain-tavern": {
+        "label": "Rain Tavern",
+        "blurb": "A dim old bar on a rainy night, practical lamps, warm skin tones.",
+        "switches": {"bad_photo": False, "pro_photo": True, "indoor": True, "daytime": False, "atmosphere": True},
+        "style": "cinematic 35mm film photograph in a dim tavern at night, warm tungsten practical lamps, soft amber skin tones, rain on the windows",
+        "grade": "A_portra_dusk",
+        "places": [
+            "a long wooden bar in a dim old tavern at night, brass taps, small warm table lamps, rain streaking the front windows",
+            "a corner booth with worn red leather seats under a low hanging lamp, rain-blurred street lights through the glass",
+            "the tavern doorway at night from the street, warm light spilling onto wet cobblestones, heavy rain in the lamplight",
+        ],
+        "establish": "Slow push in from a rainy street at night toward the glowing windows of an old tavern, rain falling through "
+                     "the warm light, puddles rippling. Smooth, cinematic camera movement.",
+        "genre": "smoky late-night soul with brushed drums, upright bass and a Rhodes piano, 78 BPM, D minor, intimate and warm",
+    },
+    "golden-warehouse": {
+        "label": "Golden Warehouse",
+        "blurb": "Golden hour in an empty factory: tall windows, dust in the light beams.",
+        "switches": {"bad_photo": False, "pro_photo": True, "indoor": True, "daytime": True, "atmosphere": True},
+        "style": "cinematic 35mm photograph in an industrial space at golden hour, low sun through tall windows, dust in the light beams, warm highlights",
+        "grade": "A2_portra_dusk_plus",
+        "places": [
+            "the empty floor of an old brick warehouse at golden hour, long beams of sun through tall factory windows, dust floating",
+            "a steel mezzanine walkway in the warehouse, rivets and railings, the low sun flaring through grimy glass",
+            "a wide loading dock door open to the evening, warm light flooding in across concrete, a few wooden pallets",
+        ],
+        "establish": "Slow dolly across the empty floor of a vast brick warehouse at golden hour, sunbeams slanting through tall "
+                     "windows, dust drifting in the light. Smooth, cinematic camera movement.",
+        "genre": "anthemic indie rock with big room drums and chiming guitars, 104 BPM, G major, rising and triumphant",
+    },
+    "cathedral-light": {
+        "label": "Cathedral Light",
+        "blurb": "A vast stone hall, shafts of light through tall windows, slow camera moves.",
+        "switches": {"bad_photo": False, "pro_photo": True, "indoor": True, "daytime": True, "atmosphere": True},
+        "style": "cinematic photograph in a vast old stone hall, volumetric shafts of daylight through tall arched windows, soft haze, cool stone and warm light",
+        "grade": "C_faded_pastel",
+        "places": [
+            "the long central aisle of a vast empty stone hall, shafts of light through tall arched windows, haze in the air",
+            "the foot of a wide stone staircase under high vaulted ceilings, a single beam of light falling across the steps",
+            "a high gallery walkway overlooking the hall, carved stone columns, light pouring through stained glass with no figures or text",
+        ],
+        "establish": "Slow crane up through a vast empty stone hall, shafts of daylight cutting through haze from tall arched windows, "
+                     "dust glittering in the beams. Smooth, cinematic camera movement.",
+        "genre": "cinematic ambient pop with choir pads, deep piano and a slow heartbeat kick, 70 BPM, C minor, vast and reverent",
+    },
+    "snow-motel": {
+        "label": "Snow Motel",
+        "blurb": "A roadside motel in falling snow, fluorescent lot lights, glowing curtains.",
+        "switches": {"bad_photo": True, "pro_photo": False, "indoor": False, "daytime": False, "atmosphere": True},
+        "style": "candid 35mm film photograph at night in falling snow, cold blue night, buzzing fluorescent lot lights, warm curtains glowing in motel windows",
+        "grade": "B_cinestill_night",
+        "places": [
+            "the snowy parking lot of a small roadside motel at night, fluorescent lights, a row of doors with curtains glowing warm",
+            "the outdoor walkway of the motel's second floor at night, snow drifting past the railing, an ice machine humming",
+            "an empty two-lane road beside the motel at night, snowbanks, a lone streetlight, snow falling in its beam",
+        ],
+        "establish": "Wide shot slowly pushing toward a lonely roadside motel at night in falling snow, fluorescent lights buzzing "
+                     "over the lot, warm curtains glowing in the windows. Smooth, cinematic camera movement.",
+        "genre": "lo-fi dream pop with a drum machine, warm tape-saturated synths and a soft vocal, 88 BPM, B minor, lonely but tender",
+    },
 }
 
 DEFAULT_LYRICS = """[Intro]
@@ -430,8 +490,8 @@ def create(root, form):
 
 def overlay_cfg(lyrics, title=None, enabled=False, aspect="16:9"):
     """The lyric HUD settings for a project: sections from the lyric sheet's [tags], the most repeated line as the hero.
-    The HUD is drawn at 1920x1080, so it is 16:9 only for now."""
-    if not enabled or aspect == "9:16":
+    The HUD is drawn at the final size: 1920x1080, or 1080x1920 for vertical with the platform UI bands kept clear."""
+    if not enabled:
         return {"enabled": False}
     sections, seen, pending = [], {}, None
     lines = []

@@ -68,3 +68,9 @@ always makes a complete video, and some shots may look wrong to a human eye; whe
 
 The aspect (`16:9` or `9:16`) and the image model (`flux2` or `flux3`) work with any profile. They go in `project.json`:
 `"profile": "short", "aspect": "9:16", "image_model": "flux3"`.
+
+## The crew
+
+hexeosis (creative director), Claude (lead engineer), ⬣ hexONE (named the project; a Hermes agent), ⬡ Zero (tester and
+infrastructure; an OpenClaw agent that made two full videos overnight over MCP) and Gemini Argon (early creative development).
+The pitch is that any agent can drive Nightshift; it was also built by that kind of crew. Full credits are in the README.

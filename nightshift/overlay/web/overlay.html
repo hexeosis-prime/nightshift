@@ -11,10 +11,13 @@ canvas { display: block; }
 </style></head>
 <body><canvas id="c" width="1920" height="1080"></canvas>
 <script>
-// Nightshift overlay: a transparent 1920x1080 HUD rendered frame by frame (render.mjs), keyed over the cut in finish.
+// Nightshift overlay: a transparent HUD (1920x1080, or 1080x1920 for vertical video) rendered frame by frame (render.mjs),
+// keyed over the cut in finish. Vertical keeps clear of the platform UI: the top and bottom bands and the right-hand buttons.
 // Every frame is a pure function of the frame number f: no state carried between frames, no Math.random();
 // hash() gives stable per-object randomness. Everything specific to a video lives in data.json "style".
-const W = 1920, H = 1080, M = 64;
+let W = 1920, H = 1080, P = false;      // P: portrait (9:16)
+const M = 64;
+let MR = 64, TOP_DY = 0, BOT_DY = 0;     // right margin and the top / bottom furniture shift (vertical: platform UI safe zones)
 const DEF = {
   title: "", label: "LOOP 01",
   palette: ["#0e8ebd","#2475cb","#646ebf","#b374b1","#e77aa1","#fc8083","#fd8e61","#f3a63f","#d5b931","#91c137","#46ba59","#19a98e"],
@@ -81,7 +84,7 @@ function cornerMarks() {
   }
 }
 function ruler(t) {
-  const x = 18, y0 = 230, y1 = 870;
+  const x = 18, y0 = Math.round(H * 0.213), y1 = Math.round(H * 0.806);
   ctx.strokeStyle = FAINT; ctx.lineWidth = 1;
   for (let y = y0, i = 0; y <= y1; y += 16, i++) { const major = i % 5 === 0; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (major ? 12 : 5), y); ctx.stroke(); }
   const py = y0 + (y1 - y0) * clamp(t / D.seconds);
@@ -129,7 +132,7 @@ function readoutBoxAt(f) {    // the readout panel is occupied space too while i
   const R = rd(); if (!R) return null; const t = f / D.fps;
   const start = D.sections.find(s => s.name === R.start_section); if (!start || t < start.t || t > breakT() + (R.linger ?? 4.2) + 0.5) return null;
   const MT = mergeTimes(); if (MT && t > MT.t0 - 0.2 && t < MT.tEnd + 0.6) return null;      // stepped aside for the merge widget
-  const [, shot] = shotAt(f), w = 470, h = 250, x = W - M - w;
+  const [, shot] = shotAt(f), w = 470, h = 250, x = W - MR - w;
   const y = overlap([x, 160, x + w, 160 + h], faceZone(shot.f0, shot.f1 - 1)) > 0 ? H - 120 - h : 160;
   return [x - 20, y - 20, x + w + 20, y + h + 20];
 }
@@ -142,10 +145,10 @@ function meanOverlap(box, f0, f1) {
 // ---- lyrics -------------------------------------------------------------------------------
 function isHero(L) { return !!(S.hero && new RegExp(S.hero, "i").test(lineText(L).trim())); }
 function layoutLine(L, hero, scale, slot) {
-  const size = (hero ? 196 : 104) * scale;
+  const size = (hero ? (P ? 150 : 196) : (P ? 92 : 104)) * scale;
   ctx.font = hero ? `700 ${size}px BC` : LYRIC_FONT(size);
   ctx.letterSpacing = hero ? "2px" : `${-3 * scale}px`;
-  const maxW = (hero ? 1500 : 1040) * (slot === "tl" || slot === "bl" ? 1 : 0.62), lh = size * (hero ? 0.86 : 1.0);
+  const maxW = P ? W - M - MR : (hero ? 1500 : 1040) * (slot === "tl" || slot === "bl" ? 1 : 0.62), lh = size * (hero ? 0.86 : 1.0);
   const words = L.words.map((w, k) => ({ ...w, txt: (hero ? w.w.toUpperCase() : w.w) + (hero && k === L.words.length - 1 && !/[?!.]$/.test(w.w) ? "?" : "") }));
   const rows = [[]]; let x = 0; const space = ctx.measureText(" ").width;
   for (const w of words) { const ww = ctx.measureText(w.txt).width;
@@ -158,9 +161,16 @@ function layoutLine(L, hero, scale, slot) {
   if (slot === "bl") top = H - 112 - blockH;
   if (slot === "tr") { x0 = W - M - Math.max(blockW, 520); top = 460 - capH; }
   if (slot === "ml") top = 470 - capH;
+  if (P) {                                                        // vertical: under the top UI band, the middle, above the captions
+    x0 = M; top = (hero ? 400 : 330) - capH;
+    if (slot === "bl") top = H - 430 - blockH;
+    if (slot === "ml") top = Math.round(H * 0.45) - capH;
+    if (slot === "tr") { x0 = W - MR - Math.min(blockW, W - M - MR); top = Math.round(H * 0.6) - capH; }
+  }
   const placed = []; rows.forEach((r, i) => r.forEach(w => placed.push({ ...w, x: x0 + w.dx, y: top + capH + lh * i })));
   return { size, placed, x0, ruleY: top + capH + lh * (rows.length - 1) + (hero ? 46 : 40),
-           box: [x0 - 10, top - 10, x0 + Math.max(blockW, 900) + 10, top + blockH], ruleW: Math.max(Math.min(900, blockW + 40), 420) };
+           box: [x0 - 10, top - 10, Math.min(x0 + Math.max(blockW, 900), W - MR) + 10, top + blockH],
+           ruleW: Math.max(Math.min(900, blockW + 40, W - x0 - MR), 420) };
 }
 const LAYOUT_CACHE = {};
 function chooseLayout(li, L, hold, hero) {
@@ -483,16 +493,16 @@ function faceBrackets(f, t) {
 function ticker(f, t) {
   const sec = sectionAt(t).name;
   const items = (S.ticker_after && t >= breakT() ? S.ticker_after : S.ticker).map(s => fill(s, t));
-  ctx.strokeStyle = FAINT; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, H - 62); ctx.lineTo(W - M, H - 62); ctx.stroke();
+  ctx.strokeStyle = FAINT; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, H - 62); ctx.lineTo(W - MR, H - 62); ctx.stroke();
   if (items.length) {
     const str = items.join("   ✱   ") + "   ✱   ";
-    ctx.save(); ctx.beginPath(); ctx.rect(M, H - 60, W - 2 * M, 40); ctx.clip();
+    ctx.save(); ctx.beginPath(); ctx.rect(M, H - 60, W - M - MR, 40); ctx.clip();
     ctx.font = "400 15px JBM"; ctx.letterSpacing = "2px"; const sw = ctx.measureText(str).width;
     const off = (t * 110) % sw; ctx.fillStyle = DIM; ctx.textAlign = "left";
     for (let x = M - off; x < W; x += sw) ctx.fillText(str, x, H - 34);
     ctx.restore(); ctx.letterSpacing = "0px";
   }
-  mono(tc(f), W - M, H - 78, 14, INK, "right");
+  mono(tc(f), W - MR, H - 78, 14, INK, "right");
   mono([sec, S.label].filter(Boolean).join("  ·  "), M, H - 78, 13, DIM);
 }
 
@@ -508,16 +518,20 @@ window.renderAt = function (f) {
   const main = ctx;                                   // graphics go to a layer that is desaturated once; lyrics stay full colour on top
   if (!LAYER.cv) { LAYER.cv = document.createElement("canvas"); LAYER.cv.width = W; LAYER.cv.height = H; }
   ctx = LAYER.cv.getContext("2d"); ctx.clearRect(0, 0, W, H);
-  if (kT > 0) { ctx.save(); ctx.translate(0, -(1 - kT) * 190); grad(0, 220); cornerMarks(); topLabels(f, t); ctx.restore();
+  if (kT > 0) { ctx.save(); ctx.translate(0, -(1 - kT) * 190); grad(0, 220 + TOP_DY); ctx.translate(0, TOP_DY); cornerMarks(); topLabels(f, t); ctx.restore();
     ctx.save(); ctx.translate(-(1 - kT) * 70, 0); ruler(t); ctx.restore(); }
   faceBrackets(f, t); if (t < D.seconds - OUT_LEN + 0.3) readout(f, t); mergeDots(f, t); illustrations(f, t);
-  if (kB > 0) { ctx.save(); ctx.translate(0, (1 - kB) * 200); grad(H, H - 190); ticker(f, t); ctx.restore(); }
+  if (kB > 0) { ctx.save(); ctx.translate(0, (1 - kB) * 200); grad(H, H - 190 - BOT_DY); ctx.translate(0, -BOT_DY); ticker(f, t); ctx.restore(); }
   ctx = main; ctx.filter = S.calm || "none"; ctx.drawImage(LAYER.cv, 0, 0); ctx.filter = "none";
   expandLine(f, t); headline(f, t);
   return document.getElementById("c").toDataURL("image/png");
 };
 window.init = async function (data) {
-  D = data; ctx = document.getElementById("c").getContext("2d");
+  D = data;
+  W = D.width || 1920; H = D.height || 1080; P = H > W;
+  if (P) { MR = 150; TOP_DY = 120; BOT_DY = 300; }
+  const cv = document.getElementById("c"); cv.width = W; cv.height = H;
+  ctx = cv.getContext("2d");
   const st = D.style || {};
   S = { ...DEF, ...st, intro: { ...DEF.intro, ...(st.intro || {}) }, widgets: { ...(st.widgets || {}) } };
   IN = S.intro; OUT_LEN = S.outro;
