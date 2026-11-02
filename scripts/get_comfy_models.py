@@ -39,7 +39,7 @@ FILES = [
     ("core", "diffusion_models", "minimax_music3_dit_fp16.safetensors", "Comfy-Org/MiniMax-Music-3", "diffusion_models/minimax_music3_dit_fp16.safetensors"),
     ("core", "text_encoders", "minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "Comfy-Org/MiniMax-Music-3", "text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors"),
     ("core", "vae", "minimax_music3_dav.safetensors", "Comfy-Org/MiniMax-Music-3", "vae/minimax_music3_dav.safetensors"),
-    ("flux3", "diffusion_models", "flux3-image-klein-int8-convrot.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "diffusion_models/flux3-image-klein-int8-convrot.safetensors"),
+    ("flux3", "diffusion_models", "flux3-image-klein-base-int8-convrot.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "diffusion_models/flux3-image-klein-base-int8-convrot.safetensors"),
     ("flux3", "text_encoders", "qwen3vl_4b_int8_convrot.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "text_encoders/qwen3vl_4b_int8_convrot.safetensors"),
     ("flux3", "vae", "flux2-vae.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "vae/flux2-vae.safetensors"),
 ]

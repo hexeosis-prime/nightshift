@@ -2,7 +2,7 @@
  "1": {
   "class_type": "UNETLoader",
   "inputs": {
-   "unet_name": "flux3-image-klein-int8-convrot.safetensors",
+   "unet_name": "flux3-image-klein-base-int8-convrot.safetensors",
    "weight_dtype": "default"
   },
   "_meta": {
@@ -46,8 +46,8 @@
   "class_type": "KSampler",
   "inputs": {
    "seed": 1,
-   "steps": 16,
-   "cfg": 1.0,
+   "steps": 50,
+   "cfg": 3.5,
    "sampler_name": "euler",
    "scheduler": "simple",
    "denoise": 1.0,

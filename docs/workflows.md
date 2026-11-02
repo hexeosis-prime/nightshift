@@ -26,8 +26,11 @@ graphs, all core ComfyUI nodes (0.41+), no custom node packs:
 | `sheet_text` / `sheet_image` | `sheet_from_text_flux3` / `sheet_from_image_flux3` | the same three-view character sheet, from the description or from a picture |
 | `edit2` / `edit3` | `edit_flux3_2image` / `edit_flux3_3image` | multi-reference edits through `Set Reference Multi Latent`; prompts written for Flux 2's "[reference_image2]" / "image 2" are rewritten to `<ref_image_1>` automatically |
 
-They load the step-distilled int8 checkpoint (16 steps, cfg 1). For the 50-step base checkpoint set the roles `model`,
-`steps` and `cfg` (e.g. in a project-level copy of the graph, or by editing the defaults in the `.json`).
+They load the full (base) int8 checkpoint with Comfy's template settings: 50 steps at cfg 3.5 for text to image (still,
+sheet from text), 50 steps at cfg 1 for the reference edits (identity edits, sheet from a photo). About 30 s per still and
+45 s per edit on an RTX 3090. The step-distilled checkpoint is faster (16 steps, cfg 1) but noticeably softer, with
+undersampled faces; to use it, set the roles `model`, `steps` and `cfg`. Mirrors with other file names work as is (e.g.
+DeepBeepMeep/Flux3's `flux3_image_klein_int8_convrot.safetensors` is the full model): Nightshift matches the file ComfyUI has.
 
 Video-to-video and an image glitch utility were tried during the first video and left out for now (see ROADMAP.md).
 
@@ -75,7 +78,7 @@ gated: accept the license on Hugging Face and set `HF_TOKEN` first. Any copy wit
 
 **FLUX 3 Image Klein** (optional, `image_model: flux3`), from
 [black-forest-labs/flux-3-image-klein-comfy](https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy) (gated: accept the
-license first): `diffusion_models/flux3-image-klein-int8-convrot.safetensors` (or `flux3-image-klein-base-int8-convrot.safetensors`),
+license first): `diffusion_models/flux3-image-klein-base-int8-convrot.safetensors` (the full model; ComfyUI 0.41 or later),
 `text_encoders/qwen3vl_4b_int8_convrot.safetensors`, `vae/flux2-vae.safetensors`.
 
 **MiniMax Music 3** (song): `minimax_music3_dit_fp16.safetensors`, `minimax_music3_text_encoder_pruned_int8_convrot.safetensors`,
