@@ -351,9 +351,8 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
               <div class="field" style="flex:none;min-width:0"><span class="label">Length</span><div class="seg" id="length"></div></div>
               <div class="field" style="flex:none;min-width:0"><span class="label">Aspect</span>
                 <div class="seg" id="aspect"><button data-v="9:16" class="on"><i class="aspect v"></i>9:16</button><button data-v="16:9"><i class="aspect w"></i>16:9</button></div></div>
-              <!-- FLUX 3 Klein is wired in (workflows/*_flux3.json) but untested on this ComfyUI; the choice comes back once it is.
               <div class="field" style="flex:none;min-width:0"><span class="label">Image model</span>
-                <div class="seg" id="model"><button data-v="flux2" class="on">Flux 2 Klein 9B</button><button data-v="flux3">FLUX 3 Klein</button></div></div> -->
+                <div class="seg" id="model"><button data-v="flux2" class="on">Flux 2 Klein 9B</button><button data-v="flux3">FLUX 3 Klein</button></div></div>
             </div>
             <div class="row" id="lookRow" style="gap:22px;margin-top:16px">
               <div class="field" style="flex:none;min-width:0"><span class="label">Colour grade</span><div class="grades" id="grades"></div></div>
@@ -558,7 +557,7 @@ function lenUi(){
     (state.length === "full" ? "A full song renders overnight." : "Character sheets and the song come first; you can leave it running.");
 }
 seg("tabs", "tab", tabUi);
-seg("who","who"); seg("hud","hud"); seg("cDay","cDay"); seg("cIn","cIn");
+seg("who","who"); seg("model","model"); seg("hud","hud"); seg("cDay","cDay"); seg("cIn","cIn");
 seg("aspect","aspect", hudUi); seg("length","length", lenUi);
 seg("songSrc","songSrc", lyricsUi); seg("lyrSrc","lyrSrc", lyricsUi); seg("upLyr","upLyr", lyricsUi);
 let photoData = null, photoData2 = null;

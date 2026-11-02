@@ -61,7 +61,34 @@ class Comfy:
     def object_info(self, node_class=None):
         return self._req("GET", "/object_info" + (f"/{urllib.parse.quote(node_class)}" if node_class else ""))
 
+    def model_names(self, prompt):
+        """Model files can be saved under a slightly different name than the workflow asks for (hyphens vs underscores, case,
+        as mirrors of the same file often are). Swap in the name ComfyUI actually has when it is the same name otherwise."""
+        cache = self.__dict__.setdefault("_choices", {})
+        norm = lambda s: s.lower().replace("-", "_").replace(" ", "_")
+        for node in prompt.values():
+            if not isinstance(node, dict):
+                continue
+            cls = node.get("class_type", "")
+            for k, v in (node.get("inputs") or {}).items():
+                if not (isinstance(v, str) and v.lower().endswith((".safetensors", ".gguf", ".ckpt", ".pt", ".pth", ".bin", ".sft"))):
+                    continue
+                if cls not in cache:
+                    try:
+                        req = self.object_info(cls).get(cls, {}).get("input", {})
+                        cache[cls] = {kk: vv[0] for part in ("required", "optional") for kk, vv in (req.get(part) or {}).items()
+                                      if isinstance(vv, (list, tuple)) and vv and isinstance(vv[0], list)}
+                    except Exception:
+                        cache[cls] = {}
+                have = cache[cls].get(k) or []
+                if have and v not in have:
+                    alt = next((h for h in have if isinstance(h, str) and norm(os.path.basename(h)) == norm(os.path.basename(v))), None)
+                    if alt:
+                        node["inputs"][k] = alt
+        return prompt
+
     def queue_prompt(self, prompt):
+        prompt = self.model_names(prompt)
         try:
             r = self._req("POST", "/prompt", {"prompt": prompt, "client_id": self.client_id})
         except ComfyError as e:
