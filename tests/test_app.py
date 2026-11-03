@@ -121,7 +121,10 @@ def main(keep=False, stay=False):
         wh = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0",
                              p.path("out", "pass01.mp4")], capture_output=True, text=True).stdout.strip()
         assert wh == "1080,1920", wh
-        edit = json.load(open(p.path("jobs", "s02_edit.json")))
+        ej = next(f for f in sorted(os.listdir(p.path("jobs"))) if f.startswith("s02_") and f.endswith(".json") and not f.endswith(".meta.json")
+                  and json.load(open(p.path("jobs", f[:-5] + ".meta.json"))).get("kind") == "edit")
+        assert len([f for f in os.listdir(p.path("jobs")) if f.startswith("s02_vC") and f.endswith(".meta.json")]) == 2, "two identity edits per shot"
+        edit = json.load(open(p.path("jobs", ej)))
         txt = next(n["inputs"]["text"] for n in edit.values() if n.get("_meta", {}).get("title") == "prompt")
         assert "<ref_image_1>" in txt and "[reference_image" not in txt, txt[:200]
         size = next(n["inputs"] for n in edit.values() if n["class_type"] == "EmptyFlux2LatentImage")

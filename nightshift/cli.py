@@ -269,7 +269,8 @@ def cmd_overlay(a):
     elif a.action == "render":
         print(O.render(p.path("overlay", "data.json"), p.path("overlay", "frames"), a.first, a.last))
     elif a.action == "encode":
-        _show(O.encode(p.path("overlay", "frames"), p.path(a.out or "overlay/chunks")))
+        _show(O.encode(p.path("overlay", "frames"), p.path(a.out or "overlay/chunks"),
+                       chunk_frames=round(p.cfg["finish"]["chunk_seconds"] * p.cfg["fps"]), fps=p.cfg["fps"]))   # same pieces as finish
 
 
 def cmd_run(a):

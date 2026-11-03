@@ -1,0 +1,21 @@
+{
+ "workflow": "vocals_melband.json",
+ "kind": "vocals",
+ "description": "The vocal stem of the song (MelBand RoFormer, the separator the lip-sync graph already uses), so Whisper times the words on the voice alone.",
+ "roles": {
+  "audio": {
+   "node": "1",
+   "input": "audio"
+  },
+  "duration": {
+   "node": "1",
+   "input": "duration"
+  }
+ },
+ "outputs": {
+  "vocals": {
+   "node": "4",
+   "input": "filename_prefix"
+  }
+ }
+}

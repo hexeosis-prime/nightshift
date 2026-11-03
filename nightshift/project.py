@@ -38,7 +38,7 @@ DEFAULTS = {
     "workflows": {
         "still": "still_flux", "edit2": "edit_flux_2image", "edit3": "edit_flux_3image",
         "ff": "vid_ltx_ff", "fflf": "vid_ltx_fflf", "lipsync": "vid_ltx_lipsync", "t2v": "vid_ltx_t2v",
-        "song": "song_minimax_m3", "sheet_text": "sheet_from_text", "sheet_image": "sheet_from_image",
+        "song": "song_minimax_m3", "sheet_text": "sheet_from_text", "sheet_image": "sheet_from_image", "vocals": "vocals_melband",
     },
     "sheets": {"candidates": 3, "approve": True, "yolo_source": "text", "seed": 7001},
     "timeline": {"min_seconds": 1.0, "max_seconds": 12.0, "max_fit_seconds": 15.0, "snap": 0.35},
@@ -62,6 +62,7 @@ PROFILES = {
         "song_max_seconds": 40,
         "timeline": {"min_seconds": 1.5, "max_seconds": 6.0, "max_fit_seconds": 8.0},
         "yolo_variants": False,
+        "identity_candidates": 2,      # two identity edits per shot, the closer face match kept
         "overlay": {"enabled": False},
         "finish": {"chunk_seconds": 12.0, "halftone": None, "grain": 7},
     },

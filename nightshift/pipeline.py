@@ -163,11 +163,37 @@ def step_song(project, st, on_event):
     return []
 
 
+def _vocal_stem(project, on_event):
+    """The song's vocals alone (MelBand RoFormer in ComfyUI, a few seconds), so Whisper times the words on the voice: on the
+    full mix the drums pull word times off by up to a second. None if it can't be made; the mix is used then."""
+    from .song import song_path
+    have = [p for p in project.renders("song", "vocals_*") if p.lower().endswith((".mp3", ".flac", ".wav"))]
+    if have:
+        return have[-1]
+    try:
+        import librosa
+        src = song_path(project)
+        wf = project.workflow("vocals")
+        wf.apply_defaults()
+        wf.set("audio", project.stage_input(src, "song_for_vocals" + os.path.splitext(src)[1]))
+        wf.try_set("duration", round(librosa.get_duration(path=src) + 1, 1))
+        wf.output(project.prefix("song", "vocals"))
+        job = wf.save(project.path("jobs", "song_vocals.json"), {"kind": "vocals"})
+        on_event("separating the vocals so the lyric timing is measured on the voice alone")
+        _run_jobs(project, [project.rel(job)], on_event)
+        have = [p for p in project.renders("song", "vocals_*") if p.lower().endswith((".mp3", ".flac", ".wav"))]
+        return have[-1] if have else None
+    except Exception as e:                                    # no separator node / model: time the words on the mix
+        on_event(f"WARN vocal stem skipped ({str(e)[:160]}); timing the lyrics on the full mix")
+        return None
+
+
 def step_analyze(project, st, on_event):
     from . import lyrics
     if os.path.exists(project.path("song", "lines.json")) and os.path.exists(project.path("song", "beatmap.json")):
         return []
-    r = lyrics.analyze(project)
+    stem = _vocal_stem(project, on_event) if project.cfg.get("lyrics_stem", True) else None
+    r = lyrics.analyze(project, stem=stem)
     on_event(f"song: {r['duration_s']} s, {r['bpm']} bpm, {r['lines_timed']}/{r['lines_on_sheet']} lyric lines timed, coverage {r['coverage']:.0%}")
     return []
 
@@ -204,15 +230,19 @@ def step_sheetedits(project, st, on_event):
     todo = [s for s in b.shots if s.get("chars") and s.get("still") == "edit" and s["mode"] in B.STILL_MODES and not s.get("dropped")
             and not _has_still(project, s, "edit")]
     yolo = project.cfg.get("mode") == "yolo"
+    # identity_candidates: edits per shot, the best face match is kept (the director can still pick another at the checkpoint).
+    # Unset: the first video's behaviour (yolo: a 2 x 2 wording/seed grid, director: one edit).
+    n = project.cfg.get("identity_candidates")
+    grid = ("AC", 2) if n is None and yolo and project.cfg.get("yolo_variants", True) else (("C", int(n)) if n and int(n) > 1 else None)
     written = []
     for s in todo:
-        if yolo and project.cfg.get("yolo_variants", True):
-            written += B.variants(project, [s["id"]], "AC", 2, tag="v")
+        if grid:
+            written += B.variants(project, [s["id"]], grid[0], grid[1], tag="v")
         else:
             written.append(project.rel(b.sheet_job(s)))
     _run_jobs(project, written, on_event)
     packet = []
-    if yolo:
+    if grid:
         for s in todo:
             cands = project.renders("stills", f"{s['id']}_v*_*")
             if not cands:
@@ -222,7 +252,7 @@ def step_sheetedits(project, st, on_event):
             label = os.path.basename(best)[len(s["id"]) + 1:].split("_")[0]
             project.patch_shot(s["id"], {"still": label}, "shots_resolved.json")
             on_event(f"{s['id']}: identity edit {label} (face {ranked[0]['face']})")
-    else:
+    if not yolo:
         os.makedirs(project.path("review"), exist_ok=True)
         people = [s for s in b.shots if s.get("chars") and s["mode"] in B.STILL_MODES and not s.get("dropped")]
         for ch in sorted({s["chars"][0] for s in people}):
@@ -373,7 +403,9 @@ def step_overlay(project, st, on_event):
     on_event(f"overlay data: {r['lines']} lines, sections {r['sections']}")
     frames = project.path("overlay", "frames")
     O.render(r["out"], frames)
-    O.encode(frames, project.path("overlay", pn))
+    fps = project.cfg["fps"]                                  # overlay pieces must match the finish pieces exactly, or the
+    chunk = round(project.cfg["finish"]["chunk_seconds"] * fps)  # lyrics drift later with every piece
+    O.encode(frames, project.path("overlay", pn), chunk_frames=chunk, fps=fps)
     return []
 
 
