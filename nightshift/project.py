@@ -74,7 +74,7 @@ ASPECTS = {
 IMAGE_MODELS = {
     "flux2": {},
     "flux3": {"workflows": {"still": "still_flux3", "edit2": "edit_flux3_2image", "edit3": "edit_flux3_3image",
-                            "sheet_text": "sheet_from_text_flux3", "sheet_image": "sheet_from_image_flux3"}},
+                            "sheet_text": "sheet7_from_text_flux3", "sheet_image": "sheet7_from_image_flux3"}},
 }
 
 

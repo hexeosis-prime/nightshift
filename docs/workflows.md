@@ -23,7 +23,7 @@ graphs, all core ComfyUI nodes (0.41+), no custom node packs:
 | job | file | what it does |
 |---|---|---|
 | `still` | `still_flux3` | text to image from one caption the builder writes (shot, person, outfit, action, setting, the world's `style`) |
-| `sheet_text` / `sheet_image` | `sheet_from_text_flux3` / `sheet_from_image_flux3` | the same three-view character sheet, from the description or from a picture |
+| `sheet_text` / `sheet_image` | `sheet7_from_text_flux3` / `sheet7_from_image_flux3` | a seven-panel character sheet (front, 3/4, profile and back full-body; front, 3/4 and profile close-ups), from the description (cfg 3.5) or from a picture (cfg 3, which keeps the layout even from a face-only photo); about 55 s and 90 s. The three-view `sheet_from_*_flux3` graphs are kept for older projects |
 | `edit2` / `edit3` | `edit_flux3_2image` / `edit_flux3_3image` | multi-reference edits through `Set Reference Multi Latent`; prompts written for Flux 2's "[reference_image2]" / "image 2" are rewritten to `<ref_image_1>` automatically |
 
 They load the full (base) int8 checkpoint with Comfy's template settings: 50 steps at cfg 3.5 for text to image (still,

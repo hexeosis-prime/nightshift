@@ -79,7 +79,7 @@ def main(keep=False, stay=False):
         p = Project(os.path.join(comfy, "output", "nightshift", name))
         assert p.renders_in_place
         assert p.cfg["work_size"] == [768, 1280] and p.cfg["final_size"] == [1080, 1920]
-        assert p.cfg["workflows"]["still"] == "still_flux3" and p.cfg["workflows"]["sheet_image"] == "sheet_from_image_flux3"
+        assert p.cfg["workflows"]["still"] == "still_flux3" and p.cfg["workflows"]["sheet_image"] == "sheet7_from_image_flux3"
         assert p.canon["characters"]["lead"]["reference"] == "refs/lead.png"
         dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
                                     p.path("song", "song.mp3")], capture_output=True, text=True).stdout)

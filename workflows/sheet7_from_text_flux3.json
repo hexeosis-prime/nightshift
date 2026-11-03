@@ -1,0 +1,144 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "flux3-image-klein-base-int8-convrot.safetensors",
+   "weight_dtype": "default"
+  },
+  "_meta": {
+   "title": "FLUX 3 Klein (distilled int8; base: flux3-image-klein-base-int8-convrot, 50 steps, cfg 3.5)"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_4b_int8_convrot.safetensors",
+   "type": "flux3",
+   "device": "default"
+  },
+  "_meta": {
+   "title": "Qwen3-VL 4B text encoder"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "flux2-vae.safetensors"
+  },
+  "_meta": {
+   "title": "FLUX 2 VAE"
+  }
+ },
+ "5": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "",
+   "clip": [
+    "2",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "negative"
+  }
+ },
+ "7": {
+  "class_type": "KSampler",
+  "inputs": {
+   "seed": 1,
+   "steps": 50,
+   "cfg": 3.5,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1.0,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "4",
+    0
+   ],
+   "negative": [
+    "5",
+    0
+   ],
+   "latent_image": [
+    "6",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "sampler"
+  }
+ },
+ "8": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "7",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "9": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "nightshift/sheet_from_text_flux3",
+   "images": [
+    "8",
+    0
+   ]
+  }
+ },
+ "20": {
+  "class_type": "StringConcatenate",
+  "inputs": {
+   "string_a": "Film character sheet, photorealistic commercial studio photography, one seamless neutral grey #B8B8B8 background, seven panels side by side separated by thin light grey lines. The four narrow panels on the left are full-body views of the exact same person, feet to head fully in frame: front view facing the camera, three-quarter view, side profile view, back view. The three wider panels on the right are close-up portraits of the same person from the chest up: facing the camera straight on; head turned about 45 degrees to the side so one cheek is closer to the camera (a true three-quarter view, both eyes visible but the far eye partly hidden by the nose bridge); and a full side profile at 90 degrees. Identical person, face, hairstyle, outfit and styling in all seven panels.",
+   "string_b": "",
+   "delimiter": "\n\n"
+  },
+  "_meta": {
+   "title": "sheet language + description"
+  }
+ },
+ "21": {
+  "class_type": "StringConcatenate",
+  "inputs": {
+   "string_a": [
+    "20",
+    0
+   ],
+   "string_b": "Relaxed neutral standing pose in the full-body views, arms loose at the sides, head level. In the close-ups the face is fully visible and sharp, eyes in focus, natural relaxed expression, clear healthy skin, true-to-life skin texture. Soft even studio lighting with smooth falloff, clean commercial catalogue look, crisp fabric and hair detail. No text, no labels, no captions, no numbers, no lettering anywhere.",
+   "delimiter": "\n\n"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": [
+    "21",
+    0
+   ],
+   "clip": [
+    "2",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "prompt"
+  }
+ },
+ "6": {
+  "class_type": "EmptyFlux2LatentImage",
+  "inputs": {
+   "width": 1792,
+   "height": 1008,
+   "batch_size": 1
+  }
+ }
+}

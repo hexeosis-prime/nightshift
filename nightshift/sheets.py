@@ -1,7 +1,9 @@
 """Character reference sheets, made before any other frame.
 
-A sheet is one image per character and world: a full-body front view (face covered by a white circle, like an anonymized
-casting photo), a full-body back view, and a macro close-up of the face, on seamless grey. Every identity
+A sheet is one image per character and world, on seamless grey. FLUX 3 projects use seven panels: front, three-quarter,
+profile and back full-body views, then front, three-quarter and profile close-ups (more face angles for the identity edits
+and the face scorer). Flux 2 projects use three views: a full-body front view (face covered by a white circle, like an
+anonymized casting photo), a full-body back view, and a macro close-up of the face. Every identity
 edit uses it as image 2, and the face scorer compares every still and take against it. Locking these first is the single
 biggest lesson of the first video.
 
@@ -97,8 +99,8 @@ def build(project, ch, world, n=None, primary=None):
             wf.set("image1", img)
             wf.set("image2", img)
             wf.set("prompt", "Modify image 1. Keep the person exactly the same: face, facial structure, hair, body proportions and pose in "
-                             "every view, the three-view layout, the white circle over the face in the front view, the seamless grey "
-                             f"background and the lighting. Change only the clothing, in every view, to: {outfit}.")
+                             "every view, the panel layout and every panel as it is (including any white circle over a face), the "
+                             f"seamless grey background and the lighting. Change only the clothing, in every view, to: {outfit}.")
             tag, kind = f"o{i}", "outfit"
         else:
             src = source(project, ch)
