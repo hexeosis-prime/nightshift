@@ -26,8 +26,8 @@ SCENES = {
     "night-avenue": {
         "label": "Night Avenue",
         "blurb": "Sodium lamps, wet asphalt, a rooftop over the city. The first video's look.",
-        "switches": {"bad_photo": True, "pro_photo": False, "indoor": False, "daytime": False, "atmosphere": True},
-        "style": "candid handheld 35mm film photograph at night, sodium street light and neon spill, wet reflections, light mist",
+        "switches": {"bad_photo": False, "pro_photo": True, "indoor": False, "daytime": False, "atmosphere": True},
+        "style": "cinematic 35mm film photograph at night, sodium street light and neon spill, wet reflections, light mist",
         "grade": "A2_portra_dusk_plus",
         "places": [
             "a long empty avenue in a city at night, wet asphalt reflecting sodium street lamps and shop signs with no readable text, light mist",
@@ -131,8 +131,8 @@ SCENES = {
     "snow-motel": {
         "label": "Snow Motel",
         "blurb": "A roadside motel in falling snow, fluorescent lot lights, glowing curtains.",
-        "switches": {"bad_photo": True, "pro_photo": False, "indoor": False, "daytime": False, "atmosphere": True},
-        "style": "candid 35mm film photograph at night in falling snow, cold blue night, buzzing fluorescent lot lights, warm curtains glowing in motel windows",
+        "switches": {"bad_photo": False, "pro_photo": True, "indoor": False, "daytime": False, "atmosphere": True},
+        "style": "cinematic 35mm film photograph at night in falling snow, cold blue night, buzzing fluorescent lot lights, warm curtains glowing in motel windows",
         "grade": "B_cinestill_night",
         "places": [
             "the snowy parking lot of a small roadside motel at night, fluorescent lights, a row of doors with curtains glowing warm",
@@ -564,7 +564,7 @@ def create(root, form):
         "default_world": "real",
         "location": sc["places"][0],
         "never_common": "text, letters, watermarks, logos",
-        "image_switches_default": {"safe": True, "pro_photo": False, "bad_photo": True, "pov": False, "indoor": False,
+        "image_switches_default": {"safe": True, "pro_photo": True, "bad_photo": False, "pov": False, "indoor": False,
                                    "daytime": False, "atmosphere": True, "suffix": False},
         "negatives": {},
     }

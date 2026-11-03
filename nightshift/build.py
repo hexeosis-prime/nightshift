@@ -128,7 +128,7 @@ class Builder:
             look += ", " + ("daylight" if sw.get("daytime") else "night") + ", " + ("indoors" if sw.get("indoor") else "outdoors")
             if sw.get("atmosphere"):
                 look += ", atmospheric haze and depth"
-        parts.append(f"Style: {look}, photorealistic film still, natural skin texture.")
+        parts.append(f"Style: {look}, photorealistic film still, natural clear healthy skin.")
         if person:
             parts.append("Only one person in the frame." if people <= 1 else "")
         parts.append("No text, no letters, no logos, no watermark.")

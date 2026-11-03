@@ -166,9 +166,9 @@ function layoutLine(L, hero, scale, slot) {
   if (slot === "ml") top = 470 - capH;
   if (P) {                                                        // vertical: under the top UI band, the middle, above the captions
     x0 = M; top = (hero ? 400 : 330) - capH;
-    if (slot === "bl") top = H - 430 - blockH;
-    if (slot === "ml") top = Math.round(H * 0.45) - capH;
-    if (slot === "tr") { x0 = W - MR - Math.min(blockW, W - M - MR); top = Math.round(H * 0.6) - capH; }
+    if (slot === "bl") top = H - 400 - blockH;
+    if (slot === "ml") top = Math.round(H * 0.56) - capH;
+    if (slot === "tr") { x0 = W - MR - Math.min(blockW, W - M - MR); top = Math.round(H * 0.66) - capH; }
   }
   const placed = []; rows.forEach((r, i) => r.forEach(w => placed.push({ ...w, x: x0 + w.dx, y: top + capH + lh * i })));
   return { size, placed, x0, ruleY: top + capH + lh * (rows.length - 1) + (hero ? 46 : 40),
@@ -182,9 +182,10 @@ function chooseLayout(li, L, hold, hero) {
   const sid = shotAt(Math.round(L.start * 24))[1].id, txt = normTxt(lineText(L));
   const forced = S.slot_by_line[txt] || S.slot_by_shot[sid], bouncy = isBouncy(L);
   let best = null;
-  for (const slot of forced ? [forced] : ["tl", "bl", "ml", "tr"]) for (const scale of bouncy ? [1] : [1, 0.78, 0.6]) {
+  const order = P ? ["bl", "ml", "tr", "tl"] : ["tl", "bl", "ml", "tr"];   // vertical: lower third first, the top last
+  for (const slot of forced ? [forced] : order) for (const scale of bouncy ? [1] : [1, 0.78, 0.6]) {
     const lay = layoutLine(L, hero, scale, slot); const o = meanOverlap(lay.box, fa, fb);
-    const score = o * 10 + (1 - scale) * 1e4 + ["tl", "bl", "ml", "tr"].indexOf(slot) * 10;
+    const score = o * 10 + (1 - scale) * 1e4 + order.indexOf(slot) * 10;
     if (!best || score < best.score) best = { ...lay, score, slot, scale };
     if (o === 0 && scale === 1) break;
   }
