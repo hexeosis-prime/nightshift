@@ -112,7 +112,7 @@ class Builder:
 
     def caption(self, s, person, outfit, action, loc, framing, people):
         """One full caption for caption-style graphs (FLUX 3 Klein): what the switch-built Flux 2 prompt says, in prose."""
-        sw = dict(self.canon.get("image_switches_default", {}), **self.world_cfg(s).get("switches", {}), **s.get("switches", {}))
+        sw = {**self.canon.get("image_switches_default", {}), **self.world_cfg(s).get("switches", {}), **s.get("switches", {})}   # later wins
         shot = {"close": "Close-up", "medium": "Medium shot", "wide": "Wide shot"}.get(framing, "Shot")
         parts = []
         if person:
@@ -162,7 +162,7 @@ class Builder:
             wf.set("prompt", self.caption(s, person, outfit, action, loc, framing, fem + male))
         else:
             wf.set("prompt", ", ".join(x for x in (person, ("wearing " + outfit) if outfit else "", action, loc) if x))
-        sw = dict(self.canon.get("image_switches_default", {}), **self.world_cfg(s).get("switches", {}), **s.get("switches", {}))
+        sw = {**self.canon.get("image_switches_default", {}), **self.world_cfg(s).get("switches", {}), **s.get("switches", {})}   # later wins
         for k, v in sw.items():
             wf.try_set(f"switch.{k}", bool(v))
         wf.try_set("switch.closeup", framing == "close" and bool(chars))
