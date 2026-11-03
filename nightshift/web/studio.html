@@ -88,6 +88,9 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
   display:flex;flex-direction:column;justify-content:flex-end;padding:12px;transition:.18s}
 .scene:hover{transform:translateY(-2px)}
 .scene.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 10px 30px rgba(255,138,31,.15)}
+.scene .ord{position:absolute;top:10px;right:10px;z-index:3;min-width:24px;height:24px;border-radius:12px;background:var(--amber);
+  color:#111;font:700 13px/24px var(--mono);text-align:center}
+.scene .ord:empty{display:none}
 .scene .sky{position:absolute;inset:0;z-index:0}
 .scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(5,6,10,.92));z-index:1}
 .scene b,.scene small{position:relative;z-index:2}
@@ -105,6 +108,9 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
   linear-gradient(180deg,#5a3a22 0%,#a8703c 45%,#6b4628 70%,#2e1e14 100%)}
 .sky.cathedral-light{background:linear-gradient(160deg,transparent 35%,rgba(255,245,220,.35) 42%,transparent 50%),linear-gradient(200deg,transparent 40%,rgba(255,245,220,.25) 47%,transparent 54%),
   linear-gradient(180deg,#3b3e48 0%,#6d6a6a 50%,#2a2b31 100%)}
+.sky.living-room{background:radial-gradient(46px 46px at 30% 48%,rgba(255,180,90,.75),transparent 70%),
+  repeating-linear-gradient(90deg,rgba(90,170,255,.28) 0 3px,transparent 3px 9px) 62% 24%/34% 40% no-repeat,
+  linear-gradient(180deg,#141a26 0%,#1d2433 58%,#2a2420 70%,#120f0d 100%)}
 .sky.snow-motel{background:radial-gradient(1.5px 1.5px at 20% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 60% 20%,#fff,transparent),radial-gradient(1.5px 1.5px at 80% 45%,#fff,transparent),
   radial-gradient(1.5px 1.5px at 35% 60%,#fff,transparent),radial-gradient(60px 30px at 50% 62%,rgba(255,190,110,.55),transparent 70%),linear-gradient(180deg,#0f1a2e 0%,#1f3554 55%,#cfd8e6 64%,#7f8ea6 100%)}
 .aspect{display:inline-block;border:1.5px solid currentColor;border-radius:2px}
@@ -294,7 +300,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
                 <div class="note" style="margin-top:0">The grey text is only an example: type your own.</div>
               </div>
             </div>
-            <button class="btn ghost" id="addP2" style="margin-top:14px" onclick="toggleP2(true)">+ Add a second performer (duet)</button>
+            <button class="btn ghost" id="addP2" style="margin-top:14px" onclick="toggleP2(true)">+ Add an optional second performer (duet)</button>
             <div id="p2" class="hide" style="margin-top:16px">
               <span class="label" style="display:block;margin-bottom:10px">Second performer · sings every other section</span>
               <div class="row">
@@ -334,6 +340,9 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
             </div>
             <pre class="sample" id="sampleLyr"></pre>
             <textarea id="lyrics" rows="9" class="hide" placeholder="[Verse]&#10;Your first line&#10;Your second line&#10;&#10;[Chorus]&#10;..."></textarea>
+            <div class="note hide" id="lyrNote">Section tags on their own lines ([Verse], [Chorus], [Bridge]) tell MiniMax Music 3 how to sing them.
+              Leave them out and Nightshift adds them for you: each block of lines separated by an empty line becomes a section.
+              <a href="https://github.com/hexeosis-prime/nightshift/blob/main/docs/guides/minimax-music-3-prompting-guide.md" target="_blank" rel="noopener">More tips</a></div>
           </div>
         </div>
 
@@ -341,7 +350,8 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
           <div class="num">03</div>
           <div>
             <h3>Where</h3>
-            <p class="hint">A scene is a look and three places; the shot list moves the performer through them. Or type your own.</p>
+            <p class="hint">Pick up to three places, in the order the video moves through them (the numbers on the cards). One place suits a
+              short video; two or three keep a longer one moving. Or type your own.</p>
             <div class="scenes" id="scenes"></div>
             <div id="customBox" class="row hide" style="margin-top:12px;align-items:flex-end">
               <div class="field" style="min-width:280px"><span class="label">Your location</span><input type="text" id="customPlace" placeholder="e.g. an abandoned greenhouse with broken glass panes and overgrown ferns"></div>
@@ -361,22 +371,41 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
               <div class="field" style="flex:none;min-width:0"><span class="label">Length</span><div class="seg" id="length"></div></div>
               <div class="field" style="flex:none;min-width:0"><span class="label">Aspect</span>
                 <div class="seg" id="aspect"><button data-v="9:16" class="on"><i class="aspect v"></i>9:16</button><button data-v="16:9"><i class="aspect w"></i>16:9</button></div></div>
-              <div class="field" style="flex:none;min-width:0"><span class="label">Image model</span>
-                <div class="seg" id="model"><button data-v="flux2" class="on">Flux 2 Klein 9B</button><button data-v="flux3">FLUX 3 Klein</button></div></div>
+
             </div>
             <div class="row" id="lookRow" style="gap:22px;margin-top:16px">
               <div class="field" style="flex:none;min-width:0"><span class="label">Colour grade</span><div class="grades" id="grades"></div></div>
-              <div class="field" style="flex:none;min-width:0"><span class="label">Lyric HUD</span>
-                <div class="seg" id="hud"><button data-v="off" class="on">Off</button><button data-v="on">Animated lyrics + HUD</button></div>
-                <span class="note" id="hudNote" style="margin-top:2px"></span></div>
+
             </div>
             <div class="note" id="lenNote"></div>
             <div class="note hide" id="agentLook">The agent picks the colour grade, and adds the animated lyric HUD only if your idea asks for on-screen lyrics.</div>
           </div>
         </div>
 
+        <div class="step" id="ovStep">
+          <div class="num">05</div>
+          <div>
+            <h3>Overlay</h3>
+            <p class="hint">Graphics drawn over the finished video. Use either, both or neither.</p>
+            <div class="row" style="gap:22px">
+              <div class="field" style="flex:none;min-width:0"><span class="label">Lyrics</span>
+                <div class="seg" id="ovLyrics"><button data-v="off" class="on">Off</button><button data-v="on">Animated lyrics</button></div>
+                <span class="note" style="margin-top:2px">word by word as they're sung, placed around faces</span></div>
+              <div class="field" style="flex:none;min-width:0"><span class="label">HUD</span>
+                <div class="seg" id="ovHud"><button data-v="off" class="on">Off</button><button data-v="on">HUD graphics</button></div>
+                <span class="note" style="margin-top:2px">frame marks, face tracking, audio meter, timecode</span></div>
+            </div>
+            <div class="row" id="lyrColRow" style="gap:14px;margin-top:16px;align-items:center">
+              <div class="field" style="flex:none;min-width:0"><span class="label">Lyric colour</span>
+                <div class="seg" id="lyrCol"><button data-v="contrast">Contrast</button><button data-v="solid">Solid colour</button><button data-v="rainbow" class="on">Rainbow</button></div></div>
+              <input type="color" id="lyrSolid" value="#f5f2ea" class="hide" style="width:44px;height:36px;border:0;background:none;margin-top:18px">
+              <span class="note" id="lyrColNote" style="margin-top:20px"></span>
+            </div>
+          </div>
+        </div>
+
         <div class="step" id="dirStep">
-          <div class="num" id="dirNum">05</div>
+          <div class="num" id="dirNum">06</div>
           <div>
             <h3>How much you're involved</h3>
             <p class="hint">Both make the whole video. The difference is whether it waits for you along the way.</p>
@@ -509,8 +538,8 @@ const CP = {
   pass_review:["The pass","The finished pass, plus a review copy with shot numbers burned in for notes."],
 };
 let INFO = null, CUR = null, logNext = 0, timer = null, lastView = null;
-const state = {tab:"form", who:"woman", songSrc:"generate", lyrSrc:"sample", upLyr:"own", aspect:"9:16", model:"flux2", mode:"director",
-  length:"short", scene:"night-avenue", grade:"A2_portra_dusk_plus", hud:"off", cDay:"night", cIn:"out"};
+const state = {tab:"form", who:"woman", songSrc:"generate", lyrSrc:"sample", upLyr:"own", aspect:"9:16", model:"flux3", mode:"director",
+  length:"short", scenes:["night-avenue"], grade:"A2_portra_dusk_plus", ovLyrics:"off", ovHud:"off", lyrCol:"rainbow", cDay:"night", cIn:"out"};
 let PLAN = null;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fileUrl = (p, f) => `/files/${encodeURIComponent(p)}/${f.split("/").map(encodeURIComponent).join("/")}`;
@@ -533,18 +562,24 @@ function lyricsUi(){
   $("genBox").classList.toggle("hide", up); $("upBox").classList.toggle("hide", !up);
   const own = up ? state.upLyr === "own" : state.lyrSrc === "own";
   $("sampleLyr").classList.toggle("hide", up || own);
-  $("lyrics").classList.toggle("hide", !own);
+  $("lyrics").classList.toggle("hide", !own); $("lyrNote").classList.toggle("hide", !own);
 }
-function hudUi(){
-  $("hudNote").textContent = state.aspect === "9:16" ? "word-by-word lyrics that steer around faces, clear of the app buttons"
-                                                     : "word-by-word lyrics that steer around faces";
+function ovUi(){
+  $("lyrColRow").classList.toggle("hide", state.ovLyrics !== "on");
+  $("lyrSolid").classList.toggle("hide", state.lyrCol !== "solid");
+  $("lyrColNote").textContent = {contrast:"white or black per line, from how bright the video is behind it", solid:"pick the colour",
+                                 rainbow:"letters on a moving gradient"}[state.lyrCol];
 }
-$("mode").addEventListener("click", e => {const c = e.target.closest(".dir"); if (!c) return;
-  state.mode = c.dataset.v; [...$("mode").children].forEach(x => x.classList.toggle("on", x === c))});
+function hudUi(){}
+function scenesUi(){
+  [...$("scenes").children].forEach(x => { const i = state.scenes.indexOf(x.dataset.v);
+    x.classList.toggle("on", i >= 0); x.querySelector(".ord").textContent = i >= 0 && state.scenes.length > 1 ? i + 1 : "" });
+  $("customBox").classList.toggle("hide", !state.scenes.includes("custom"));
+}
 function tabUi(){
   const ag = state.tab === "agent";
   $("agentMode").classList.toggle("hide", !ag); $("formMode").classList.toggle("hide", ag);
-  $("fmtStep").classList.toggle("hide", ag); $("dirStep").classList.toggle("hide", ag);   // Full Agent Mode is one box
+  $("fmtStep").classList.toggle("hide", ag); $("dirStep").classList.toggle("hide", ag); $("ovStep").classList.toggle("hide", ag);   // Full Agent Mode is one box
   $("goBtn").textContent = ag ? "Send to my agent" : "Start the shift";
   $("agentInfo").classList.toggle("hide", !ag);
   $("planBox").classList.add("hide"); $("goErr").textContent = "";
@@ -558,7 +593,7 @@ function lenUi(){
     (state.length === "full" ? "A full song renders overnight." : "Character sheets and the song come first; you can leave it running.");
 }
 seg("tabs", "tab", tabUi);
-seg("who","who"); seg("model","model"); seg("hud","hud"); seg("cDay","cDay"); seg("cIn","cIn");
+seg("who","who"); seg("ovLyrics","ovLyrics", ovUi); seg("ovHud","ovHud", ovUi); seg("lyrCol","lyrCol", ovUi); seg("cDay","cDay"); seg("cIn","cIn");
 seg("aspect","aspect", hudUi); seg("length","length", lenUi);
 seg("songSrc","songSrc", lyricsUi); seg("lyrSrc","lyrSrc", lyricsUi); seg("upLyr","upLyr", lyricsUi);
 let photoData = null, photoData2 = null;
@@ -593,18 +628,21 @@ async function init(){
   INFO = await api("/api/info");
   $("sampleLyr").textContent = INFO.default_lyrics;
   const scenes = Object.entries(INFO.scenes).map(([k, s]) =>
-    `<div class="scene ${k === state.scene ? "on" : ""}" data-v="${k}"><div class="sky ${k}"></div><b>${esc(s.label)}</b><small>${esc(s.blurb)}</small></div>`);
-  scenes.push(`<div class="scene custom" data-v="custom"><div class="sky"></div><b>Your own place</b><small>Type a location: one place, seen three ways.</small></div>`);
+    `<div class="scene" data-v="${k}"><div class="sky ${k}"></div><span class="ord"></span><b>${esc(s.label)}</b><small>${esc(s.blurb)}</small></div>`);
+  scenes.push(`<div class="scene custom" data-v="custom"><div class="sky"></div><span class="ord"></span><b>Your own place</b><small>Type a location: one place, seen three ways.</small></div>`);
   $("scenes").innerHTML = scenes.join("");
   $("scenes").style.gridTemplateColumns = "repeat(5,minmax(0,1fr))";
   $("scenes").addEventListener("click", e => {const c = e.target.closest(".scene"); if (!c) return;
-    state.scene = c.dataset.v; [...$("scenes").children].forEach(x => x.classList.toggle("on", x === c));
-    $("customBox").classList.toggle("hide", state.scene !== "custom")});
+    const k = c.dataset.v, i = state.scenes.indexOf(k);
+    if (i >= 0) { if (state.scenes.length > 1) state.scenes.splice(i, 1) }
+    else { if (state.scenes.length >= 3) state.scenes.shift(); state.scenes.push(k) }
+    scenesUi()});
+  scenesUi();
   $("grades").innerHTML = Object.entries(INFO.grades).map(([k, label]) =>
     `<div class="grade ${k === state.grade ? "on" : ""}" data-v="${k}"><i class="g-${k}"></i><span>${esc(label)}</span></div>`).join("");
   $("grades").addEventListener("click", e => {const c = e.target.closest(".grade"); if (!c) return;
     state.grade = c.dataset.v; [...$("grades").children].forEach(x => x.classList.toggle("on", x === c))});
-  lyricsUi(); hudUi(); tabUi();
+  lyricsUi(); ovUi(); tabUi();
   $("comfyUrl").value = localGet("comfyUrl") || INFO.comfy_url;
   checkComfy(); setInterval(checkComfy, 15000);
   agentInfo();
@@ -669,11 +707,12 @@ async function listVideos(){
 }
 const opts = () => state.tab === "agent"
   ? {image_model:state.model, mode:"yolo", comfy_url:$("comfyUrl").value.trim() || undefined}   // the agent picks length, shape, grade + HUD; runs to the end
-  : {aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade, overlay:state.hud === "on",
+  : {aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade,
+     overlay:{lyrics:state.ovLyrics === "on", hud:state.ovHud === "on", color:state.lyrCol, solid:$("lyrSolid").value},
      comfy_url:$("comfyUrl").value.trim() || undefined};
 function go1(){ return state.tab === "agent" ? handOff() : create() }
 async function handOff(){
-  $("goErr").textContent = ""; $("handBtn").disabled = true;
+  $("goErr").textContent = ""; $("goBtn").disabled = true;
   try {
     $("goErr").className = "ok"; $("goErr").textContent = "sending to your agent...";
     const r = await api("/api/agent/handoff", {idea:$("idea").value, length:"auto", opts:opts()});
@@ -693,7 +732,7 @@ async function handOff(){
       <pre class="sample" style="max-height:340px">${esc(r.brief)}</pre>
       <div class="go"><button class="btn" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(r.brief))}).then(()=>this.textContent='Copied')">Copy the brief</button></div>`;
     box.scrollIntoView({behavior:"smooth", block:"start"});
-  } catch(e){ $("goErr").className = "err"; $("goErr").textContent = e.message } finally { $("handBtn").disabled = false }
+  } catch(e){ $("goErr").className = "err"; $("goErr").textContent = e.message } finally { $("goBtn").disabled = false }
 }
 
 async function planIt(){
@@ -748,8 +787,8 @@ async function create(){
     const own = up ? state.upLyr === "own" : state.lyrSrc === "own";
     const lyrics = own ? $("lyrics").value : (up ? "" : INFO.default_lyrics);
     if (own && !lyrics.trim() && !up) throw new Error("write your lyrics, or use the sample");
-    if (state.scene === "custom" && !$("customPlace").value.trim()) throw new Error("type your location");
-    const form = Object.assign(opts(), {length:state.length, scene:state.scene,
+    if (state.scenes.includes("custom") && !$("customPlace").value.trim()) throw new Error("type your location");
+    const form = Object.assign(opts(), {length:state.length, scenes:state.scenes,
       custom_place:$("customPlace").value, custom_daytime:state.cDay === "day", custom_indoor:state.cIn === "in",
       character:{noun:state.who, look:$("look").value, outfit:$("outfit").value},
       character2: state.duet ? {noun:state.who2, look:$("look2").value, outfit:$("outfit2").value} : undefined,

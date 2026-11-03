@@ -122,7 +122,7 @@ class Builder:
             parts.append(f"{shot}" + (f": {action}" if action else "") + ".")
         if loc:
             parts.append(f"Setting: {loc}.")
-        look = self.world_cfg(s).get("style") or self.canon.get("style")
+        look = s.get("style") or self.world_cfg(s).get("style") or self.canon.get("style")   # a shot can carry its own place's look
         if not look:
             look = ("professional cinematic photograph" if sw.get("pro_photo") else "candid handheld film photograph, natural imperfections")
             look += ", " + ("daylight" if sw.get("daytime") else "night") + ", " + ("indoors" if sw.get("indoor") else "outdoors")

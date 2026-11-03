@@ -142,6 +142,22 @@ SCENES = {
                      "over the lot, warm curtains glowing in the windows. Smooth, cinematic camera movement.",
         "genre": "lo-fi dream pop with a drum machine, warm tape-saturated synths and a soft vocal, 88 BPM, B minor, lonely but tender",
     },
+    "living-room": {
+        "label": "Living Room",
+        "blurb": "A suburban living room at night: a wall of glowing computer towers, one warm lamp.",
+        "switches": {"bad_photo": False, "pro_photo": True, "indoor": True, "daytime": False, "atmosphere": True},
+        "style": "photographic suburban ranch living room at night, Portra film look, low warm lamps plus cool blue monitor glow from a wall "
+                 "of computer towers, mixed tungsten-and-blue light, dark corners, cozy clutter, 50mm lens look, shallow depth of field",
+        "grade": "A2_portra_dusk_plus",
+        "places": [
+            "a suburban living room at night, a wall of computer towers with tiny glowing status lights, a warm lamp and blue monitor glow, faint haze",
+            "the same living room from the beige fabric couch, square pillows, a coffee table, potted plants, the towers glowing behind",
+            "a wide view of the living room at night, a sisal rug, the hallway at the far end lost in shadow, the lamp a small warm island",
+        ],
+        "establish": "Wide establishing shot of a suburban ranch living room at night, a wall of computer towers with tiny glowing status "
+                     "lights, a beige couch and a coffee table, a single warm lamp, no people. Slow, smooth cinematic camera move.",
+        "genre": "warm bedroom electro pop with a soft four-on-the-floor kick, humming synth bass and glassy plucks, 108 BPM, C minor, cozy and late-night",
+    },
 }
 
 DEFAULT_LYRICS = """[Intro]
@@ -260,6 +276,28 @@ def voice_label(c, other=None):
     return v
 
 
+def tag_sections(lyrics):
+    """Lyrics typed without [Section] tags get them: each block of lines (separated by an empty line) becomes a section,
+    verses and choruses alternating; a block that repeats is the chorus. Tagged lyrics are left as they are."""
+    text = (lyrics or "").strip()
+    if not text or re.search(r"^\s*\[[^\]]+\]\s*$", text, re.M):
+        return lyrics
+    blocks = [b.strip() for b in re.split(r"\n\s*\n", text) if b.strip()]
+    counts = {b: blocks.count(b) for b in blocks}
+    chorus = max(counts, key=counts.get) if max(counts.values()) > 1 else None
+    out, v = [], 0
+    for i, b in enumerate(blocks):
+        if len(blocks) == 1:
+            tag = "Verse"
+        elif b == chorus or (chorus is None and i % 2 == 1):
+            tag = "Chorus"
+        else:
+            v += 1
+            tag = f"Verse {v}"
+        out.append(f"[{tag}]\n{b}")
+    return "\n\n".join(out)
+
+
 def tag_duet(lyrics, ch, ch2):
     """Name a singer in every section tag (alternating, starting with the lead) unless the tags already name one.
     Returns (tagged lyrics, {lyric line index: "lead" | "partner"})."""
@@ -286,7 +324,11 @@ def tag_duet(lyrics, ch, ch2):
 
 
 def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None):
-    sc = SCENES[scene]
+    """scene: one scene key, or a list of up to three; with several, the video moves through them in order and each shot
+    carries its place's look."""
+    keys = [scene] if isinstance(scene, str) else list(scene)[:3]
+    scs = [SCENES[k] for k in keys]
+    sc = scs[0]
     lines = lyric_lines(lyrics)
     owner = owner or {}
     n_ff = 0
@@ -298,6 +340,9 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None):
         sid = f"s{i + 1:02d}"
         section = "intro" if i == 0 else "outro" if i == len(pattern) - 1 else "body"
         s = {"id": sid, "section": section, "world": "real", "mode": mode, "framing": framing, "seed": seed0 + i + 1}
+        sc = scs[min(len(scs) - 1, i * len(scs) // len(pattern))]       # the place block this shot is in
+        if len(scs) > 1:
+            s.update(style=sc["style"], switches=dict(sc["switches"]))
         if mode == "t2v":
             s.update(chars=[], video=sc["establish"])
         elif mode == "fflf":
@@ -405,16 +450,19 @@ def create(root, form):
               character: {noun, look, outfit, shoes, never, photo (path)},
               song: {source: "generate" | "upload", vibe, lyrics, audio (path), start}}"""
     length = LENGTHS[form.get("length") or "short"]
-    scene = form.get("scene") or "night-avenue"
-    if scene == "custom":
+    keys = [k for k in (form.get("scenes") or [form.get("scene") or "night-avenue"]) if k][:3] or ["night-avenue"]
+    if "custom" in keys:
         SCENES["custom"] = custom_scene(form.get("custom_place"), form.get("custom_daytime"), form.get("custom_indoor"))
-    if scene not in SCENES:
-        raise ValueError(f"unknown scene '{scene}' (one of {', '.join(SCENES)})")
+    for k in keys:
+        if k not in SCENES:
+            raise ValueError(f"unknown scene '{k}' (one of {', '.join(SCENES)})")
+    scene = keys[0]
     song = form.get("song") or {}
     upload = song.get("source") == "upload"
     lyrics = (song.get("lyrics") or "").strip()
     if not upload and not lyrics:
         lyrics = DEFAULT_LYRICS if length["seconds"] < 60 else DEFAULT_LYRICS_LONG
+    lyrics = tag_sections(lyrics)
     instrumental = upload and not lyric_lines(lyrics)
     p = P.init(root, form.get("name") or os.path.basename(root), form.get("comfy_url"), form.get("comfy_dir"),
                mode=form.get("mode") or "director", skip=("refs/README.md", "README.md"))   # the starter's notes are about its own example
@@ -457,7 +505,7 @@ def create(root, form):
         "negatives": {},
     }
     p.save("canon.json", canon)
-    p.save("shots.json", shots(scene, lyrics, length["shots"], ch, ch2=ch2, owner=owner))
+    p.save("shots.json", shots(keys, lyrics, length["shots"], ch, ch2=ch2, owner=owner))
     os.makedirs(p.path("song"), exist_ok=True)
     with open(p.path("song", "caption.md"), "w", encoding="utf-8") as f:
         f.write(caption(scene, song.get("vibe"), ch["noun"], length["seconds"], instrumental, duet))
@@ -469,7 +517,7 @@ def create(root, form):
     cfg.update({
         "profile": length["profile"], "length": form.get("length") or "short",
         "aspect": form.get("aspect") or "16:9", "image_model": form.get("image_model") or "flux2",
-        "scene": scene, "song_max_seconds": length["seconds"],
+        "scene": "+".join(keys), "song_max_seconds": length["seconds"],
         "grade": {"look": form.get("grade") if form.get("grade") in GRADES else sc["grade"], "lifts": []},
         "overlay": overlay_cfg(lyrics, form.get("name"), form.get("overlay"), form.get("aspect") or "16:9"),
         "sheets": {"approve": form.get("approve_looks", False) is True,   # hands-off never pauses; director mode stops for the look anyway
@@ -490,8 +538,10 @@ def create(root, form):
 
 def overlay_cfg(lyrics, title=None, enabled=False, aspect="16:9"):
     """The lyric HUD settings for a project: sections from the lyric sheet's [tags], the most repeated line as the hero.
-    The HUD is drawn at the final size: 1920x1080, or 1080x1920 for vertical with the platform UI bands kept clear."""
-    if not enabled:
+    The HUD is drawn at the final size: 1920x1080, or 1080x1920 for vertical with the platform UI bands kept clear.
+    enabled: True (lyrics + HUD graphics) or {lyrics, hud, color: rainbow | solid | contrast, solid: "#rrggbb"}."""
+    o = enabled if isinstance(enabled, dict) else {"lyrics": bool(enabled), "hud": bool(enabled)}
+    if not (o.get("lyrics") or o.get("hud")):
         return {"enabled": False}
     sections, seen, pending = [], {}, None
     lines = []
@@ -514,7 +564,11 @@ def overlay_cfg(lyrics, title=None, enabled=False, aspect="16:9"):
             pending = None
     hero = max(seen, key=lambda k: (seen[k], -lines.index(k))) if seen else None
     style = {"title": (title or "NIGHTSHIFT").upper()[:32], "label": "PASS 01", "face_label": "SUBJECT 01",
-             "ticker": ["NIGHT SHIFT", "ALL CHANNELS OPEN", "TAKE {count}"], "widgets": {}}
+             "ticker": ["NIGHT SHIFT", "ALL CHANNELS OPEN", "TAKE {count}"], "widgets": {},
+             "show_lyrics": bool(o.get("lyrics")), "show_hud": bool(o.get("hud")),
+             "lyric_color": o.get("color") if o.get("color") in ("rainbow", "solid", "contrast") else "rainbow"}
+    if style["lyric_color"] == "solid":
+        style["lyric_solid"] = o.get("solid") if re.fullmatch(r"#[0-9a-fA-F]{6}", str(o.get("solid") or "")) else "#f5f2ea"
     if hero and seen[hero] > 1:
         style["hero"] = "^" + re.escape(hero.lower()).replace("\\ ", " ") + "$"
     return {"enabled": True, "sections": sections or [{"name": "INTRO"}], "style": style}

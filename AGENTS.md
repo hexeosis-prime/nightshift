@@ -7,7 +7,8 @@ and turn the director's notes into precise changes. The human (if there is one) 
 - Use the MCP server (`nightshift mcp`) or the CLI (`nightshift -p <project> ...`); both do the same things.
 - Start with `project_info` / `nightshift status`. Read `canon.json`, `shots.json`, `cut.json` and the latest
   `out/passNN_notes.md` before changing anything.
-- Character sheets come first and the human approves the looks (in yolo mode too, unless `sheets.approve` is false).
+- Character sheets come first and, in director mode, the human approves the looks (yolo mode skips that when
+  `sheets.approve` is false, as it is in projects made by Studio or `create_from_plan`).
   With a picture of the character use it (`reference`); in yolo mode build from the written description.
 - A pass is hours of rendering: start it in the background (`pipeline_run`), poll `pipeline_status` every few minutes,
   don't block on it.

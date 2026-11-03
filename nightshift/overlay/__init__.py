@@ -172,6 +172,8 @@ def prep(project, edl, faces_json, out=None, seconds=None):
             "rms": [round(float(v), 3) for v in rms], "beats": [x for x in bm["beats"] if x < secs],
             "downbeats": [x for x in bm["downbeats"] if x < secs], "shots": shots, "faces": faces_all[:nf], "people": people,
             "sections": _sections(ocfg.get("sections"), lines, secs), "style": ocfg.get("style", {})}
+    if (ocfg.get("style") or {}).get("lyric_color") == "contrast":
+        data["luma"] = luma_grid(edl.replace("_edl.csv", ".mp4"), nf)
     illus = {}
     for name, p in (ocfg.get("illus") or {}).items():
         illus[name] = "file://" + os.path.abspath(project.path(p)).replace("\\", "/")
@@ -184,6 +186,25 @@ def prep(project, edl, faces_json, out=None, seconds=None):
     with open(out, "w") as fh:
         json.dump(data, fh)
     return {"out": out, "lines": len(lines), "sections": [(s["name"], round(s["t"], 2)) for s in data["sections"]], "frames": nf}
+
+
+def luma_grid(video, frames, step=6, gx=12, gy=12):
+    """Brightness of the cut on a coarse grid every `step` frames (0-1), so lyrics in "contrast" colour can pick white or black."""
+    import cv2
+    if not os.path.exists(video):
+        return None
+    cap = cv2.VideoCapture(video)
+    out, f = [], 0
+    while f < frames:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, f)
+        ok, im = cap.read()
+        if not ok:
+            break
+        g = cv2.resize(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), (gx, gy), interpolation=cv2.INTER_AREA)
+        out.append([round(float(v) / 255, 2) for v in g.flatten()])
+        f += step
+    cap.release()
+    return {"step": step, "gx": gx, "gy": gy, "v": out} if out else None
 
 
 # ---- render + encode -------------------------------------------------------------------------------
