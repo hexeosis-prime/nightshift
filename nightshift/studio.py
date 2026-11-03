@@ -8,6 +8,7 @@ module writes canon.json, shots.json, song/caption.md, song/lyrics.txt and proje
 nobody editing JSON. Everything it writes is a normal project: open the files later and direct it by hand.
 """
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -205,19 +206,74 @@ PATTERN = [
     ("ff", "wide", 2, True, False),
     ("fflf", "wide", 0, False, False),
 ]
-ACTIONS = {
-    ("lipsync", "close"): ("singing softly to the camera, eyes half closed, 85mm lens", "calm, lips gently closed, about to sing"),
-    ("lipsync", "medium"): ("singing with feeling, one hand moving with the music, 50mm lens", "open, singing"),
-    ("ff", "medium"): ("walking slowly toward the camera, arms loose, looking past the lens, 35mm lens", "restless, searching"),
-    ("ff", "wide"): ("standing alone in the middle of the frame, turning to look over the shoulder, 24mm lens", "thoughtful"),
+# The shot bank: proven music-video setups per (mode, framing), each a still action + expression + LTX motion prompt.
+# Every video draws its own mix from it with a seed (repeatable: the seed is saved in shots.json), never the same setup twice
+# in a row. {lead} = the performer, {pr} = her / him / them, {po} = her / his / their.
+BANK = {
+    ("lipsync", "close"): [
+        ("handheld drift", "singing softly to the camera, eyes half closed, 85mm lens", "calm, lips gently closed, about to sing",
+         "Close-up of {lead} singing softly, the background a soft blur of light. Handheld camera drifting slowly around {pr}."),
+        ("slow push in", "looking straight into the lens, very still, 85mm lens", "intent, lips gently closed, about to sing",
+         "Close-up of {lead} singing straight into the lens. The camera pushes in slowly and steadily toward {po} face."),
+        ("profile turn", "in profile, about to turn toward the camera, 85mm lens", "calm, lips gently closed, about to sing",
+         "Close-up of {lead} in profile, turning toward the camera and singing. Static camera, shallow focus."),
+        ("light sweep", "singing with eyes closed, soft light on one side of the face, 85mm lens", "lost in the song, lips gently closed",
+         "Close-up of {lead} singing as a soft band of light slowly sweeps across {po} face. Slow handheld drift."),
+    ],
+    ("lipsync", "medium"): [
+        ("slow arc", "singing with feeling, one hand moving with the music, 50mm lens", "open, singing",
+         "Medium shot of {lead} singing with feeling. The camera arcs slowly around {pr}, steady."),
+        ("walk and sing", "singing while walking toward the camera, 50mm lens", "open, singing",
+         "Medium shot of {lead} singing while walking toward the camera. The camera dollies backward ahead of {pr}, steady."),
+        ("low angle rise", "singing, seen from a low angle, chin up, 35mm lens", "strong, singing",
+         "Low-angle medium shot of {lead} singing with feeling. The camera rises slowly, looking up at {pr}."),
+        ("half orbit", "singing, turning slightly with the music, 50mm lens", "open, singing",
+         "Medium shot of {lead} singing. The camera orbits slowly halfway around {pr}, smooth and steady."),
+        ("backlit rim", "singing with the brightest light behind, a bright rim around the hair and shoulders, 50mm lens", "open, singing",
+         "Medium shot of {lead} singing, backlit with a bright rim of light. The camera drifts slowly sideways."),
+    ],
+    ("ff", "medium"): [
+        ("walk toward", "walking slowly toward the camera, arms loose, looking past the lens, 35mm lens", "restless, searching",
+         "Medium shot of {lead} walking slowly toward the camera. The camera tracks backward in front of {pr}, steady."),
+        ("side track", "walking through the scene from left to right, looking ahead, 35mm lens", "focused, moving on",
+         "Medium shot of {lead} walking through the scene. The camera tracks alongside {pr} at walking pace."),
+        ("follow from behind", "walking away from the camera, seen from behind, head turned a little to one side, 35mm lens", "determined",
+         "The camera follows close behind {lead} at shoulder height through the scene, smooth and steady."),
+        ("groove", "dancing loosely to the beat, shoulders moving, 35mm lens", "joyful, lost in the music",
+         "Medium shot of {lead} dancing loosely to the beat. Handheld camera moving with {pr}, bouncing slightly."),
+    ],
+    ("ff", "wide"): [
+        ("look back", "standing alone in the middle of the frame, turning to look over the shoulder, 24mm lens", "thoughtful",
+         "Wide shot of {lead} standing alone, turning to look over {po} shoulder as the air moves {po} hair. The camera pushes in slowly."),
+        ("crane reveal", "standing small in the frame, looking up, 24mm lens", "awed",
+         "Wide shot of {lead} standing still. The camera cranes up slowly to reveal the whole place around {pr}."),
+        ("walk away", "walking away from the camera into the distance, 24mm lens", "resolute",
+         "Wide shot of {lead} walking away from the camera into the distance. Static camera, the figure growing smaller."),
+        ("spin", "spinning slowly with arms out, 24mm lens", "free, smiling",
+         "Wide shot of {lead} spinning slowly with arms out. The camera circles slowly around {pr}."),
+        ("silhouette", "standing in silhouette against the brightest light in the place, 24mm lens", "still, thoughtful",
+         "Wide shot of {lead} in silhouette against the light, hair moving in the air. The camera pushes in slowly."),
+    ],
 }
-VIDEO = {
-    ("lipsync", "close"): "Close-up of {lead} singing softly, the background a soft blur of light. Handheld camera drifting slowly around {pr}.",
-    ("lipsync", "medium"): "Medium shot of {lead} singing with feeling. The camera arcs slowly around {pr}, steady.",
-    ("ff", "medium"): "Medium shot of {lead} walking slowly toward the camera. The camera tracks backward in front of {pr}, steady.",
-    ("ff", "wide"): "Wide shot of {lead} standing alone, turning to look over {po} shoulder as the wind moves {po} hair. The camera "
-                    "pushes in slowly.",
-}
+ACTIONS = {k: v[0][1:3] for k, v in BANK.items()}      # the first setup of each kind (kept for anything that reads these)
+VIDEO = {k: v[0][3] for k, v in BANK.items()}
+
+
+class _Deck:
+    """Draws setups for each (mode, framing) in a shuffled order, reshuffling when used up, never repeating back to back."""
+    def __init__(self, seed):
+        self.rng, self.decks, self.last = random.Random(seed), {}, {}
+
+    def draw(self, key):
+        if not self.decks.get(key):
+            order = list(range(len(BANK[key])))
+            self.rng.shuffle(order)
+            if len(order) > 1 and order[0] == self.last.get(key):
+                order.append(order.pop(0))
+            self.decks[key] = order
+        i = self.decks[key].pop(0)
+        self.last[key] = i
+        return BANK[key][i]
 
 
 def slug(text):
@@ -327,7 +383,7 @@ def tag_duet(lyrics, ch, ch2):
     return "\n".join(out), owner
 
 
-def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None):
+def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None, shot_seed=None):
     """scene: one scene key, or a list of up to three; with several, the video moves through them in order and each shot
     carries its place's look."""
     keys = [scene] if isinstance(scene, str) else list(scene)[:3]
@@ -339,6 +395,8 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None):
     pattern = [PATTERN[0]] + [PATTERN[1 + (i % 6)] for i in range(n_shots - 2)] + [PATTERN[-1]]
     sung = [i for i, p in enumerate(pattern) if p[4]]
     anchors = pick_anchors(lines, len(sung))
+    shot_seed = random.randrange(1, 10 ** 6) if shot_seed is None else int(shot_seed)
+    deck = _Deck(shot_seed)
     out = []
     for i, (mode, framing, place, with_char, sings) in enumerate(pattern):
         sid = f"s{i + 1:02d}"
@@ -366,22 +424,24 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None):
                 mode = s["mode"] = "ff" if mode == "lipsync" else mode
                 if framing == "close":
                     s["framing"] = framing = "medium"
-            key = (mode, framing) if (mode, framing) in ACTIONS else ("ff", "wide")
-            act, expr = ACTIONS[key]
+            key = (mode, framing) if (mode, framing) in BANK else ("ff", "wide")
+            setup, act, expr, video = deck.draw(key)
+            s["setup"] = setup
             c = ch2 if who == "partner" else ch
             obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((c or {}).get("pronoun"), ("them", "their"))
             if mode == "lipsync":
                 s["no_lyric"] = True                 # quoted lyrics can burn in as subtitles; the song audio drives the mouth
             s.update(chars=[who], still="edit", wording="C", expr=expr, action=act, location=sc["places"][place],
-                     video=VIDEO[key].replace("{pr}", obj).replace("{po}", pos).replace("{lead}", "{" + who + "}"))
+                     video=video.replace("{pr}", obj).replace("{po}", pos).replace("{lead}", "{" + who + "}"))
             if ch2 and mode == "ff" and framing == "wide" and not any(x.get("add") for x in out):
                 other = "partner" if who == "lead" else "lead"
                 s["add"] = {"char": other, "where": "standing a few steps away, facing them", "expr": "natural"}
                 s["video"] = (f"Wide shot of {{{who}}} and {{{other}}} together, a few steps apart, the wind moving their hair. "
                               f"The camera pushes in slowly.")
         out.append(s)
-    return {"_readme": "Written by Nightshift Studio from a scene preset. Song-agnostic: lip-sync shots start on the lyric line in "
-                       "\"anchor\". Edit freely; fields: docs/shots.md.", "shots": out}
+    return {"_readme": "Written by Nightshift Studio from a scene preset and the shot bank (studio.BANK; \"setup\" names the one "
+                       "each shot drew). Song-agnostic: lip-sync shots start on the lyric line in \"anchor\". Edit freely; fields: "
+                       "docs/shots.md.", "_shot_seed": shot_seed, "shots": out}
 
 
 def _ts(sec):
@@ -509,7 +569,7 @@ def create(root, form):
         "negatives": {},
     }
     p.save("canon.json", canon)
-    p.save("shots.json", shots(keys, lyrics, length["shots"], ch, ch2=ch2, owner=owner))
+    p.save("shots.json", shots(keys, lyrics, length["shots"], ch, ch2=ch2, owner=owner, shot_seed=form.get("shot_seed")))
     os.makedirs(p.path("song"), exist_ok=True)
     with open(p.path("song", "caption.md"), "w", encoding="utf-8") as f:
         f.write(caption(scene, song.get("vibe"), ch["noun"], length["seconds"], instrumental, duet))

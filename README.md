@@ -39,7 +39,8 @@ opens `http://127.0.0.1:8189` with two tabs. **Director Mode** asks five things:
    made from the photo, or from the words.
 2. **The song**: MiniMax Music 3 writes and sings it from a vibe and your lyrics, or upload your own track (it's trimmed to
    the length; paste its lyrics for lip-sync, or leave them out for an instrumental).
-3. **Where**: a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn, Rain Tavern, Golden Warehouse,
+3. **Where** (the shot list is drawn from a bank of music-video setups: slow push-ins, arcs, orbits, walk-and-sing dolly
+   shots, crane reveals, silhouettes, spins, so every video gets its own mix, and the seed in `shots.json` repeats it): a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn, Rain Tavern, Golden Warehouse,
    Cathedral Light, Snow Motel) or your own place: a look plus three places that the shot
    list moves the performer through.
 4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full, 9:16 or
