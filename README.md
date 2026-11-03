@@ -33,7 +33,7 @@ closed APIs, no agent required.
 nightshift app --comfy-dir C:/ComfyUI_windows_portable/ComfyUI      # or --comfy-url http://<gpu-box>:8188 for ComfyUI elsewhere
 ```
 
-opens `http://127.0.0.1:8189`. **Interactive Mode** asks five things:
+opens `http://127.0.0.1:8189` with two tabs. **Director Mode** asks five things:
 
 1. **Who's in it**: a photo (yourself, or someone who agreed) and/or a few words: look, outfit. The character sheet is
    made from the photo, or from the words.
@@ -44,10 +44,10 @@ opens `http://127.0.0.1:8189`. **Interactive Mode** asks five things:
    list moves the performer through.
 4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full, 9:16 or
    16:9, a colour grade, and the animated lyric HUD (in both shapes; vertical keeps clear of the app buttons).
-5. **How much you're involved**: *Director mode* stops at each checkpoint and waits for your picks and notes. *Hands-off
-   mode* never pauses, not even for the character's look: it runs to the end.
+5. **How much you're involved**: *Checkpoint Mode* stops at each checkpoint and waits for your picks and notes. *Run to End
+   Mode* never pauses, not even for the character's look: it runs to the end.
 
-**About hands-off mode:** it always makes a complete video, and there is a good chance some shots come out wrong to a human
+**About Run to End Mode** (and Full Agent Mode, which always runs to the end): it always makes a complete video, and there is a good chance some shots come out wrong to a human
 eye: a hand with too many fingers, a face that drifts, a stray word painted on a wall. Nightshift catches some of this
 itself (it re-takes shots with burned-in text and keeps the take whose face best matches the character sheet), but not
 all of it. Watching the result and deciding whether to run a second pass or keep the weirdness is the human's call.
@@ -65,7 +65,8 @@ nightshift new my-video --scene desert-highway --aspect 9:16 --image-model flux3
 ### Agent mode
 
 **Full Agent Mode** is one box: describe the video with as few or as many details as you like (the story, the places, who is
-in it, what the song is about). Then either:
+in it, what the song is about, how long, vertical or widescreen). The agent picks the length, the shape, the grade and the
+lyric HUD from the idea, and the video runs to the end without stopping. Your own photo needs Director Mode. Then either:
 
 - **Plan it**: an agent model writes the lyrics, the song brief, one or two characters, the worlds and every shot, and the
   app shows you the plan before anything renders. Any OpenAI-compatible server works: LM Studio or Ollama on another machine

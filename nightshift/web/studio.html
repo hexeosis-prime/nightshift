@@ -187,7 +187,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .tabs{display:flex;gap:6px;margin:-4px 0 6px;border-bottom:1px solid var(--line)}
 .tabs button{border:0;background:transparent;color:var(--dim);padding:10px 14px 12px;cursor:pointer;font:600 15px/1 var(--sans);border-bottom:2px solid transparent;margin-bottom:-1px}
 .tabs button.on{color:var(--ink);border-bottom-color:var(--amber)}
-.tabs button{text-align:left;flex:1}
+.tabs button{text-align:left;flex:1;display:flex;flex-direction:column;justify-content:flex-start}
 .tabs button small{display:block;font:400 12.5px/1.35 var(--sans);color:var(--faint);margin-top:5px}
 .tabs button.on small{color:var(--dim)}
 .dirs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -249,7 +249,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
     <div class="hero">
       <div>
         <h1>A whole music video,<br>directed overnight <em>on your own GPU.</em></h1>
-        <p>Describe an idea and an agent writes the song, casts the characters and plans every shot, or build it step by step.
+        <p>Build it step by step with presets, or describe an idea in one box and an agent writes the song, casts the characters and plans every shot.
           Nightshift locks each character's look, paints every first frame, animates them with lip-sync on LTX&nbsp;2.3, cuts on
           the beat and grades it, all in your local ComfyUI with open-weight models.</p>
       </div>
@@ -257,30 +257,31 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
     <div class="home">
       <div class="card">
         <div class="tabs" id="tabs">
-          <button data-v="agent" class="on">Full Agent Mode<small>Describe your idea simply; the agent works out every detail.</small></button>
-          <button data-v="form">Interactive Mode<small>Set up the key creative choices yourself, step by step.</small></button>
+          <button data-v="form" class="on">Director Mode<small>Set up the key creative choices yourself, step by step.</small></button>
+          <button data-v="agent">Full Agent Mode<small>One box: describe your idea, and the agent makes the whole video.</small></button>
         </div>
 
         <!-- AGENT MODE -->
-        <div id="agentMode">
+        <div id="agentMode" class="hide">
           <div class="step">
             <div class="num">01</div>
             <div>
               <h3>Your idea</h3>
-              <p class="hint">As few or as many details as you like: the story, the places, who is in it, what the song is about.
-                The agent writes the lyrics, the song brief, the characters and every shot, then Nightshift renders it.</p>
+              <p class="hint">As few or as many details as you like: the story, the places, who is in it, what the song is about,
+                how long, vertical or widescreen. The agent writes the song, casts the characters, plans every shot and picks the
+                look, then Nightshift makes the whole video without stopping. Want your own photo in it? Use Director Mode.</p>
               <textarea id="idea" rows="9" placeholder="Example (type your own): A duet between two night-shift workers in a city that never sleeps. She runs a 24-hour laundromat, he drives the last bus. They keep missing each other: the laundromat window, the bus stop in the rain, a rooftop at dawn, the empty bus depot. Synth pop with a heartbeat kick, bittersweet but hopeful. She has a short silver bob and a yellow raincoat; he has a beard and a navy driver's jacket."></textarea>
             </div>
           </div>
         </div>
 
         <!-- FORM MODE -->
-        <div id="formMode" class="hide">
+        <div id="formMode">
         <div class="step">
           <div class="num">01</div>
           <div>
             <h3>Who's in it</h3>
-            <p class="hint">A photo makes the character sheet from the picture; without one it's built from your description. In director mode you approve the look before anything else renders.</p>
+            <p class="hint">A photo makes the character sheet from the picture; without one it's built from your description. In Checkpoint Mode you approve the look before anything else renders.</p>
             <div class="row">
               <label class="drop" id="photoDrop"><input type="file" accept="image/*" id="photo" hidden>
                 <span id="photoHint">Drop a photo<br>or click<br><small>(optional)</small></span><img id="photoImg" class="hide" alt="">
@@ -351,8 +352,8 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
         </div>
 
         <!-- SHARED -->
-        <div class="step">
-          <div class="num" id="fmtNum">02</div>
+        <div class="step" id="fmtStep">
+          <div class="num" id="fmtNum">04</div>
           <div>
             <h3 id="fmtTitle">Format and look</h3>
             <div class="row" style="gap:22px">
@@ -373,25 +374,26 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
           </div>
         </div>
 
-        <div class="step">
-          <div class="num" id="dirNum">03</div>
+        <div class="step" id="dirStep">
+          <div class="num" id="dirNum">05</div>
           <div>
             <h3>How much you're involved</h3>
             <p class="hint">Both make the whole video. The difference is whether it waits for you along the way.</p>
             <div class="dirs" id="mode">
-              <div class="dir on" data-v="director"><b>Director mode: I check in</b>
+              <div class="dir on" data-v="director"><b>Checkpoint Mode: I check in</b>
                 <span>Nightshift stops at checkpoints (the song takes, the first frames, the video takes, the finished pass), shows you what it made, and waits for your picks and notes before it goes on.</span></div>
-              <div class="dir" data-v="yolo"><b>Hands-off mode: run to the end</b>
-                <span>Never pauses for feedback, not even for the character's look. You get a complete video, and some shots may look wrong to a human eye. Watch it, then run a second pass or keep the weirdness: that call is yours.</span></div>
+              <div class="dir" data-v="yolo"><b>Run to End Mode</b>
+                <span>Never pauses for feedback, not even for the character's look. After you press Start the shift, you get a complete video, and some shots may look wrong to a human eye. Watch it, then run a second pass or keep the weirdness: that call is yours.</span></div>
             </div>
           </div>
         </div>
 
         <div class="go">
           <button class="btn primary" id="goBtn" onclick="go1()">Plan it</button>
-          <button class="btn" id="handBtn" onclick="handOff()">Hand off to my agent</button>
           <span class="err" id="goErr"></span>
         </div>
+        <div class="agentStat hide" id="handLine">Have your own agent (OpenClaw, Hermes, Claude ...)? It can drive Nightshift directly.
+          <a href="#" onclick="handOff();return false">Hand this idea to my agent</a></div>
         <div class="agentStat" id="agentInfo"></div>
 
         <div class="plan hide" id="planBox"></div>
@@ -405,7 +407,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
         <div class="card how" style="margin-top:16px">
           <span class="label">What happens</span>
           <ol>
-            <li><b>Character sheet</b> first: front, back, face. In director mode you pick it.</li>
+            <li><b>Character sheet</b> first: front, back, face. In Checkpoint Mode you pick it.</li>
             <li><b>Song</b>, then beats and lyric timing, so every shot lands on a line.</li>
             <li><b>First frames</b>, then an identity edit from the sheet, so it's the same face in every shot.</li>
             <li><b>LTX 2.3</b> animates each shot: lip-sync, camera moves, an establishing shot.</li>
@@ -513,7 +515,7 @@ const CP = {
   pass_review:["The pass","The finished pass, plus a review copy with shot numbers burned in for notes."],
 };
 let INFO = null, CUR = null, logNext = 0, timer = null, lastView = null;
-const state = {tab:"agent", who:"woman", songSrc:"generate", lyrSrc:"sample", upLyr:"own", aspect:"9:16", model:"flux2", mode:"director",
+const state = {tab:"form", who:"woman", songSrc:"generate", lyrSrc:"sample", upLyr:"own", aspect:"9:16", model:"flux2", mode:"director",
   length:"short", scene:"night-avenue", grade:"A2_portra_dusk_plus", hud:"off", cDay:"night", cIn:"out"};
 let PLAN = null;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -548,12 +550,9 @@ $("mode").addEventListener("click", e => {const c = e.target.closest(".dir"); if
 function tabUi(){
   const ag = state.tab === "agent";
   $("agentMode").classList.toggle("hide", !ag); $("formMode").classList.toggle("hide", ag);
-  $("fmtNum").textContent = ag ? "02" : "04"; $("dirNum").textContent = ag ? "03" : "05";
-  $("fmtTitle").textContent = ag ? "Format" : "Format and look";
-  $("lookRow").classList.toggle("hide", ag);
-  $("agentLook").classList.toggle("hide", !ag);
+  $("fmtStep").classList.toggle("hide", ag); $("dirStep").classList.toggle("hide", ag);   // Full Agent Mode is one box
   $("goBtn").textContent = ag ? "Plan it" : "Start the shift";
-  $("handBtn").classList.toggle("hide", !ag); $("agentInfo").classList.toggle("hide", !ag);
+  $("handLine").classList.toggle("hide", !ag); $("agentInfo").classList.toggle("hide", !ag);
   $("planBox").classList.add("hide"); $("goErr").textContent = "";
   lenUi();
 }
@@ -641,8 +640,7 @@ async function agentInfo(){
   $("mcpInfo").textContent = a.mcp_url ? `Your agent reaches Nightshift at ${a.mcp_url}` : "Agents can't reach Nightshift yet: start the app with --mcp-port 8765";
   const host = u => { try { return new URL(u).host } catch(e){ return u } };
   $("agentInfo").innerHTML =
-    `<b>Plan it</b> → ${a.model ? `${esc(a.model)} <span style="color:var(--faint)">at ${esc(host(a.base_url))}</span>` : `<span style="color:var(--faint)">no planning model chosen yet</span>`}<br>` +
-    `<b>Hand off to my agent</b> → ${a.hook_url ? (/\/notes\/?$/.test(a.hook_url) ? `posts the brief to a notes file at ${esc(host(a.hook_url))} <span style="color:var(--faint)">(your agent has to be reading it)</span>` : `your agent's webhook at ${esc(host(a.hook_url))}`) : `<span style="color:var(--faint)">no webhook: you get a brief to paste into your agent's chat</span>`}<br>` +
+    `<b>Plan it</b> uses ${a.model ? `${esc(a.model)} <span style="color:var(--faint)">at ${esc(host(a.base_url))}</span>` : `<span style="color:var(--faint)">no planning model yet</span>`} · ` +
     `<a href="#" onclick="return openAgent()">Agent settings</a>`;
 }
 async function saveAgent(){
@@ -680,7 +678,7 @@ async function listVideos(){
   }).join("") : `<div class="empty">Nothing yet.</div>`;
 }
 const opts = () => state.tab === "agent"
-  ? {aspect:state.aspect, image_model:state.model, mode:state.mode, comfy_url:$("comfyUrl").value.trim() || undefined}   // the agent picks grade + HUD
+  ? {image_model:state.model, mode:"yolo", comfy_url:$("comfyUrl").value.trim() || undefined}   // the agent picks length, shape, grade + HUD; runs to the end
   : {aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade, overlay:state.hud === "on",
      comfy_url:$("comfyUrl").value.trim() || undefined};
 function go1(){ return state.tab === "agent" ? planIt() : create() }
@@ -688,7 +686,7 @@ async function handOff(){
   $("goErr").textContent = ""; $("handBtn").disabled = true;
   try {
     $("goErr").className = "ok"; $("goErr").textContent = "sending to your agent...";
-    const r = await api("/api/agent/handoff", {idea:$("idea").value, length:state.length, opts:opts()});
+    const r = await api("/api/agent/handoff", {idea:$("idea").value, length:"short", opts:Object.assign(opts(), {aspect:state.aspect})});
     const drop = r.sent && /\/notes\/?$/.test(AGENT.hook_url || "");     // a notes file the agent reads, not a webhook that wakes it
     const at = new Date().toLocaleTimeString();
     $("goErr").textContent = !r.sent ? "No agent webhook set: copy the brief below into your agent's chat."
@@ -714,7 +712,7 @@ async function planIt(){
   const box = $("planBox"); box.classList.remove("hide");
   box.innerHTML = `<span class="label">The agent is planning</span><div class="log" id="planLog" style="margin-top:10px">sending your idea...</div>`;
   try {
-    const {id} = await api("/api/agent/plan", {idea:$("idea").value, length:state.length});
+    const {id} = await api("/api/agent/plan", {idea:$("idea").value, length:"auto"});
     while (true) {
       await new Promise(r => setTimeout(r, 1500));
       const j = await api(`/api/agent/plan/${id}`);
@@ -731,7 +729,8 @@ function showPlan(){
     <td>${esc((s.chars || []).concat(s.add ? [s.add.char] : []).map(k => p.characters[k]?.name || k).join(" + ") || "·")}</td>
     <td>${esc(s.framing || "")}</td><td>${esc(s.anchor ? "“" + s.anchor + "…”" : "")}</td><td>${esc((s.location || s.video || "").slice(0, 90))}</td></tr>`).join("");
   box.innerHTML = `<span class="label">The plan</span><h2>${esc(p.title)}</h2><p style="color:var(--dim);margin:6px 0 0">${esc(p.logline)}</p>
-    <p class="note" style="margin-top:6px">The agent's look: <b>${esc(INFO.grades[p.grade] || p.grade || "Portra dusk +")}</b> grade · lyric HUD <b>${p.hud ? "on" : "off"}</b></p>
+    <p class="note" style="margin-top:6px">The agent chose: <b>${esc(p.length || "short")}</b> · <b>${esc(p.aspect || "16:9")}</b> ·
+      <b>${esc(INFO.grades[p.grade] || p.grade || "Portra dusk +")}</b> grade · lyric HUD <b>${p.hud ? "on" : "off"}</b> · runs to the end</p>
     <div class="cast">${cast}</div>
     <div class="cols"><div><span class="label">Lyrics</span><pre class="sample" style="max-height:420px;margin-top:8px">${esc(p.song.lyrics)}</pre></div>
     <div><span class="label">${p.shots.length} shots</span><table><tr><th>#</th><th>mode</th><th>who</th><th>frame</th><th>starts on</th><th>where</th></tr>${rows}</table></div></div>

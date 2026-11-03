@@ -170,9 +170,16 @@ def _json_from(text):
 
 
 def plan(idea, settings, length="medium", on_event=print, tries=2):
-    L = LENGTHS[length]
-    user = (f"The idea:\n{idea.strip()}\n\nTarget: a music video of about {L['seconds']} seconds with about {L['shots']} shots. "
-            f"Write the lyrics and arrangement for that length.")
+    if length == "auto":      # Full Agent Mode: one box, the agent picks the length and the shape from the idea
+        user = (f"The idea:\n{idea.strip()}\n\nChoose the length from the idea: \"short\" (about {LENGTHS['short']['seconds']} s, "
+                f"about {LENGTHS['short']['shots']} shots) unless the idea asks for longer: \"medium\" (about {LENGTHS['medium']['seconds']} s, "
+                f"about {LENGTHS['medium']['shots']} shots) or \"full\" (about {LENGTHS['full']['seconds']} s, about {LENGTHS['full']['shots']} shots). "
+                f"Choose the shape: \"9:16\" (vertical, for phones) unless the idea asks for widescreen, then \"16:9\". "
+                f"Add \"length\" and \"aspect\" to the JSON, and write the lyrics, arrangement and shots for that length.")
+    else:
+        L = LENGTHS[length]
+        user = (f"The idea:\n{idea.strip()}\n\nTarget: a music video of about {L['seconds']} seconds with about {L['shots']} shots. "
+                f"Write the lyrics and arrangement for that length.")
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
     last = None
     for attempt in range(tries):
@@ -198,6 +205,8 @@ def _key(s):
 
 def normalize(raw, length="medium"):
     """Check and repair a plan; raises PlanError for what can't be repaired."""
+    if length == "auto":
+        length = raw.get("length") if raw.get("length") in LENGTHS else "short"
     from .lyrics import sheet_lines
     chars_in = raw.get("characters") or {}
     if isinstance(chars_in, list):
@@ -313,7 +322,7 @@ def normalize(raw, length="medium"):
     grade = raw.get("grade") if raw.get("grade") in GRADES else "A2_portra_dusk_plus"
     hud = raw.get("hud") is True or str(raw.get("hud")).lower() == "true"
     return {"_validated": True, "title": raw.get("title") or "Untitled", "logline": raw.get("logline") or "", "length": length,
-            "grade": grade, "hud": hud,
+            "grade": grade, "hud": hud, "aspect": raw.get("aspect") if raw.get("aspect") in ("9:16", "16:9") else None,
             "characters": chars, "worlds": worlds, "default_world": default_world,
             "song": {"caption": caption, "lyrics": lyrics}, "shots": shots}
 
@@ -346,7 +355,8 @@ def create_from_plan(root, plan, opts=None):
     cfg = p.load("project.json")
     for k in ("fps", "work_size", "crop", "final_size", "video_frames", "takes", "song_seeds", "finish", "overlay", "sheets"):
         cfg.pop(k, None)
-    cfg.update({"profile": "short", "length": plan.get("length"), "aspect": o.get("aspect") or "16:9",
+    o["aspect"] = o.get("aspect") or plan.get("aspect") or "16:9"
+    cfg.update({"profile": "short", "length": plan.get("length"), "aspect": o["aspect"],
                 "image_model": o.get("image_model") or "flux2", "scene": "agent", "song_max_seconds": L["seconds"] + 15,
                 "grade": {"look": o.get("grade") or "A2_portra_dusk_plus", "lifts": []},
                 "sheets": {"approve": o.get("approve_looks", False) is not False, "yolo_source": "text"},
