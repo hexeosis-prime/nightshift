@@ -6,7 +6,7 @@ Every shot gets a slot in the edit and is rendered at exactly that length (no fr
     line lands on the right repetition.
   - Shots between two anchors share the gap (lip-sync shots weigh 2, others 1); cut points snap to nearby beats.
   - Slots under min_seconds are dropped (their time goes to the neighbour). Every clip renders its whole slot, up to
-    render_max_seconds (10 s), so a long gap in the song doesn't end on a frozen frame.
+    render_max_seconds (12 s), so a long gap in the song doesn't end on a frozen frame.
   - Lip-sync and first/last-frame shots get the song as audio from their slot start, and the words sung in the slot.
   - "voice" shots (e.g. a rapper) fall back to "fallback_mode" when the chosen song has no such voice
     (project.json "song_voices").
@@ -115,8 +115,8 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
     if live:
         live[-1]["seconds"] = round(end - live[-1]["start"], 4)
     # Render every shot at its full slot so nothing freezes: the caps above only steer how time is shared; a clip may run to
-    # render_max_seconds (LTX 2.3 is steady to about 10 s). Only a slot longer than that holds its last frame.
-    hard = lambda s: max(cap(s), tl.get("render_max_seconds", 10.0))
+    # render_max_seconds (LTX 2.3 holds up well to 12 s and beyond). Only a slot longer than that holds its last frame.
+    hard = lambda s: max(cap(s), tl.get("render_max_seconds", 12.0))
     for s in shots:
         if s["seconds"] > hard(s):
             s["warn"] = f"slot {s['seconds']:.1f}s is over the {hard(s)}s render limit: the last frame holds"

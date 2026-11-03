@@ -513,6 +513,8 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
 
 <dialog id="zoomDlg" onclick="zoomDlg.close()" style="width:fit-content;max-width:96vw;max-height:96vh;padding:8px;background:#000;border:1px solid var(--line2);cursor:zoom-out">
   <img id="zoomImg" alt="" style="display:block;width:auto;height:auto;max-width:calc(96vw - 18px);max-height:calc(96vh - 52px);object-fit:contain;margin:auto">
+  <video id="zoomVid" class="hide" controls loop playsinline disablepictureinpicture onclick="event.stopPropagation()"
+    style="display:block;max-width:calc(96vw - 18px);max-height:calc(96vh - 52px);margin:auto;background:#000"></video>
   <div class="note" style="text-align:center;margin:6px 0 0">click anywhere to close</div>
 </dialog>
 
@@ -542,7 +544,14 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
 
 <script>
 const $ = id => document.getElementById(id);
-function zoom(url, e){ if (e) e.stopPropagation(); $("zoomImg").src = url; zoomDlg.showModal(); return false }
+function zoom(url, e){
+  if (e) e.stopPropagation();
+  const vid = /\.mp4($|[?#])/i.test(url), v = $("zoomVid"), im = $("zoomImg");
+  im.classList.toggle("hide", vid); v.classList.toggle("hide", !vid);
+  if (vid) { v.src = url.replace(/#.*$/, ""); v.play().catch(() => {}) } else { v.pause(); v.removeAttribute("src"); im.src = url }
+  zoomDlg.showModal(); return false;
+}
+document.addEventListener("DOMContentLoaded", () => zoomDlg.addEventListener("close", () => $("zoomVid").pause()));
 const STEP_NAMES = {sheets:"character sheets", song:"song", analyze:"beats + lyrics", timeline:"fit to song", stills:"first frames",
   sheetedits:"identity edits", videos:"LTX 2.3 video", check:"text check", pick:"pick takes", cut:"cut", overlay:"lyric HUD", finish:"grade + finish"};
 const CP = {
@@ -918,7 +927,7 @@ function render(v){
   $("wall").classList.toggle("v", c.aspect === "9:16");
   $("wall").innerHTML = v.renders.length ? v.renders.map(f => {
     const u = fileUrl(v.name, f), n = esc(f.split("/").pop());
-    return /\.mp4$/i.test(f) ? `<div class="t"><video src="${u}#t=0.4" muted loop playsinline preload="metadata" onmouseenter="this.play()" onmouseleave="this.pause()"></video><span>${n}</span></div>` :
+    return /\.mp4$/i.test(f) ? `<div class="t"><video src="${u}#t=0.4" muted loop playsinline disablepictureinpicture preload="metadata" onmouseenter="this.play()" onmouseleave="this.pause()" onclick="zoom('${u}')" style="cursor:zoom-in"></video><span>${n}</span></div>` :
       /\.(mp3|wav|flac)$/i.test(f) ? "" : `<div class="t"><img src="${u}" loading="lazy" onclick="zoom(this.src)"><span>${n}</span></div>`}).join("") : `<div class="empty">Renders appear here as ComfyUI finishes them.</div>`;
 }
 init();
