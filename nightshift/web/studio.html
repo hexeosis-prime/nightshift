@@ -511,8 +511,8 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
   <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="comfyDlg.close()">Close</button><button class="btn primary" onclick="saveComfy()">Check &amp; use</button></div>
 </dialog>
 
-<dialog id="zoomDlg" onclick="zoomDlg.close()" style="max-width:96vw;max-height:96vh;padding:8px;background:#000;border:1px solid var(--line2)">
-  <img id="zoomImg" alt="" style="display:block;max-width:calc(96vw - 16px);max-height:calc(96vh - 50px);margin:auto">
+<dialog id="zoomDlg" onclick="zoomDlg.close()" style="width:fit-content;max-width:96vw;max-height:96vh;padding:8px;background:#000;border:1px solid var(--line2);cursor:zoom-out">
+  <img id="zoomImg" alt="" style="display:block;width:auto;height:auto;max-width:calc(96vw - 18px);max-height:calc(96vh - 52px);object-fit:contain;margin:auto">
   <div class="note" style="text-align:center;margin:6px 0 0">click anywhere to close</div>
 </dialog>
 
