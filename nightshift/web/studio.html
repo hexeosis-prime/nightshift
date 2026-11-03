@@ -487,7 +487,9 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
   <div class="dlgsec">
     <h4>For "Hand off to my agent": your own agent</h4>
     <p>Sends your idea and a brief to your own agent (OpenClaw, Hermes, ...). It plans with its own model and drives Nightshift on
-      this machine. Give its webhook here, or leave it empty and the app gives you the brief to paste into its chat.</p>
+      this machine. Give its webhook here (OpenClaw: <span class="mono">http://&lt;agent machine&gt;:18789/hooks/agent</span> plus its token) and it
+      starts on its own. A notes or drop-box address works only while your agent is reading it. Or leave it empty and the app
+      gives you the brief to paste into its chat.</p>
     <div class="field"><span class="label">Agent webhook</span><input type="text" id="hookUrl" placeholder="http://10.0.1.x:18789/hooks/agent"></div>
     <div class="field" style="margin-top:10px"><span class="label">Webhook token</span><input type="password" id="hookToken"></div>
     <div class="mono" id="mcpInfo" style="font-size:12.5px;color:var(--dim);margin-top:10px"></div>
@@ -541,6 +543,8 @@ function hudUi(){
   $("hudNote").textContent = state.aspect === "9:16" ? "word-by-word lyrics that steer around faces, clear of the app buttons"
                                                      : "word-by-word lyrics that steer around faces";
 }
+$("mode").addEventListener("click", e => {const c = e.target.closest(".dir"); if (!c) return;
+  state.mode = c.dataset.v; [...$("mode").children].forEach(x => x.classList.toggle("on", x === c))});
 function tabUi(){
   const ag = state.tab === "agent";
   $("agentMode").classList.toggle("hide", !ag); $("formMode").classList.toggle("hide", ag);
@@ -638,7 +642,7 @@ async function agentInfo(){
   const host = u => { try { return new URL(u).host } catch(e){ return u } };
   $("agentInfo").innerHTML =
     `<b>Plan it</b> → ${a.model ? `${esc(a.model)} <span style="color:var(--faint)">at ${esc(host(a.base_url))}</span>` : `<span style="color:var(--faint)">no planning model chosen yet</span>`}<br>` +
-    `<b>Hand off to my agent</b> → ${a.hook_url ? `your agent at ${esc(host(a.hook_url))}` : `<span style="color:var(--faint)">no webhook: you get a brief to paste into your agent's chat</span>`}<br>` +
+    `<b>Hand off to my agent</b> → ${a.hook_url ? (/\/notes\/?$/.test(a.hook_url) ? `posts the brief to a notes file at ${esc(host(a.hook_url))} <span style="color:var(--faint)">(your agent has to be reading it)</span>` : `your agent's webhook at ${esc(host(a.hook_url))}`) : `<span style="color:var(--faint)">no webhook: you get a brief to paste into your agent's chat</span>`}<br>` +
     `<a href="#" onclick="return openAgent()">Agent settings</a>`;
 }
 async function saveAgent(){
@@ -665,7 +669,9 @@ async function listVideos(){
     const fresh = projects.find(p => !WAITING.known.has(p.name));
     const mins = Math.round((Date.now() - WAITING.since) / 60000);
     if (fresh) { WAITING = null; $("goErr").className = "ok"; $("goErr").innerHTML = `✓ Your agent started <a href="#/${esc(fresh.name)}">${esc(fresh.name)}</a>`; }
-    else if (state.tab === "agent") $("goErr").textContent = `✓ Sent to your agent. Waiting for it to start the video (${mins} min)...`;
+    else if (state.tab === "agent") $("goErr").textContent = WAITING.drop
+      ? `✓ Posted to your agent's notes ${mins} min ago. No project yet: if your agent isn't reading its notes, tell it to.`
+      : `✓ Sent to your agent. Waiting for it to start the video (${mins} min)...`;
   }
   $("vlist").innerHTML = projects.length ? projects.map(p => {
     const b = p.waiting ? `<span class="badge wait">${esc((CP[p.waiting] || [p.waiting])[0])}</span>` : p.step === "done" ? `<span class="badge done">done</span>` :
@@ -683,14 +689,19 @@ async function handOff(){
   try {
     $("goErr").className = "ok"; $("goErr").textContent = "sending to your agent...";
     const r = await api("/api/agent/handoff", {idea:$("idea").value, length:state.length, opts:opts()});
-    $("goErr").textContent = r.sent ? `✓ Sent to your agent at ${new Date().toLocaleTimeString()}. Waiting for it to start the video...`
-                                   : "No agent webhook set: copy the brief below into your agent's chat.";
-    WAITING = r.sent ? {since: Date.now(), known: new Set((await api("/api/projects")).projects.map(p => p.name))} : null;
+    const drop = r.sent && /\/notes\/?$/.test(AGENT.hook_url || "");     // a notes file the agent reads, not a webhook that wakes it
+    const at = new Date().toLocaleTimeString();
+    $("goErr").textContent = !r.sent ? "No agent webhook set: copy the brief below into your agent's chat."
+      : drop ? `✓ Posted to your agent's notes at ${at}. It starts when your agent next reads them.`
+      : `✓ Your agent's webhook took it at ${at}. Waiting for it to start the video...`;
+    WAITING = r.sent ? {since: Date.now(), drop, known: new Set((await api("/api/projects")).projects.map(p => p.name))} : null;
     const box = $("planBox"); box.classList.remove("hide");
-    box.innerHTML = `<span class="label">${r.sent ? "Sent to your agent" : "The brief for your agent"}</span>
-      <h2>${r.sent ? "Your agent has it" : "Paste this into your agent's chat"}</h2>
-      <p style="color:var(--dim);margin:6px 0 12px">${r.sent ? "It plans the video with its own model and drives Nightshift on this machine. The project appears under Your videos when it starts."
-        : "No webhook is set, so copy the brief to your agent (OpenClaw, Hermes, Claude ...). The project appears under Your videos when it starts."}</p>
+    box.innerHTML = `<span class="label">${!r.sent ? "The brief for your agent" : drop ? "Posted to your agent's notes" : "Sent to your agent"}</span>
+      <h2>${!r.sent ? "Paste this into your agent's chat" : drop ? "Waiting for your agent to read its notes" : "Your agent has it"}</h2>
+      <p style="color:var(--dim);margin:6px 0 12px">${!r.sent
+        ? "No webhook is set, so copy the brief to your agent (OpenClaw, Hermes, Claude ...). The project appears under Your videos when it starts."
+        : drop ? "The brief is in a notes file your agent reads; nothing wakes the agent up. If it isn't checking its notes right now, tell it to, or paste the brief into its chat. For a hands-free start, give Agent settings your agent's real webhook (OpenClaw: /hooks/agent with its token)."
+        : "It plans the video with its own model and drives Nightshift on this machine. The project appears under Your videos when it starts."}</p>
       <pre class="sample" style="max-height:340px">${esc(r.brief)}</pre>
       <div class="go"><button class="btn" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(r.brief))}).then(()=>this.textContent='Copied')">Copy the brief</button></div>`;
     box.scrollIntoView({behavior:"smooth", block:"start"});
