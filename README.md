@@ -7,8 +7,9 @@ Nightshift turns a song idea into a finished music video with open-weight models
 [ComfyUI](https://github.com/comfyanonymous/ComfyUI):
 
 - **MiniMax Music 3** writes and sings the song from a production brief and a lyric sheet
-- **Flux 2 Klein 9B** paints the first frames and keeps the characters' faces and wardrobe consistent from shot to shot
-  (FLUX 3 Image Klein workflows are included but not yet tested end to end, so the app doesn't offer them yet)
+- **FLUX 3 Image Klein** draws a seven-panel character sheet for each performer (front, 3/4, profile and back, plus three
+  face angles), paints the first frames and keeps the faces and wardrobe consistent from shot to shot (Flux 2 Klein 9B, the
+  first video's model, is still there: `"image_model": "flux2"`, for its LoRAs)
 - **LTX 2.3** animates them: lip-sync to the song, first-to-last-frame camera moves, text-to-video establishing shots
 - **Python tools** fit the shot list to the song, score every take against the character sheets, cut on the beat, grade,
   and draw a lyric HUD that steers around faces
@@ -150,7 +151,7 @@ nightshift run --yolo      # or: no stops after the character looks are approved
 - `"profile"`: `full` (the first video: 121-frame clips, best-of-4 on complex shots, 4 song seeds) or `short` (97-frame clips,
   one take, 4 song seeds, a 40 s song, no HUD)
 - `"aspect"`: `16:9` (1280×768 renders, 1920×1080 delivery) or `9:16` (768×1280 renders, 1080×1920 delivery)
-- `"image_model"`: `flux2` (Flux 2 Klein 9B) or `flux3` (FLUX 3 Image Klein for sheets, stills and identity edits)
+- `"image_model"`: `flux3` (FLUX 3 Image Klein for sheets, stills and identity edits; the default) or `flux2` (Flux 2 Klein 9B)
 
 ## How a pass works
 

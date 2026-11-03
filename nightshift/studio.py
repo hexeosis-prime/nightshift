@@ -580,7 +580,7 @@ def create(root, form):
         cfg.pop(k, None)                         # the profile decides these; project.json can still override any of them
     cfg.update({
         "profile": length["profile"], "length": form.get("length") or "short",
-        "aspect": form.get("aspect") or "16:9", "image_model": form.get("image_model") or "flux2",
+        "aspect": form.get("aspect") or "16:9", "image_model": form.get("image_model") or "flux3",
         "scene": "+".join(keys), "song_max_seconds": length["seconds"],
         "grade": {"look": form.get("grade") if form.get("grade") in GRADES else sc["grade"], "lifts": []},
         "overlay": overlay_cfg(lyrics, form.get("name"), form.get("overlay"), form.get("aspect") or "16:9"),

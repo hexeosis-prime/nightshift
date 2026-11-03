@@ -357,7 +357,7 @@ def create_from_plan(root, plan, opts=None):
         cfg.pop(k, None)
     o["aspect"] = o.get("aspect") or plan.get("aspect") or "16:9"
     cfg.update({"profile": "short", "length": plan.get("length"), "aspect": o["aspect"],
-                "image_model": o.get("image_model") or "flux2", "scene": "agent", "song_max_seconds": L["seconds"] + 15,
+                "image_model": o.get("image_model") or "flux3", "scene": "agent", "song_max_seconds": L["seconds"] + 15,
                 "grade": {"look": o.get("grade") or "A2_portra_dusk_plus", "lifts": []},
                 "sheets": {"approve": o.get("approve_looks", False) is not False, "yolo_source": "text"},
                 "overlay": studio.overlay_cfg(plan["song"]["lyrics"], plan.get("title"), o.get("overlay"), o.get("aspect"))})
@@ -389,7 +389,7 @@ How:
 def handoff_brief(idea, length, opts, mcp_url, studio_url):
     """length "auto" (Full Agent Mode): the agent chooses length, shape, grade and HUD, and the video runs to the end."""
     mode = opts.get("mode") or "yolo"
-    args = [f'image_model="{opts.get("image_model") or "flux2"}"', f'mode="{mode}"']
+    args = [f'image_model="{opts.get("image_model") or "flux3"}"', f'mode="{mode}"']
     if length == "auto" or length not in LENGTHS:
         choices = ("You choose: the length (\"short\", about 40 s and 9 shots, unless the idea asks for longer: \"medium\" about 75 s, "
                    "\"full\" about 2.5 min), the shape (\"9:16\" vertical unless the idea asks for widescreen \"16:9\"), the color grade "

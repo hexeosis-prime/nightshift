@@ -404,7 +404,7 @@ def main(argv=None):
     s = sub.add_parser("new", help="new project from a scene preset (what the app's form does)")
     s.add_argument("dir"); s.add_argument("--name"); s.add_argument("--scene", choices=list(SCENES), default="night-avenue")
     s.add_argument("--length", choices=list(LENGTHS), default="short"); s.add_argument("--aspect", choices=["16:9", "9:16"], default="16:9")
-    s.add_argument("--image-model", choices=["flux2", "flux3"], default="flux2"); s.add_argument("--mode", choices=["director", "yolo"], default="director")
+    s.add_argument("--image-model", choices=["flux2", "flux3"], default="flux3"); s.add_argument("--mode", choices=["director", "yolo"], default="director")
     s.add_argument("--who", choices=["woman", "man", "person"], default="woman"); s.add_argument("--look"); s.add_argument("--outfit")
     s.add_argument("--photo", help="a picture of the performer (yourself, or someone who agreed)")
     s.add_argument("--vibe", help="extra words for the song brief"); s.add_argument("--lyrics", help="lyrics file with [Section] tags")

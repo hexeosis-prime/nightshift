@@ -4,7 +4,7 @@ Nightshift was built before the [Comfy "Open Source Higgsfield" challenge](https
 announced: the first commit in this repo is the pipeline as it was used to make "What Do You Want?", a 2:49 music
 video. The commits after it (dated October 29, 2026) adapt it to the challenge's brief, *"build a working app that makes it
 easy for someone else to create their own"*. They add an app, a profile that finishes in about an hour instead of a
-night (measured: ~45 minutes of GPU time on an RTX 3090), vertical video, your-own-track input, and FLUX 3 Image Klein workflows (included, not yet tested end to end: see below).
+night (measured: ~45 minutes of GPU time on an RTX 3090), vertical video, your-own-track input, and FLUX 3 Image Klein as the image model (seven-panel character sheets, every first frame and identity edit).
 
 ## What the entry is
 
@@ -12,7 +12,8 @@ night (measured: ~45 minutes of GPU time on an RTX 3090), vertical video, your-o
 of yourself, or a written description), a song (MiniMax Music 3 writes and sings it from your lyrics, or you upload
 your track), a scene and a format. It then directs a complete music video:
 
-1. **Character sheet first.** The app makes a front/back/face sheet with Flux 2 Klein and you pick the look.
+1. **Character sheet first.** FLUX 3 Klein draws a seven-panel sheet (front, 3/4, profile and back, plus three face angles)
+   and, in Checkpoint Mode, you pick the look.
    Every later frame is edited toward that sheet and every take is scored against it with face recognition.
 2. **Song.** MiniMax Music 3 renders a song for each seed and the app shows how much of your lyric sheet each one actually
    sings. Then the song gets a beat map and word timing from faster-whisper.
@@ -48,9 +49,9 @@ to the end always makes a complete video, and some shots may look wrong to a hum
   a local model too (see [docs/agents.md](docs/agents.md)). Licenses: [docs/licenses.md](docs/licenses.md).
 - **VFX workflow built with LTX.** LTX 2.3 is the only video model and renders every shot: lip-sync from the song,
   first/last-frame moves and text to video.
-- **Built with FLUX.** Flux 2 Klein 9B makes every character sheet, first frame and identity edit. FLUX 3 Image Klein
-  workflows are in `workflows/*_flux3.json` (`image_model: flux3`), but we couldn't download the weights and test them on
-  our machine before the deadline, so the app doesn't offer them yet and we don't claim the FLUX 3 bonus.
+- **Built with FLUX.** FLUX 3 Image Klein (full model, int8, on ComfyUI 0.43) makes every character sheet, first frame and
+  identity edit: seven-panel sheets from a description or a photo, multi-reference identity edits through `Set Reference
+  Multi Latent`, two edit candidates per shot ranked by face match. Tested end to end on an RTX 3090.
 - **Most Innovative.** It's a whole production pipeline, not one graph: a crew that writes the song, casts and locks the
   character, shoots, scores takes against the cast sheet and edits on the beat. It is drivable by a person in a browser
   or by any agent over MCP, overnight, on one consumer GPU.
