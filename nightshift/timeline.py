@@ -5,8 +5,8 @@ Every shot gets a slot in the edit and is rendered at exactly that length (no fr
     if the singer needs a run-up). Anchors are matched in order with a small dynamic program, so a repeated chorus
     line lands on the right repetition.
   - Shots between two anchors share the gap (lip-sync shots weigh 2, others 1); cut points snap to nearby beats.
-  - Slots under min_seconds are dropped (their time goes to the neighbour), slots over max_seconds are flagged
-    ("fit": true shots, usually first/last-frame moves, may run to max_fit_seconds).
+  - Slots under min_seconds are dropped (their time goes to the neighbour). Every clip renders its whole slot, up to
+    render_max_seconds (10 s), so a long gap in the song doesn't end on a frozen frame.
   - Lip-sync and first/last-frame shots get the song as audio from their slot start, and the words sung in the slot.
   - "voice" shots (e.g. a rapper) fall back to "fallback_mode" when the chosen song has no such voice
     (project.json "song_voices").
@@ -114,8 +114,15 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
         a["seconds"] = round(b["start"] - a["start"], 4)
     if live:
         live[-1]["seconds"] = round(end - live[-1]["start"], 4)
+    # Render every shot at its full slot so nothing freezes: the caps above only steer how time is shared; a clip may run to
+    # render_max_seconds (LTX 2.3 is steady to about 10 s). Only a slot longer than that holds its last frame.
+    hard = lambda s: max(cap(s), tl.get("render_max_seconds", 10.0))
     for s in shots:
-        s["frames"] = frames_for(min(s["seconds"], cap(s)) + 0.05, fps)
+        if s["seconds"] > hard(s):
+            s["warn"] = f"slot {s['seconds']:.1f}s is over the {hard(s)}s render limit: the last frame holds"
+        elif s.get("warn"):
+            s.pop("warn")
+        s["frames"] = frames_for(min(s["seconds"], hard(s)) + 0.05, fps)
         if s["mode"] in ("lipsync", "fflf"):
             s["audio"], s["audio_start"] = song_in, round(s["start"], 3)
             s["lyric"] = " ".join(w["word"] for w in words if s["start"] - 0.1 <= w["start"] < s["start"] + s["seconds"] - 0.1).strip()
