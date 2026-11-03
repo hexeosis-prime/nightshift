@@ -220,10 +220,20 @@ def cut_report(project, cut_name="cut.json"):
     return out
 
 
-def grid(out, rows, label_key="face", cols=3, cell=(480, 270)):
-    """Contact sheet of ranked stills/clips (first frame for clips), score in the corner."""
+def grid(out, rows, label_key="face", cols=None, cell=None):
+    """Contact sheet of ranked stills/clips (first frame for clips), score in the corner. The cells take the pictures' own
+    shape (vertical video gets tall cells), unless `cell` is given."""
     cv2 = _cv()
     cells = []
+    if cell is None:
+        first = next((r["path"] for r in rows if not r["path"].lower().endswith((".mp4", ".mov", ".webm"))), None)
+        im0 = cv2.imread(first) if first else None
+        if im0 is None and rows:
+            fr = clip_frames(rows[0]["path"], (0.5,))
+            im0 = fr[0][1] if fr else None
+        h0, w0 = im0.shape[:2] if im0 is not None else (270, 480)
+        cell = (480, round(480 * h0 / w0)) if w0 >= h0 else (300, round(300 * h0 / w0))
+    cols = cols or (3 if cell[0] >= cell[1] else 4)
     for r in rows:
         p = r["path"]
         if p.lower().endswith((".mp4", ".mov", ".webm")):
