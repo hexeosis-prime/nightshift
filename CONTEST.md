@@ -1,6 +1,6 @@
-# Nightshift × Open Source Higgsfield
+# Nightshift: the Comfy challenge entry
 
-Nightshift was built before the [Comfy "Open Source Higgsfield" challenge](https://comfy.org/open-source-higgsfield/) was
+Nightshift was built before Comfy's open-source creator app challenge (October 2026) was
 announced: the first commit in this repo is the pipeline as it was used to make "What Do You Want?", a 2:49 music
 video. The commits after it (dated October 29, 2026) adapt it to the challenge's brief, *"build a working app that makes it
 easy for someone else to create their own"*. They add an app, a profile that finishes in about an hour instead of a
@@ -39,7 +39,7 @@ to the end always makes a complete video, and some shots may look wrong to a hum
 | Repo: app code, workflow files, open-source license, setup to run it locally | Apache 2.0 ([LICENSE](LICENSE)). Setup: [README](README.md#install), plus custom nodes and model files with download links in [docs/workflows.md](docs/workflows.md). `nightshift doctor` checks tools, workflows, node types and ComfyUI. |
 | Other tools explained | ffmpeg (cut, grade), librosa (beats), faster-whisper (lyric timing), OpenCV YuNet + SFace (face scoring), all open source. Claude helped write the code and orchestrated the first video over MCP; the app needs no agent at all. |
 | Lawful, SFW, no unlicensed IP or likenesses | The demo characters are generated personas described in text. The app asks for a photo of yourself or of someone who agreed. |
-| Demo video ≤ 2 min, social post #OpenSourceHiggsfield | linked from the submission |
+| Demo video ≤ 2 min, social post with the challenge hashtag | linked from the submission |
 
 ## Prize categories it fits
 

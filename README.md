@@ -22,7 +22,7 @@ finished video.
 The first video made with it, while the tools were being developed at the same time: **"What Do You Want?"** (2:49, 52 shots,
 nine passes), [posted October 28, 2026](https://x.com/hexeosis/status/2115545427290489287).
 
-Entered in Comfy's [Open Source Higgsfield](https://comfy.org/open-source-higgsfield/) challenge: see [CONTEST.md](CONTEST.md)
+Entered in Comfy's open-source creator app challenge (October 2026): see [CONTEST.md](CONTEST.md)
 for what was added for it and how it meets the rules. Everything renders locally on open-weight models; no partner nodes, no
 closed APIs, no agent required.
 
@@ -223,7 +223,7 @@ usage. In principle a self-hosted agent (Hermes, for example) can run the same l
 
 ## Docs
 
-- [CONTEST.md](CONTEST.md): the Open Source Higgsfield entry, rules and prize categories
+- [CONTEST.md](CONTEST.md): the challenge entry, rules and prize categories
 - [docs/pipeline.md](docs/pipeline.md): the pass step by step, files, commands
 - [docs/shots.md](docs/shots.md): every shot field and what it does
 - [docs/techniques.md](docs/techniques.md): the craft that made the difference (rescue first/last-frame, self-consistent last frames, relighting, whip-pan arrivals, fly-overs, best-of-N)
