@@ -253,6 +253,7 @@ def step_sheetedits(project, st, on_event):
             project.patch_shot(s["id"], {"still": label}, "shots_resolved.json")
             on_event(f"{s['id']}: identity edit {label} (face {ranked[0]['face']})")
     if not yolo:
+        b = B.Builder(project)                 # re-read: the picks above changed each shot's still label
         os.makedirs(project.path("review"), exist_ok=True)
         people = [s for s in b.shots if s.get("chars") and s["mode"] in B.STILL_MODES and not s.get("dropped")]
         for ch in sorted({s["chars"][0] for s in people}):

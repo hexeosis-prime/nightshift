@@ -166,7 +166,11 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
 .status .big{font:600 26px/1 var(--sans)}
 .bar{flex:1;min-width:160px;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber2),var(--amber));transition:width .6s}
-.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:12px}
+.opt .zoom{position:absolute;top:8px;right:8px;padding:4px 9px;border-radius:7px;background:rgba(10,11,16,.75);color:#fff;
+  font:600 12px/1.4 var(--sans);border:1px solid rgba(255,255,255,.3);cursor:zoom-in}
+.opt .zoom:hover{background:var(--amber);color:#111}
+.packet img,.wall img{cursor:zoom-in}
 .opt{position:relative;border:1px solid var(--line2);border-radius:10px;overflow:hidden;cursor:pointer;background:var(--bg)}
 .opt img{display:block;width:100%;height:auto}
 .opt .meta{display:flex;justify-content:space-between;padding:8px 10px;font:12px/1.2 var(--mono);color:var(--dim)}
@@ -507,6 +511,11 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
   <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="comfyDlg.close()">Close</button><button class="btn primary" onclick="saveComfy()">Check &amp; use</button></div>
 </dialog>
 
+<dialog id="zoomDlg" onclick="zoomDlg.close()" style="max-width:96vw;max-height:96vh;padding:8px;background:#000;border:1px solid var(--line2)">
+  <img id="zoomImg" alt="" style="display:block;max-width:calc(96vw - 16px);max-height:calc(96vh - 50px);margin:auto">
+  <div class="note" style="text-align:center;margin:6px 0 0">click anywhere to close</div>
+</dialog>
+
 <dialog id="agentDlg">
   <h3 style="margin-top:0">Your agent</h3>
   <p style="color:var(--dim);font-size:14px;margin:-4px 0 0;line-height:1.5">Full Agent Mode sends your idea to your own agent
@@ -533,6 +542,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
 
 <script>
 const $ = id => document.getElementById(id);
+function zoom(url, e){ if (e) e.stopPropagation(); $("zoomImg").src = url; zoomDlg.showModal(); return false }
 const STEP_NAMES = {sheets:"character sheets", song:"song", analyze:"beats + lyrics", timeline:"fit to song", stills:"first frames",
   sheetedits:"identity edits", videos:"LTX 2.3 video", check:"text check", pick:"pick takes", cut:"cut", overlay:"lyric HUD", finish:"grade + finish"};
 const CP = {
@@ -883,7 +893,7 @@ function render(v){
         html += `<div class="label" style="margin:4px 0 10px">${esc(ch.char)} · ${esc(ch.world)}</div><div class="opts">` + ch.options.map(o => {
           const on = ch.picked_file === o.file;
           return `<div class="opt ${on ? "on" : ""}" data-f="${esc(o.file)}" onclick='pick(${JSON.stringify({kind:"sheet", char:ch.char, world:ch.world, file:o.file})}); this.parentNode.querySelectorAll(".opt").forEach(x=>x.classList.toggle("on", x===this))'>
-            <img src="${fileUrl(v.name, o.file)}" loading="lazy"><div class="meta"><span>${esc(o.file.split("/").pop())}</span><span>${o.score == null ? "" : esc(o.by) + " " + o.score}</span></div></div>`}).join("") + `</div>`;
+            <span class="zoom" onclick="return zoom('${fileUrl(v.name, o.file)}', event)">⤢ View large</span><img src="${fileUrl(v.name, o.file)}" loading="lazy"><div class="meta"><span>${esc(o.file.split("/").pop())}</span><span>${o.score == null ? "" : esc(o.by) + " " + o.score}</span></div></div>`}).join("") + `</div>`;
         if (ch.picked) html += `<div class="note">Picked: ${esc(ch.picked)}. Anything you don't pick gets the best-scoring sheet.</div>`;
       } else if (ch.kind === "song") {
         html += `<div class="songs">` + ch.options.map(o => `<div class="song ${ch.picked_file === o.file ? "on" : ""}"
@@ -894,7 +904,7 @@ function render(v){
     }
     if (!(w.choices || []).length) {
       html += `<div class="packet">` + w.files.filter(f => /\.(png|jpe?g|webp|mp4)$/i.test(f)).map(f => /\.mp4$/i.test(f) ?
-        `<video controls playsinline src="${fileUrl(v.name, f)}"></video><div class="note">${esc(f)}</div>` : `<img src="${fileUrl(v.name, f)}" loading="lazy">`).join("") + `</div>`;
+        `<video controls playsinline src="${fileUrl(v.name, f)}"></video><div class="note">${esc(f)}</div>` : `<img src="${fileUrl(v.name, f)}" loading="lazy" onclick="zoom(this.src)">`).join("") + `<div class="note">Click a picture to see it large.</div></div>`;
     }
     $("cpBody").innerHTML = html;
     $("cpGo").textContent = w.checkpoint === "pass_review" ? "Approve the pass" : "Approve & carry on";
@@ -909,7 +919,7 @@ function render(v){
   $("wall").innerHTML = v.renders.length ? v.renders.map(f => {
     const u = fileUrl(v.name, f), n = esc(f.split("/").pop());
     return /\.mp4$/i.test(f) ? `<div class="t"><video src="${u}#t=0.4" muted loop playsinline preload="metadata" onmouseenter="this.play()" onmouseleave="this.pause()"></video><span>${n}</span></div>` :
-      /\.(mp3|wav|flac)$/i.test(f) ? "" : `<div class="t"><img src="${u}" loading="lazy"><span>${n}</span></div>`}).join("") : `<div class="empty">Renders appear here as ComfyUI finishes them.</div>`;
+      /\.(mp3|wav|flac)$/i.test(f) ? "" : `<div class="t"><img src="${u}" loading="lazy" onclick="zoom(this.src)"><span>${n}</span></div>`}).join("") : `<div class="empty">Renders appear here as ComfyUI finishes them.</div>`;
 }
 init();
 </script>

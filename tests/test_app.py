@@ -116,6 +116,9 @@ def main(keep=False, stay=False):
                 break
             seen.append(v["waiting"]["checkpoint"])
             assert len(seen) < 8, seen
+            if seen[-1] == "stills_review":           # the first frames page must show the first frames
+                imgs = [f for f in v["waiting"].get("files", []) if f.endswith((".jpg", ".png"))]
+                assert imgs and all(os.path.exists(p.path(f)) for f in imgs), v["waiting"]
         assert seen == ["sheets_review", "stills_review", "pass_review"], seen     # one take per shot: no takes review
         assert v["finished"] == ["out/pass01.mp4"], v["finished"]
         wh = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0",
