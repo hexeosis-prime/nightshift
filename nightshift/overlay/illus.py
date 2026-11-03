@@ -2,7 +2,7 @@
 
 1. Make a still of the art on pure black (Flux: "neon line drawing ... on a pure black background").
 2. Animate it (an ff video job of a few seconds: sparks, flicker, a slow turn).
-3. key(): crop each clip to the art's box and luma-key it: alpha = max(R,G,B) through a soft curve, colour
+3. key(): crop each clip to the art's box and luma-key it: alpha = max(R,G,B) through a soft curve, color
    un-premultiplied so glows keep their hue. Writes overlay/illus/il_<name>_%03d.png and overlay/illus_anim.json,
    which prep() hands to the page.
 """

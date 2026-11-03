@@ -43,7 +43,7 @@ opens `http://127.0.0.1:8189` with two tabs. **Director Mode** asks five things:
    Cathedral Light, Snow Motel) or your own place: a look plus three places that the shot
    list moves the performer through.
 4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full, 9:16 or
-   16:9, a colour grade, and the animated lyric HUD (in both shapes; vertical keeps clear of the app buttons).
+   16:9, a color grade, and the animated lyric HUD (in both shapes; vertical keeps clear of the app buttons).
 5. **How much you're involved**: *Checkpoint Mode* stops at each checkpoint and waits for your picks and notes. *Run to End
    Mode* never pauses, not even for the character's look: it runs to the end.
 

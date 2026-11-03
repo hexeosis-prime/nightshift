@@ -39,7 +39,7 @@ JSON shape:
  "title": "short title",
  "logline": "one sentence: what the video is",
  "grade": "A2_portra_dusk_plus" | "A_portra_dusk" | "B_cinestill_night" | "C_faded_pastel" | "none",
-                                     // the colour grade: warm Portra dusk (+ is punchier), CineStill night (cool, neon
+                                     // the color grade: warm Portra dusk (+ is punchier), CineStill night (cool, neon
                                      // halation), faded pastel (soft, daylight), none. Pick what suits the idea.
  "hud": false,                       // the animated lyric HUD (word-by-word on-screen lyrics). true ONLY if the user asks
                                      // for on-screen lyrics, captions, karaoke text or a HUD; otherwise false.
@@ -47,7 +47,7 @@ JSON shape:
    "<key>": {
      "noun": "woman" | "man" | "person",
      "name": "display name",
-     "person": "identity words: age as a number range, face shape, eyes, hair (colour, length, style), skin tone, build. 25-45 words. Concrete, no adjectives like beautiful.",
+     "person": "identity words: age as a number range, face shape, eyes, hair (color, length, style), skin tone, build. 25-45 words. Concrete, no adjectives like beautiful.",
      "outfit": {"close": "top + accessories only", "medium": "top + bottoms", "wide": "full outfit including shoes"},
      "video_name": "how video prompts name them: 'the woman with short silver hair and a red bomber jacket'",
      "signature": "the one most recognisable feature",
@@ -56,7 +56,7 @@ JSON shape:
    }
  },
  "worlds": {                         // usually 1, at most 3 visual worlds; each shot names one
-   "<key>": {"style": "photographic look in concrete words: film stock / lens look, light quality, time of day, colour",
+   "<key>": {"style": "photographic look in concrete words: film stock / lens look, light quality, time of day, color",
              "daytime": true|false, "indoor": true|false}
  },
  "song": {
@@ -392,7 +392,7 @@ def handoff_brief(idea, length, opts, mcp_url, studio_url):
     args = [f'image_model="{opts.get("image_model") or "flux2"}"', f'mode="{mode}"']
     if length == "auto" or length not in LENGTHS:
         choices = ("You choose: the length (\"short\", about 40 s and 9 shots, unless the idea asks for longer: \"medium\" about 75 s, "
-                   "\"full\" about 2.5 min), the shape (\"9:16\" vertical unless the idea asks for widescreen \"16:9\"), the colour grade "
+                   "\"full\" about 2.5 min), the shape (\"9:16\" vertical unless the idea asks for widescreen \"16:9\"), the color grade "
                    "(\"grade\" in the plan) and the lyric HUD (\"hud\" in the plan: on only if the idea asks for on-screen lyrics).")
         args = ['length=<your choice>', 'aspect=<your choice>'] + args
         hours = "under an hour for short, longer for medium or full"
@@ -401,10 +401,10 @@ def handoff_brief(idea, length, opts, mcp_url, studio_url):
         choices = f"Their settings: length {length} (about {L['seconds']} s, about {L['shots']} shots), shape {opts.get('aspect') or '16:9'}."
         args = [f'length="{length}"', f'aspect="{opts.get("aspect") or "16:9"}"'] + args
         if opts.get("grade"):
-            choices += f" Colour grade {opts['grade']}, lyric HUD {'on' if opts.get('overlay') else 'off'}."
+            choices += f" Color grade {opts['grade']}, lyric HUD {'on' if opts.get('overlay') else 'off'}."
             args += [f'grade="{opts["grade"]}"', f'overlay={"true" if opts.get("overlay") else "false"}']
         else:
-            choices += " You choose the colour grade (\"grade\") and the lyric HUD (\"hud\", only if the idea asks for on-screen lyrics)."
+            choices += " You choose the color grade (\"grade\") and the lyric HUD (\"hud\", only if the idea asks for on-screen lyrics)."
         hours = {"short": "under an hour", "medium": "about 1.5 hours", "full": "several hours"}[length]
     mode_note = ("It runs to the end without stopping." if mode == "yolo"
                  else f"It stops at checkpoints; the user approves them in the Studio app ({studio_url}).")

@@ -68,7 +68,7 @@ the performance runs free. A whip-pan that lands on the singer, then lets her pe
 
 **Fly-overs.** A last frame that is a tighter crop of the first (`nightshift.takes.zoom_crop`, 60% for example) makes LTX
 fly forward into the scene. A dead reef in the first frame and a 60% crop of the living reef as the last: the camera flies
-over it while the colour comes back. Same trick for a forward glide down a street.
+over it while the color comes back. Same trick for a forward glide down a street.
 
 **Environment changes over a shot.** First frame winter tree, last frame the same tree in blossom (a Flux edit of the first:
 `nightshift edit --base stills/tree.png --id tree_spring --text "..."`). Bleached to living, night to dawn, empty to busy.
@@ -91,7 +91,7 @@ graph (first frame only) rendered the same length without trouble.
 ## Finish
 
 - **Grade the footage, not the graphics.** The look goes on the cut; the HUD is desaturated a little and keyed on top; the
-  lyrics stay full colour.
+  lyrics stay full color.
 - **Fix skin per shot, not globally.** A face that sat too dark under the grade got a shadow/mid lift only inside its shot's
   time window (`grade.lifts`), leaving everything else alone.
 - **eq before RGB.** In the bloom (screen blend), ffmpeg's eq runs in YUV; everything after it must run in RGB or the blend

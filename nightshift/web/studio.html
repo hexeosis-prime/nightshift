@@ -91,6 +91,11 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
 .scene .ord{position:absolute;top:10px;right:10px;z-index:3;min-width:24px;height:24px;border-radius:12px;background:var(--amber);
   color:#111;font:700 13px/24px var(--mono);text-align:center}
 .scene .ord:empty{display:none}
+.scene .ord{cursor:pointer}
+.scene .add{position:absolute;top:10px;right:10px;z-index:3;width:26px;height:26px;border-radius:13px;border:1px solid rgba(255,255,255,.35);
+  background:rgba(10,11,16,.6);color:#fff;font:600 17px/24px var(--sans);text-align:center;opacity:0;transition:.15s}
+.scene:hover .add{opacity:1}
+.scene .add:hover{background:var(--amber);color:#111;border-color:var(--amber)}
 .scene .sky{position:absolute;inset:0;z-index:0}
 .scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(5,6,10,.92));z-index:1}
 .scene b,.scene small{position:relative;z-index:2}
@@ -350,8 +355,9 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
           <div class="num">03</div>
           <div>
             <h3>Where</h3>
-            <p class="hint">Pick up to three places, in the order the video moves through them (the numbers on the cards). One place suits a
-              short video; two or three keep a longer one moving. Or type your own.</p>
+            <p class="hint">Click a place to use it. To move through two or three places, press <b>+</b> on the next ones, in order (the numbers
+              show the order; click a number to take that place out). One place suits a short video; two or three keep a longer one
+              moving. Or type your own.</p>
             <div class="scenes" id="scenes"></div>
             <div id="customBox" class="row hide" style="margin-top:12px;align-items:flex-end">
               <div class="field" style="min-width:280px"><span class="label">Your location</span><input type="text" id="customPlace" placeholder="e.g. an abandoned greenhouse with broken glass panes and overgrown ferns"></div>
@@ -374,11 +380,11 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
 
             </div>
             <div class="row" id="lookRow" style="gap:22px;margin-top:16px">
-              <div class="field" style="flex:none;min-width:0"><span class="label">Colour grade</span><div class="grades" id="grades"></div></div>
+              <div class="field" style="flex:none;min-width:0"><span class="label">Color grade</span><div class="grades" id="grades"></div></div>
 
             </div>
             <div class="note" id="lenNote"></div>
-            <div class="note hide" id="agentLook">The agent picks the colour grade, and adds the animated lyric HUD only if your idea asks for on-screen lyrics.</div>
+            <div class="note hide" id="agentLook">The agent picks the color grade, and adds the animated lyric HUD only if your idea asks for on-screen lyrics.</div>
           </div>
         </div>
 
@@ -396,8 +402,8 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
                 <span class="note" style="margin-top:2px">frame marks, face tracking, audio meter, timecode</span></div>
             </div>
             <div class="row" id="lyrColRow" style="gap:14px;margin-top:16px;align-items:center">
-              <div class="field" style="flex:none;min-width:0"><span class="label">Lyric colour</span>
-                <div class="seg" id="lyrCol"><button data-v="contrast">Contrast</button><button data-v="solid">Solid colour</button><button data-v="rainbow" class="on">Rainbow</button></div></div>
+              <div class="field" style="flex:none;min-width:0"><span class="label">Lyric color</span>
+                <div class="seg" id="lyrCol"><button data-v="contrast">Contrast</button><button data-v="solid">Solid color</button><button data-v="rainbow" class="on">Rainbow</button></div></div>
               <input type="color" id="lyrSolid" value="#f5f2ea" class="hide" style="width:44px;height:36px;border:0;background:none;margin-top:18px">
               <span class="note" id="lyrColNote" style="margin-top:20px"></span>
             </div>
@@ -567,13 +573,15 @@ function lyricsUi(){
 function ovUi(){
   $("lyrColRow").classList.toggle("hide", state.ovLyrics !== "on");
   $("lyrSolid").classList.toggle("hide", state.lyrCol !== "solid");
-  $("lyrColNote").textContent = {contrast:"white or black per line, from how bright the video is behind it", solid:"pick the colour",
+  $("lyrColNote").textContent = {contrast:"white or black per line, from how bright the video is behind it", solid:"pick the color",
                                  rainbow:"letters on a moving gradient"}[state.lyrCol];
 }
 function hudUi(){}
 function scenesUi(){
   [...$("scenes").children].forEach(x => { const i = state.scenes.indexOf(x.dataset.v);
-    x.classList.toggle("on", i >= 0); x.querySelector(".ord").textContent = i >= 0 && state.scenes.length > 1 ? i + 1 : "" });
+    x.classList.toggle("on", i >= 0); x.querySelector(".ord").textContent = i >= 0 && state.scenes.length > 1 ? i + 1 : "";
+    x.querySelector(".ord").title = "take this place out";
+    x.querySelector(".add").classList.toggle("hide", i >= 0 || state.scenes.length >= 3) });
   $("customBox").classList.toggle("hide", !state.scenes.includes("custom"));
 }
 function tabUi(){
@@ -593,7 +601,9 @@ function lenUi(){
     (state.length === "full" ? "A full song renders overnight." : "Character sheets and the song come first; you can leave it running.");
 }
 seg("tabs", "tab", tabUi);
-seg("who","who"); seg("ovLyrics","ovLyrics", ovUi); seg("ovHud","ovHud", ovUi); seg("lyrCol","lyrCol", ovUi); seg("cDay","cDay"); seg("cIn","cIn");
+seg("who","who");
+$("mode").addEventListener("click", e => {const c = e.target.closest(".dir"); if (!c) return;     // 06: Checkpoint / Run to End
+  state.mode = c.dataset.v; [...$("mode").children].forEach(x => x.classList.toggle("on", x === c))}); seg("ovLyrics","ovLyrics", ovUi); seg("ovHud","ovHud", ovUi); seg("lyrCol","lyrCol", ovUi); seg("cDay","cDay"); seg("cIn","cIn");
 seg("aspect","aspect", hudUi); seg("length","length", lenUi);
 seg("songSrc","songSrc", lyricsUi); seg("lyrSrc","lyrSrc", lyricsUi); seg("upLyr","upLyr", lyricsUi);
 let photoData = null, photoData2 = null;
@@ -628,14 +638,15 @@ async function init(){
   INFO = await api("/api/info");
   $("sampleLyr").textContent = INFO.default_lyrics;
   const scenes = Object.entries(INFO.scenes).map(([k, s]) =>
-    `<div class="scene" data-v="${k}"><div class="sky ${k}"></div><span class="ord"></span><b>${esc(s.label)}</b><small>${esc(s.blurb)}</small></div>`);
-  scenes.push(`<div class="scene custom" data-v="custom"><div class="sky"></div><span class="ord"></span><b>Your own place</b><small>Type a location: one place, seen three ways.</small></div>`);
+    `<div class="scene" data-v="${k}"><div class="sky ${k}"></div><span class="ord"></span><span class="add" title="add as the next place">+</span><b>${esc(s.label)}</b><small>${esc(s.blurb)}</small></div>`);
+  scenes.push(`<div class="scene custom" data-v="custom"><div class="sky"></div><span class="ord"></span><span class="add" title="add as the next place">+</span><b>Your own place</b><small>Type a location: one place, seen three ways.</small></div>`);
   $("scenes").innerHTML = scenes.join("");
   $("scenes").style.gridTemplateColumns = "repeat(5,minmax(0,1fr))";
   $("scenes").addEventListener("click", e => {const c = e.target.closest(".scene"); if (!c) return;
     const k = c.dataset.v, i = state.scenes.indexOf(k);
-    if (i >= 0) { if (state.scenes.length > 1) state.scenes.splice(i, 1) }
-    else { if (state.scenes.length >= 3) state.scenes.shift(); state.scenes.push(k) }
+    if (e.target.closest(".add")) { if (i < 0 && state.scenes.length < 3) state.scenes.push(k) }      // + : the next place
+    else if (e.target.closest(".ord")) { if (state.scenes.length > 1) state.scenes.splice(i, 1) }   // its number: take it out
+    else state.scenes = [k];                                                                         // a click: just this place
     scenesUi()});
   scenesUi();
   $("grades").innerHTML = Object.entries(INFO.grades).map(([k, label]) =>

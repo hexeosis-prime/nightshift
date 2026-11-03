@@ -54,7 +54,7 @@ SCENES = {
     },
     "neon-stage": {
         "label": "Neon Stage",
-        "blurb": "A dark performance space, haze and coloured light, a mirrored back wall.",
+        "blurb": "A dark performance space, haze and colored light, a mirrored back wall.",
         "switches": {"bad_photo": False, "pro_photo": True, "indoor": True, "daytime": False, "atmosphere": True},
         "style": "cinematic concert photograph, deep magenta and cyan stage light, haze beams, glossy black floor reflections",
         "grade": "B_cinestill_night",
@@ -63,7 +63,7 @@ SCENES = {
             "a long corridor backstage lit by a single red bulb, concrete walls, cables on the floor",
             "the same stage from the back of the room, a wall of small warm bulbs behind, haze, empty floor",
         ],
-        "establish": "Slow dolly through an empty dark performance space, coloured light beams sweeping through thick haze, "
+        "establish": "Slow dolly through an empty dark performance space, colored light beams sweeping through thick haze, "
                      "reflections on a glossy black floor. Smooth, cinematic camera movement.",
         "genre": "dark pulsing electro pop with heavy sub bass and gated synths, 118 BPM, F minor, confident and hypnotic",
     },
@@ -144,18 +144,22 @@ SCENES = {
     },
     "living-room": {
         "label": "Living Room",
-        "blurb": "A suburban living room at night: a wall of glowing computer towers, one warm lamp.",
+        "blurb": "A suburban ranch house at night: dim lamps, modern art, Los Angeles under dark clouds outside.",
         "switches": {"bad_photo": False, "pro_photo": True, "indoor": True, "daytime": False, "atmosphere": True},
-        "style": "photographic suburban ranch living room at night, Portra film look, low warm lamps plus cool blue monitor glow from a wall "
-                 "of computer towers, mixed tungsten-and-blue light, dark corners, cozy clutter, 50mm lens look, shallow depth of field",
+        "style": "photographic living room in a suburban ranch style home at night, dim lighting, dark corners and shadows, "
+                 "Portra film look, low warm lamp light, 50mm lens look, shallow depth of field",
         "grade": "A2_portra_dusk_plus",
         "places": [
-            "a suburban living room at night, a wall of computer towers with tiny glowing status lights, a warm lamp and blue monitor glow, faint haze",
-            "the same living room from the beige fabric couch, square pillows, a coffee table, potted plants, the towers glowing behind",
-            "a wide view of the living room at night, a sisal rug, the hallway at the far end lost in shadow, the lamp a small warm island",
+            "a living room in a suburban ranch style home at night, dim lighting, dark corners, shadows, a beige fabric couch with "
+            "square pillows, a coffee table, potted plants, modern art paintings on the wall, a sisal rug",
+            "the same living room seen from the couch toward the big window, a view outside of Los Angeles at night under dark "
+            "cloudy skies, potted plants silhouetted against the city lights",
+            "a corner of the living room at night, modern art paintings on the wall, a potted plant, deep shadows, the sisal rug in "
+            "a pool of dim lamp light",
         ],
-        "establish": "Wide establishing shot of a suburban ranch living room at night, a wall of computer towers with tiny glowing status "
-                     "lights, a beige couch and a coffee table, a single warm lamp, no people. Slow, smooth cinematic camera move.",
+        "establish": "Wide establishing shot of a living room in a suburban ranch style home at night, dim lighting and dark corners, "
+                     "a beige couch, modern art on the walls, Los Angeles glowing under dark cloudy skies through the window, no people. "
+                     "Slow, smooth cinematic camera move.",
         "genre": "warm bedroom electro pop with a soft four-on-the-floor kick, humming synth bass and glassy plucks, 108 BPM, C minor, cozy and late-night",
     },
 }
@@ -428,7 +432,7 @@ def custom_scene(place, daytime=False, indoor=False):
     return {
         "label": "Custom", "blurb": place,
         "switches": {"bad_photo": False, "pro_photo": True, "indoor": bool(indoor), "daytime": bool(daytime), "atmosphere": True},
-        "style": f"cinematic 35mm film photograph, {light}, natural colour, gentle atmosphere",
+        "style": f"cinematic 35mm film photograph, {light}, natural color, gentle atmosphere",
         "grade": "A2_portra_dusk_plus",
         "places": [place, f"{place}, seen from a different angle", f"{place}, a quieter corner of it"],
         "establish": f"Wide establishing shot of {place}, no people. Slow, smooth cinematic camera move.",

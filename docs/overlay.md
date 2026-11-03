@@ -1,6 +1,6 @@
 # The lyric HUD overlay
 
-An optional graphic layer: the lyric being sung, word by word on a scrolling colour gradient, placed where no face is;
+An optional graphic layer: the lyric being sung, word by word on a scrolling color gradient, placed where no face is;
 brackets that lock onto faces; shot and section labels, a beat light, a waveform, a ruler, a ticker, timecode. Everything is
 a pure function of the frame number, drawn on an HTML canvas and rendered frame by frame in headless Chromium, so the same
 frame always renders the same way and any range can be re-rendered.
@@ -34,9 +34,9 @@ Turn it on in `project.json`:
 ```
 
 Sections start at a lyric line (`line`, optionally `occurrence`), at the first line after another (`after`), at a time
-(`t`), or at 0. Each section gets an accent colour (`accents` to set them, otherwise a palette cycle).
+(`t`), or at 0. Each section gets an accent color (`accents` to set them, otherwise a palette cycle).
 
-**Style keys:** `title` (top right), `label` (bottom left), `palette` (12 colours for the lyric gradient), `hero` (regex: lines
+**Style keys:** `title` (top right), `label` (bottom left), `palette` (12 colors for the lyric gradient), `hero` (regex: lines
 that get the big condensed treatment, the song's question for example; a trailing ? bounces on the beat), `face_label`,
 `show_face_score`, `ticker` / `ticker_after` (tokens `{value}`, `{count}`, `{conf}`, `{n}`), `slot_by_shot` / `slot_by_line`
 (force a corner: `tl`, `bl`, `ml`, `tr`), `dy_by_line` (nudge a line up or down in pixels), `bounce_shots` (lyric words hop
@@ -49,7 +49,7 @@ loop seam).
 - `expand_line`: `{"shot": "v01", "word": "draw", "x": 1440, "y": 540}`: a short stub that stretches edge to edge as the word
   is sung.
 - `merge`: `{"lines": ["They say you'll merge", "Absorbed into one", "Until nothing cuts"], "exit_shot": "p04", "early": 0.4}`:
-  coloured dots that fall together into one blob over three lines, go grey, and dissipate. Placed on whichever side has no
+  colored dots that fall together into one blob over three lines, go grey, and dissipate. Placed on whichever side has no
   face.
 - `illustrations`: `[{"shot": "o03", "items": [{"name": "robot", "side": -1, "cy": 300, "h": 250, "at": 12.4}, ...]}]`:
   luma-keyed line art beside the singer, landing on beats or at set times (time them to head turns with

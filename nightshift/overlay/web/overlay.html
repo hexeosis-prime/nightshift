@@ -193,7 +193,7 @@ function chooseLayout(li, L, hold, hero) {
   if (dy && best) { best.placed = best.placed.map(w => ({ ...w, y: w.y + dy })); best.ruleY += dy; best.box = [best.box[0], best.box[1] + dy, best.box[2], best.box[3] + dy]; }
   return (LAYOUT_CACHE[li] = best);
 }
-// Contrast colour: the mean brightness of the video under the lyric's box over its time on screen (data.json "luma":
+// Contrast color: the mean brightness of the video under the lyric's box over its time on screen (data.json "luma":
 // a coarse grid sampled every few frames), white text on dark, near-black text on bright.
 function inkFor(box, f0, f1) {
   const Lm = D.luma; if (!Lm || !Lm.v || !Lm.v.length) return "#f5f2ea";
@@ -300,7 +300,7 @@ function expandLine(f, t) {
   ctx.fillRect(xl, y - thick / 2, xr - xl, thick); ctx.restore();
 }
 
-// ---- widget: merge (N coloured dots fall together into one blob, which smooths to grey, then dissipates) ------------
+// ---- widget: merge (N colored dots fall together into one blob, which smooths to grey, then dissipates) ------------
 const MERGE = { cv: null };
 function mergeTimes() {
   const C = S.widgets.merge; if (!C) return null;
@@ -534,7 +534,7 @@ window.renderAt = function (f) {
   const kB = easeOut((t - IN.ticker) / IN.dur) * (1 - tail), kT = easeOut((t - IN.top) / IN.dur) * (1 - tail);
   const grad = (y0, y1) => { const g = ctx.createLinearGradient(0, y0, 0, y1);
     g.addColorStop(0, "rgba(6,6,8,0.55)"); g.addColorStop(1, "rgba(6,6,8,0)"); ctx.fillStyle = g; ctx.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0)); };
-  const main = ctx;                                   // graphics go to a layer that is desaturated once; lyrics stay full colour on top
+  const main = ctx;                                   // graphics go to a layer that is desaturated once; lyrics stay full color on top
   if (!LAYER.cv) { LAYER.cv = document.createElement("canvas"); LAYER.cv.width = W; LAYER.cv.height = H; }
   ctx = LAYER.cv.getContext("2d"); ctx.clearRect(0, 0, W, H);
   if (S.show_hud && kT > 0) { ctx.save(); ctx.translate(0, -(1 - kT) * 190); grad(0, 220 + TOP_DY); ctx.translate(0, TOP_DY); cornerMarks(); topLabels(f, t); ctx.restore();

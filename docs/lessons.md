@@ -45,7 +45,7 @@ the same time, by mashing every button. These are the things we'd tell ourselves
 ## Taste, as it turned out
 
 - A Portra-at-dusk grade with a touch more contrast (A+) over everything, a per-shot lift where skin sat too dark, and the
-  HUD a little desaturated with the lyrics in full colour.
+  HUD a little desaturated with the lyrics in full color.
 - Lyrics that move out of the way of faces read as designed; lyrics on faces read as a mistake.
 - Speeding up shots with people walking looks wrong; landscapes and fly-overs take 2x well.
 - An ending montage of one-bar shots on the downbeats, then back into the first frame for the loop.

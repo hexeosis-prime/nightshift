@@ -189,7 +189,7 @@ def prep(project, edl, faces_json, out=None, seconds=None):
 
 
 def luma_grid(video, frames, step=6, gx=12, gy=12):
-    """Brightness of the cut on a coarse grid every `step` frames (0-1), so lyrics in "contrast" colour can pick white or black."""
+    """Brightness of the cut on a coarse grid every `step` frames (0-1), so lyrics in "contrast" color can pick white or black."""
     import cv2
     if not os.path.exists(video):
         return None
