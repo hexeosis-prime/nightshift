@@ -8,6 +8,7 @@
 Long steps (song analysis, assembly, overlay, finishing, a whole pass) run as background tasks: the tool returns a
 task id at once and task_status() reports progress, so no client times out on a 40-minute render.
 """
+import functools
 import glob
 import json
 import os
@@ -30,7 +31,7 @@ cut.json (the edit). The pass runs: sheets -> song -> analyze -> timeline -> sti
 Start with project_info. To run everything: pipeline_run, then poll pipeline_status every few minutes (renders take hours).
 Mode 'director' stops at checkpoints (sheets_review, outfits_review, song_pick, stills_review, takes_review, pass_review): show the human the review packet
 (view_image on contact sheets), apply their notes (write_doc / patch_shot / pick_take / edit_image), then pipeline_continue.
-Mode 'yolo' stops only for character looks (unless project.json sheets.approve is false): you pick by face-match and lyric-coverage scores. Re-running only renders what changed.
+Mode 'yolo' runs to the end (projects made in Studio or with create_from_plan skip the character-look stop): you pick by face-match and lyric-coverage scores. Re-running only renders what changed.
 Shot fields that matter: mode (ff|fflf|lipsync|t2v|reuse), anchor (first words of the lyric line a lip-sync shot starts on),
 chars, world, framing (close|medium|wide), action, location, video (motion prompt; {lead} = the character's identity words),
 seed, still ('edit' = identity-edited from the character sheet), takes (best-of-N), arrive_frame, first_frame/last_frame, expr.
@@ -39,6 +40,35 @@ Read docs/techniques.md in the repo for the craft (rescue first/last-frame, self
 ROOT = os.environ.get("NIGHTSHIFT_HOME")
 COMFY = {"url": os.environ.get("NIGHTSHIFT_COMFY_URL") or None, "dir": os.environ.get("NIGHTSHIFT_COMFY_DIR") or None}
 server = _Server("nightshift", instructions=INSTRUCTIONS)
+
+
+def _seen(tool, project=None):
+    """Note the last agent call, so Nightshift Studio can show that an agent picked up a hand-off (and is still there)."""
+    if not ROOT:
+        return
+    try:
+        with open(os.path.join(ROOT, ".agent_activity.json"), "w", encoding="utf-8") as f:
+            json.dump({"t": time.time(), "tool": tool, "project": project}, f)
+    except OSError:
+        pass
+
+
+_tool = server.tool
+
+
+def _tool_seen(*a, **k):
+    deco = _tool(*a, **k)
+
+    def wrap(fn):
+        @functools.wraps(fn)
+        def call(*args, **kw):
+            _seen(fn.__name__, kw.get("project"))
+            return fn(*args, **kw)
+        return deco(call)
+    return wrap
+
+
+server.tool = _tool_seen
 
 
 def _project(project):
@@ -114,7 +144,7 @@ def plan_format() -> str:
 
 
 @server.tool()
-def create_from_plan(plan: dict, name: str = "", length: str = "medium", aspect: str = "16:9", image_model: str = "flux2",
+def create_from_plan(plan: dict, name: str = "", length: str = "medium", aspect: str = "", image_model: str = "flux2",
                      grade: str = "", overlay: Optional[bool] = None, mode: str = "yolo") -> dict:
     """Make a whole project from a plan in plan_format's JSON shape (characters, worlds, song caption + lyrics, shots).
     grade / overlay: leave them out to use the plan's own "grade" and "hud"; pass them to override.

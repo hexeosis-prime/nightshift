@@ -119,7 +119,13 @@ class Studio:
                 if not update.get(secret):
                     update = dict(update, **{secret: s.get(secret, "")})      # an empty field keeps the saved secret
             s = agent.save_settings(self.root, {**s, **update})
-        return {"base_url": s["base_url"], "model": s["model"], "has_key": bool(s.get("api_key")),
+        act = None
+        try:
+            with open(os.path.join(self.root, ".agent_activity.json"), encoding="utf-8") as f:
+                act = json.load(f)
+        except (OSError, ValueError):
+            pass
+        return {"base_url": s["base_url"], "model": s["model"], "has_key": bool(s.get("api_key")), "agent_activity": act, "now": time.time(),
                 "hook_url": s.get("hook_url", ""), "has_hook_token": bool(s.get("hook_token")),
                 "mcp_url": self.mcp_url(), "studio_url": self.studio_url()}
 

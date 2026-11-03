@@ -268,8 +268,9 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
             <div>
               <h3>Your idea</h3>
               <p class="hint">As few or as many details as you like: the story, the places, who is in it, what the song is about,
-                how long, vertical or widescreen. The agent writes the song, casts the characters, plans every shot and picks the
-                look, then Nightshift makes the whole video without stopping. Want your own photo in it? Use Director Mode.</p>
+                how long, vertical or widescreen. Your own agent (OpenClaw, Hermes, Claude ...) writes the song, casts the characters,
+                plans every shot and picks the look with Nightshift's tools, then Nightshift makes the whole video without stopping.
+                Want your own photo in it? Use Director Mode.</p>
               <textarea id="idea" rows="9" placeholder="Example (type your own): A duet between two night-shift workers in a city that never sleeps. She runs a 24-hour laundromat, he drives the last bus. They keep missing each other: the laundromat window, the bus stop in the rain, a rooftop at dawn, the empty bus depot. Synth pop with a heartbeat kick, bittersweet but hopeful. She has a short silver bob and a yellow raincoat; he has a beard and a navy driver's jacket."></textarea>
             </div>
           </div>
@@ -392,8 +393,6 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
           <button class="btn primary" id="goBtn" onclick="go1()">Plan it</button>
           <span class="err" id="goErr"></span>
         </div>
-        <div class="agentStat hide" id="handLine">Have your own agent (OpenClaw, Hermes, Claude ...)? It can drive Nightshift directly.
-          <a href="#" onclick="handOff();return false">Hand this idea to my agent</a></div>
         <div class="agentStat" id="agentInfo"></div>
 
         <div class="plan hide" id="planBox"></div>
@@ -474,27 +473,22 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
 </dialog>
 
 <dialog id="agentDlg">
-  <h3 style="margin-top:0">Agent settings</h3>
-  <p style="color:var(--dim);font-size:14px;margin:-4px 0 0">Full Agent Mode has two buttons, and each one uses a different agent. Set up one or both.</p>
+  <h3 style="margin-top:0">Your agent</h3>
+  <p style="color:var(--dim);font-size:14px;margin:-4px 0 0;line-height:1.5">Full Agent Mode sends your idea to your own agent
+    (OpenClaw, Hermes, Claude ...) with a short brief. The brief points it at Nightshift on this machine, which has every tool and
+    guide it needs: your agent plans the song, the cast and every shot with its own model, then Nightshift renders it.</p>
   <div class="dlgsec">
-    <h4>For "Plan it": the model that writes the plan</h4>
-    <p>The app sends your idea to this model, and it writes the lyrics, the cast and every shot. Then you review the plan and
-      start it. Use any server with the OpenAI chat API: OpenRouter (<span class="mono">https://openrouter.ai/api/v1</span>),
-      LM Studio (<span class="mono">http://&lt;machine&gt;:1234/v1</span>) or Ollama (<span class="mono">http://&lt;machine&gt;:11434/v1</span>).
-      Run it on another machine, not the GPU that renders.</p>
-    <div class="field"><span class="label">Server address</span><input type="text" id="agentUrl" placeholder="https://openrouter.ai/api/v1"></div>
-    <div class="field" style="margin-top:10px"><span class="label">Model name</span><input type="text" id="agentModel" list="agentModels" placeholder="as the server names it, e.g. provider/model-name"><datalist id="agentModels"></datalist></div>
-    <div class="field" style="margin-top:10px"><span class="label">API key</span><input type="password" id="agentKey"></div>
-  </div>
-  <div class="dlgsec">
-    <h4>For "Hand off to my agent": your own agent</h4>
-    <p>Sends your idea and a brief to your own agent (OpenClaw, Hermes, ...). It plans with its own model and drives Nightshift on
-      this machine. Give its webhook here (OpenClaw: <span class="mono">http://&lt;agent machine&gt;:18789/hooks/agent</span> plus its token) and it
-      starts on its own. A notes or drop-box address works only while your agent is reading it. Or leave it empty and the app
-      gives you the brief to paste into its chat.</p>
+    <h4>How the idea reaches your agent</h4>
+    <p>Give your agent's webhook (OpenClaw: <span class="mono">http://&lt;agent machine&gt;:18789/hooks/agent</span> plus its token) and it
+      starts on its own. A notes or drop-box address works only while your agent is reading it. Leave it empty and the app gives
+      you the brief to paste into your agent's chat.</p>
     <div class="field"><span class="label">Agent webhook</span><input type="text" id="hookUrl" placeholder="http://10.0.1.x:18789/hooks/agent"></div>
     <div class="field" style="margin-top:10px"><span class="label">Webhook token</span><input type="password" id="hookToken"></div>
-    <div class="mono" id="mcpInfo" style="font-size:12.5px;color:var(--dim);margin-top:10px"></div>
+  </div>
+  <div class="dlgsec">
+    <h4>Where your agent finds Nightshift</h4>
+    <p>Your agent connects here (MCP). Agents can also come straight here without the app: tell yours "use Nightshift at this address".</p>
+    <div class="mono" id="mcpInfo" style="font-size:13px;color:var(--ink)"></div>
   </div>
   <div class="mono" id="agentCheck" style="font-size:12.5px;color:var(--dim);margin:14px 0 0;min-height:1em"></div>
   <div class="row" style="justify-content:flex-end;align-items:center;gap:14px;margin-top:10px">
@@ -551,8 +545,8 @@ function tabUi(){
   const ag = state.tab === "agent";
   $("agentMode").classList.toggle("hide", !ag); $("formMode").classList.toggle("hide", ag);
   $("fmtStep").classList.toggle("hide", ag); $("dirStep").classList.toggle("hide", ag);   // Full Agent Mode is one box
-  $("goBtn").textContent = ag ? "Plan it" : "Start the shift";
-  $("handLine").classList.toggle("hide", !ag); $("agentInfo").classList.toggle("hide", !ag);
+  $("goBtn").textContent = ag ? "Send to my agent" : "Start the shift";
+  $("agentInfo").classList.toggle("hide", !ag);
   $("planBox").classList.add("hide"); $("goErr").textContent = "";
   lenUi();
 }
@@ -631,33 +625,25 @@ async function checkComfy(){
 function saveComfy(){localSet("comfyUrl", $("comfyUrl").value.trim()); checkComfy()}
 let AGENT = {};
 const openAgent = () => { $("agentCheck").textContent = ""; agentDlg.showModal(); return false };
+function ago(s){ s = Math.max(0, Math.round(s)); return s < 90 ? "just now" : s < 5400 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago` }
 async function agentInfo(){
   const a = AGENT = await api("/api/agent/settings");
-  $("agentUrl").value = a.model ? a.base_url : (a.base_url && !a.base_url.includes("127.0.0.1:1234") ? a.base_url : "");
-  $("agentModel").value = a.model;
-  $("agentKey").placeholder = a.has_key ? "saved (leave empty to keep it)" : "only if the server needs one (OpenRouter does)";
   $("hookUrl").value = a.hook_url || ""; $("hookToken").placeholder = a.has_hook_token ? "saved (leave empty to keep it)" : "only if the webhook needs one";
-  $("mcpInfo").textContent = a.mcp_url ? `Your agent reaches Nightshift at ${a.mcp_url}` : "Agents can't reach Nightshift yet: start the app with --mcp-port 8765";
+  $("mcpInfo").textContent = a.mcp_url || "Not reachable yet: start the app with --mcp-port 8765 (studio.local.bat)";
   const host = u => { try { return new URL(u).host } catch(e){ return u } };
+  const act = a.agent_activity, seen = act ? ago(a.now - act.t) : null;
   $("agentInfo").innerHTML =
-    `<b>Plan it</b> uses ${a.model ? `${esc(a.model)} <span style="color:var(--faint)">at ${esc(host(a.base_url))}</span>` : `<span style="color:var(--faint)">no planning model yet</span>`} · ` +
+    `<b>Your agent</b> ${act ? `last talked to Nightshift ${seen}` : `<span style="color:var(--faint)">hasn't connected to Nightshift yet</span>`} · ` +
+    `${a.hook_url ? (/\/notes\/?$/.test(a.hook_url) ? `ideas go to a notes file at ${esc(host(a.hook_url))} <span style="color:var(--faint)">(your agent has to be reading it)</span>`
+                                                   : `ideas go to its webhook at ${esc(host(a.hook_url))}`)
+                   : `<span style="color:var(--faint)">no webhook: you'll get a brief to paste into its chat</span>`}<br>` +
     `<a href="#" onclick="return openAgent()">Agent settings</a>`;
 }
 async function saveAgent(){
   const btn = $("agentSave"); btn.disabled = true; $("agentCheck").textContent = "saving...";
   try {
-    const url = $("agentUrl").value.trim(), model = $("agentModel").value.trim();
-    await api("/api/agent/settings", {base_url:url || AGENT.base_url, model, api_key:$("agentKey").value.trim(),
-      hook_url:$("hookUrl").value.trim(), hook_token:$("hookToken").value.trim()});
-    $("agentKey").value = ""; $("hookToken").value = "";
-    await agentInfo();
-    if (model) {
-      $("agentCheck").textContent = "checking the planning model...";
-      const m = await api("/api/agent/models");
-      if (!m.ok) { $("agentCheck").textContent = `Saved, but the planning model didn't answer: ${m.problem}`; return }
-      $("agentModels").innerHTML = m.models.map(x => `<option value="${esc(x)}">`).join("");
-    }
-    agentDlg.close();
+    await api("/api/agent/settings", {hook_url:$("hookUrl").value.trim(), hook_token:$("hookToken").value.trim()});
+    $("hookToken").value = ""; await agentInfo(); agentDlg.close();
   } catch(e){ $("agentCheck").textContent = e.message } finally { btn.disabled = false }
 }
 let WAITING = null;
@@ -666,7 +652,11 @@ async function listVideos(){
   if (WAITING) {
     const fresh = projects.find(p => !WAITING.known.has(p.name));
     const mins = Math.round((Date.now() - WAITING.since) / 60000);
+    let act = null; try { act = (await api("/api/agent/settings")).agent_activity } catch(e){}
+    if (act && act.t * 1000 > WAITING.since) WAITING.picked = WAITING.picked || act;
     if (fresh) { WAITING = null; $("goErr").className = "ok"; $("goErr").innerHTML = `✓ Your agent started <a href="#/${esc(fresh.name)}">${esc(fresh.name)}</a>`; }
+    else if (WAITING.picked && state.tab === "agent") $("goErr").textContent =
+      `✓ Your agent picked it up at ${new Date(WAITING.picked.t * 1000).toLocaleTimeString()} and is planning (last step: ${act.tool}). The video appears under Your videos when it starts.`;
     else if (state.tab === "agent") $("goErr").textContent = WAITING.drop
       ? `✓ Posted to your agent's notes ${mins} min ago. No project yet: if your agent isn't reading its notes, tell it to.`
       : `✓ Sent to your agent. Waiting for it to start the video (${mins} min)...`;
@@ -681,12 +671,12 @@ const opts = () => state.tab === "agent"
   ? {image_model:state.model, mode:"yolo", comfy_url:$("comfyUrl").value.trim() || undefined}   // the agent picks length, shape, grade + HUD; runs to the end
   : {aspect:state.aspect, image_model:state.model, mode:state.mode, grade:state.grade, overlay:state.hud === "on",
      comfy_url:$("comfyUrl").value.trim() || undefined};
-function go1(){ return state.tab === "agent" ? planIt() : create() }
+function go1(){ return state.tab === "agent" ? handOff() : create() }
 async function handOff(){
   $("goErr").textContent = ""; $("handBtn").disabled = true;
   try {
     $("goErr").className = "ok"; $("goErr").textContent = "sending to your agent...";
-    const r = await api("/api/agent/handoff", {idea:$("idea").value, length:"short", opts:Object.assign(opts(), {aspect:state.aspect})});
+    const r = await api("/api/agent/handoff", {idea:$("idea").value, length:"auto", opts:opts()});
     const drop = r.sent && /\/notes\/?$/.test(AGENT.hook_url || "");     // a notes file the agent reads, not a webhook that wakes it
     const at = new Date().toLocaleTimeString();
     $("goErr").textContent = !r.sent ? "No agent webhook set: copy the brief below into your agent's chat."

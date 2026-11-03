@@ -62,20 +62,22 @@ nightshift new my-video --scene desert-highway --aspect 9:16 --image-model flux3
   --look "early thirties, short dark curly hair" --outfit "a rust corduroy jacket, white t-shirt" --photo me.jpg
 ```
 
-### Agent mode
+### Full Agent Mode: bring your own agent
 
 **Full Agent Mode** is one box: describe the video with as few or as many details as you like (the story, the places, who is
-in it, what the song is about, how long, vertical or widescreen). The agent picks the length, the shape, the grade and the
-lyric HUD from the idea, and the video runs to the end without stopping. Your own photo needs Director Mode. Then either:
+in it, what the song is about, how long, vertical or widescreen), then **Send to my agent**. The idea goes to *your* agent
+(OpenClaw, Hermes, Claude ...) with a short brief that points it at Nightshift's MCP server on this machine. The server has
+every tool and guide the agent needs: it reads `plan_format`, writes the lyrics, the song brief, the cast and every shot with
+its own model, picks the length, shape, grade and lyric HUD, calls `create_from_plan` and `pipeline_run`, and the video runs to
+the end. Your own photo needs Director Mode.
 
-- **Plan it**: an agent model writes the lyrics, the song brief, one or two characters, the worlds and every shot, and the
-  app shows you the plan before anything renders. Any OpenAI-compatible server works: LM Studio or Ollama on another machine
-  (don't share the GPU that renders), OpenRouter, or a closed model. With an open-weights model nothing in the loop is closed.
-- **Hand off to my agent**: the idea goes to *your* agent (OpenClaw, Hermes, Claude ...) with a brief that tells it how to
-  drive Nightshift on this machine over MCP: read `plan_format`, write the plan with its own model, `create_from_plan`,
-  `pipeline_run`, poll, report back. Set the agent's webhook in the app, or paste the brief into its chat. Start the app
-  with `--mcp-port 8765` (in `studio.local.bat`: `set "NIGHTSHIFT_ARGS=--host 0.0.0.0 --mcp-port 8765"`) so the agent can
-  reach it; the project shows up in the app and you watch it render.
+- **Webhook** (Agent settings): your agent's own endpoint, e.g. OpenClaw's `http://<agent machine>:18789/hooks/agent` with its
+  token, so it starts on its own. A notes or drop-box address works only while the agent is reading it. With no webhook the
+  app gives you the brief to paste into your agent's chat.
+- **The round trip**: Nightshift notes each call an agent makes over MCP, so the app shows when your agent picked the idea up,
+  what it is doing, and the project as soon as it starts.
+- Start the app with `--mcp-port 8765` (in `studio.local.bat`: `set "NIGHTSHIFT_ARGS=--host 0.0.0.0 --mcp-port 8765"`) so the
+  agent can reach it. Agents don't need the app at all: tell yours "use Nightshift at http://<this machine>:8765/mcp".
 
 ## What you need
 
