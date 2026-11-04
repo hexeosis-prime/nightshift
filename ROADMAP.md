@@ -13,6 +13,12 @@ Where Nightshift goes after the first video. Nothing here is built yet.
   prompt said "In terms of photoshopping, show me your best overall improved image?"). Reword it in our own language without
   "photoshopping"; "best overall improved" seems to be the part that matters. A/B it on identity edits and stills.
 - **Fold in hexe's other tested prompts** for the jobs they fit.
+- **Character sheet layout tests.** hexe collected alternative sheet tips and layouts to A/B against the seven-panel sheet.
+  First test: a darker mid-gray background (around #808080; today's is #B8B8B8) against blown-out highlights on
+  reflective or white clothing, and cleaner hair edges.
+- **Can LTX 2.3 use the character sheet as a reference?** Today LTX gets the identity-edited first frame (and a last
+  frame on first/last-frame shots). Check the current LTX 2.3 docs and ComfyUI nodes for an identity/reference input, or
+  whether a sheet crop placed as a keyframe helps faces hold through a shot.
 
 ## Format templates
 
