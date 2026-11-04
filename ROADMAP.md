@@ -16,6 +16,10 @@ Where Nightshift goes after the first video. Nothing here is built yet.
 - **Character sheet layout tests.** hexe collected alternative sheet tips and layouts to A/B against the seven-panel sheet.
   First test: a darker mid-gray background (around #808080; today's is #B8B8B8) against blown-out highlights on
   reflective or white clothing, and cleaner hair edges.
+- **Vocalise mode** (hexe's experimental genre: vocals used as an instrument, invented language, Sigur Rós style). Whisper's
+  lyric coverage can't rank takes without real words, and lip-sync anchors need recognizable lines. Instead: rank takes
+  without coverage (or by vocal presence), and find vocal phrases from the separated vocal stem's energy (where singing
+  starts and stops) to place lip-sync shots and HUD sections. Zero's MiniMax runs today: ~450 s for a 3-minute track.
 - **Can LTX 2.3 use the character sheet as a reference?** Today LTX gets the identity-edited first frame (and a last
   frame on first/last-frame shots). Check the current LTX 2.3 docs and ComfyUI nodes for an identity/reference input, or
   whether a sheet crop placed as a keyframe helps faces hold through a shot.
