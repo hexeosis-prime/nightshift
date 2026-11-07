@@ -24,6 +24,17 @@ Where Nightshift goes after the first video. Nothing here is built yet.
   frame on first/last-frame shots). Check the current LTX 2.3 docs and ComfyUI nodes for an identity/reference input, or
   whether a sheet crop placed as a keyframe helps faces hold through a shot.
 
+## hexeosis 2D loops as code
+
+- **Rebuild hexe's 2D After Effects loop process as a code renderer**, next to hexe-viewer (the 3D look). Steps:
+  1. hexe talks through the concept first: each subcomp as a node (what goes in, the one thing it does, what comes out),
+     how nesting chains them, and the perceptual choices (color change, motion) tuned by eye.
+  2. Claude writes an ExtendScript that exports the AE template's full structure to text (comp/precomp nesting, layer
+     order, blend modes, effects and settings, keyframes and easing, expressions, loop lengths, time remapping).
+  3. Rebuild as a small node graph where one or two root time signals drive everything downstream, and the seamless loop
+     comes from the structure: the end state is the start state ("as at the end, so at the beginning"), not a crossfade.
+  4. Render perfect loops at any size with per-piece parameters; Nightshift can call it as a shot source.
+
 ## Format templates
 
 Starter projects for other kinds of video: a shot-list skeleton, a song or voice-over brief, cut rules and an overlay config
