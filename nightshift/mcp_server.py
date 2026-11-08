@@ -23,7 +23,7 @@ try:   # MCP Python SDK 2.x
 except ImportError:  # 1.x
     from mcp.server.fastmcp import FastMCP as _Server, Image
 
-from .project import Project, init as init_project
+from .project import Project, check_config, init as init_project
 
 INSTRUCTIONS = """Nightshift makes music videos with a local ComfyUI (images: Flux 2 Klein, video: LTX 2.3, song: MiniMax Music 3).
 A project is a folder: canon.json (characters, wardrobe, never-lists), shots.json (shot list), song/caption.md + song/lyrics.txt,
@@ -194,7 +194,11 @@ def write_doc(project: str, name: str, content: str) -> str:
     p = _project(project)
     path = _safe(p, name)
     if name.endswith(".json"):
-        json.loads(content)
+        doc = json.loads(content)
+        if name == "project.json":
+            bad = check_config(doc)
+            if bad:
+                raise ValueError("not written: " + "; ".join(bad))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)

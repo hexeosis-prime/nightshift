@@ -78,17 +78,30 @@ IMAGE_MODELS = {
 }
 
 
-def presets(file_cfg):
-    """The profile / aspect / image_model layers a project.json asks for, merged."""
+def presets(file_cfg, warnings=None):
+    """The profile / aspect / image_model layers a project.json asks for, merged.
+    An unknown value raises, or, given a warnings list, falls back to the default and notes it there (so one bad value
+    can't lock a project: every later call, even the one that would fix project.json, opens the project first)."""
     out = {}
     for table, key, default in ((PROFILES, "profile", "full"), (ASPECTS, "aspect", None), (IMAGE_MODELS, "image_model", "flux2")):
         name = (file_cfg or {}).get(key) or default
+        if name is not None and name not in table:
+            msg = f"project.json {key} '{name}': choose one of {', '.join(table)}"
+            if warnings is None:
+                raise ValueError(msg)
+            warnings.append(msg + (f" (using '{default}' for now)" if default else " (ignored for now)"))
+            name = default
         if name is None:
             continue
-        if name not in table:
-            raise ValueError(f"project.json {key} '{name}': choose one of {', '.join(table)}")
         out = _merge(out, table[name])
     return out
+
+
+def check_config(file_cfg):
+    """Errors in a project.json about to be written: unknown profile / aspect / image_model. Empty list = fine."""
+    w = []
+    presets(file_cfg, w)
+    return [x.split(" (using")[0].split(" (ignored")[0] for x in w]
 
 
 def _merge(a, b):
@@ -120,7 +133,13 @@ class Project:
         if not os.path.exists(self.path("project.json")):
             raise FileNotFoundError(f"{self.root} has no project.json (nightshift init <folder> makes one)")
         file_cfg = _load(self.path("project.json"), {})
-        self.cfg = _merge(_merge(DEFAULTS, presets(file_cfg)), file_cfg)
+        self.warnings = []
+        self.cfg = _merge(_merge(DEFAULTS, presets(file_cfg, self.warnings)), file_cfg)
+        for k, (table, default) in {"profile": (PROFILES, "full"), "aspect": (ASPECTS, None), "image_model": (IMAGE_MODELS, "flux2")}.items():
+            if file_cfg.get(k) is not None and file_cfg[k] not in table:   # the bad value must not leak into cfg either
+                self.cfg.pop(k, None) if default is None else self.cfg.update({k: default})
+        if file_cfg.get("aspect") in ASPECTS:   # the aspect owns the sizes: an old project.json's 16:9 sizes must not win over "aspect": "9:16"
+            self.cfg.update(ASPECTS[file_cfg["aspect"]])
         self.name = self.cfg.get("name") or os.path.basename(self.root)
         self._client = None
 
