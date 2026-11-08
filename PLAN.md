@@ -107,8 +107,24 @@ Check LTX 2.5 first; it may change what's worth building.
 - [ ] Prompt and workflow refinement session (E, R) · [ ] prompt-proving pipeline as a CLI (H) · [ ] case as a control,
   cat / Cat / CAT (H) · [ ] Erik's VFX brain dump (E) · [ ] MCP driving guide (Z) · [ ] model download links (R)
 
-## Open questions for hexe
+## Decisions and open questions (Nov 7)
 
-- Later checkpoints: hard gates or auto-pass with "intervene"? · Connected-agent toggle in v1? · Finished-video actions? ·
-  LAN access: ComfyUI or only the MCP bridge? · First new Format: app demo or news crew? · Final Style names? · Where the
-  private kits live? · Still to share: web UI bug notes, v2v / Blender research, the exact drone prompt.
+- **Checkpoints:** hard gates with an inactivity timer. After 1 hour with no pick, auto-pass with the top-ranked option and
+  show an Intervene button. Every past step stays viewable (e.g. the 3 songs), with Redo from here and Branch from here.
+- **Choose / Reroll:** 3 options at every checkpoint (songs, cast looks, stills per shot, takes per shot). Reroll makes 3
+  new; a "keep" mark carries one over so only 2 are made.
+- **Connected-agent toggle:** not in v1. Director Mode stays agent-free; full agent control stays with MCP. "Tag an agent
+  in" is saved for later.
+- **Finished-video screen:** Download, Revise (back to any step), Start new, Archive. No Share.
+- **LAN access:** internal studio setup for Zero, not a Nightshift feature. ComfyUI has no login: allow only the Mac's
+  address through the PC firewall.
+- **Format build order:** 1) news crew (hexe saves its ComfyUI workflows in API format), 2) client-shaped 15-30 s
+  lifestyle ad, 3) app demo template.
+- **User Library:** every install gets a Library folder set in Settings, outside the app folder, for the user's own
+  songs, characters, show kits and presets. Updates never touch it. Our private kits are our Library.
+- **Style names (working titles):** Cinematic, Indie handmade, Broadcast, Cyber future, Live TV news, Clean commercial.
+  **Research: hexONE** — what words clients and briefs use for these looks, and which prompt words the models respond to
+  for each. Claude builds with the working titles meanwhile.
+- **Workflow consistency audit** (Phase 1): Claude lists how each workflow sets size, frames and seconds; hexe fixes them
+  in ComfyUI and re-exports UI + API versions.
+- **Still to share:** web UI bug notes, v2v / Blender workflow research, the exact drone prompt.
