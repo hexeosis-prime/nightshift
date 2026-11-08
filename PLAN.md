@@ -3,6 +3,10 @@
 _Mirror of the shared Claude Doc that hexe and Claude edit (the master: https://claude.ai/artifact/8YDBERhm8QL2jVMxi45Pdd).
 Updated by Claude on the `next` branch so Zero and hexONE can read it. Edit the doc, not this file. As of 2026-11-07._
 
+**Final plan, agreed Nov 7.** Open items carry into the phase where they're needed. Category labels (formats, styles) may
+be renamed, and a few may be added if research turns up a popular format or style we're missing; what each one contains
+stays as written.
+
 Nightshift grows from a music-video generator into a video system: formats, presets, styles and show kits on one engine.
 The order is fix the bugs first, then wire up Director Mode, then build the preset system.
 
@@ -38,9 +42,11 @@ attribution · no black gaps in anything that plays continuously · every re-rel
   automatically or show "looks stalled, restart?".
 - [ ] **Plan errors don't say what failed** (Z, H). Fix: every error names the field and the shot.
 - [ ] **Abstract and instrumental videos can't be planned** (Z). Fix: an "abstract" plan mode with no cast and no lyrics.
-- [ ] **The ComfyUI API can't be reached from the Mac** (H). Decide what to expose, then document it.
+- [ ] ~~ComfyUI API from the Mac~~ moved out: internal studio setup for Zero, not Nightshift (H).
 - [ ] **Published files carry our prompts** (E, R). Fix: a publish/export step that strips metadata.
 - [ ] **Dependency pin** (H): streamlit 1.50.0 pins packaging<26 and pillow<12.
+
+- [x] **Older project shows the wrong finished video** (E): fixed Nov 7 on `next`, the player keys on project + file.
 
 Also (R): keep birds out of wide-shot prompts and add "birds" to the default negative.
 
@@ -127,4 +133,5 @@ Check LTX 2.5 first; it may change what's worth building.
   for each. Claude builds with the working titles meanwhile.
 - **Workflow consistency audit** (Phase 1): Claude lists how each workflow sets size, frames and seconds; hexe fixes them
   in ComfyUI and re-exports UI + API versions.
-- **Still to share:** web UI bug notes, v2v / Blender workflow research, the exact drone prompt.
+- **Still to share:** the v2v / Blender workflow research. The drone prompt uses "corkscrew" for now; the exact one comes
+  with the prompt refinement session.
