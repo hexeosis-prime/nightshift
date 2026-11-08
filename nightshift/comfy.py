@@ -192,6 +192,21 @@ def _limit_minutes(project, job_meta):
     return max(wd["min_minutes"], frames * wd["max_minutes_per_frame"] * mult) + (30 if job_meta.get("kind") == "song" else 0)
 
 
+LONG_KINDS = ("ff", "fflf", "t2v", "lipsync", "song")
+
+
+def _stall_seconds(project, job_meta):
+    """How long ComfyUI's log may stay silent before a running job counts as stalled. Video and song jobs sample for many
+    minutes without writing a line (a 288-frame first/last-frame shot is silent 6+ min, and the old 6-minute rule killed 8
+    of 11 healthy renders on Zero's night), so for them silence only counts after half the job's own time limit; the
+    time limit still catches a real hang."""
+    wd = project.cfg["watchdog"]
+    base = wd["stall_minutes"] * 60
+    if job_meta.get("kind") in LONG_KINDS:
+        return max(base, _limit_minutes(project, job_meta) * 60 / 2)
+    return base
+
+
 def _state_path(project):
     return project.path("queue.json")
 
@@ -265,7 +280,7 @@ def watch(project, timeout_s=None, on_event=print):
                     on_event(f"running  {j['job']}")
                 limit = _limit_minutes(project, j.get("meta", {})) * 60
                 age = c.log_age()
-                stalled = age is not None and age > wd["stall_minutes"] * 60
+                stalled = age is not None and age > _stall_seconds(project, j.get("meta", {}))
                 overtime = time.time() - j["started"] > limit
                 if stalled or overtime:
                     why = "stalled (log silent %d min)" % (age // 60) if stalled else "over its time limit (%d min)" % (limit // 60)

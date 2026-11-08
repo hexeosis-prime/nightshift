@@ -32,3 +32,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def watchdog():
+    from nightshift import comfy as C
+    p = make({})
+    still = C._stall_seconds(p, {"kind": "still"})
+    fflf = C._stall_seconds(p, {"kind": "fflf", "frames": 289})
+    assert still == 6 * 60 and fflf > 20 * 60, (still, fflf)
+    print(f"ok   watchdog: still stalls after {still / 60:.0f} min of log silence, a 289-frame fflf after {fflf / 60:.0f} min")
+
+
+if __name__ == "__main__":
+    watchdog()
