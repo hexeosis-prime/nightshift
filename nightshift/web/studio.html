@@ -921,7 +921,8 @@ function render(v){
   // final
   const fin2 = v.finished[v.finished.length - 1];
   $("finalPanel").classList.toggle("hide", !fin2);
-  if (fin2) { const u = fileUrl(v.name, fin2) + "?t=" + Date.now(); if (!$("finalVid").src.includes(fin2)) $("finalVid").src = u;
+  if (fin2) { const key = v.name + "/" + fin2, u = fileUrl(v.name, fin2) + "?t=" + Date.now();
+    if ($("finalVid").dataset.key !== key) { $("finalVid").src = u; $("finalVid").dataset.key = key }   // the file name repeats across projects: key on project + file
     $("finalVid").className = c.aspect === "9:16" ? "v" : ""; $("finalDl").href = u; $("finalName").textContent = fin2 }
   // wall
   $("wall").classList.toggle("v", c.aspect === "9:16");

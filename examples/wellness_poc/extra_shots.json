@@ -37,7 +37,7 @@
   "last": "x_drone_cu_{a}",
   "first_strength": 0.8,
   "last_strength": 1.0,
-  "prompt": "A drone shot flies smoothly over a quiet leafy neighborhood at golden hour, high above the rooftops and palm trees, then the camera banks and does a graceful twisting barrel roll as it descends in a spiral, swooping down into one backyard and landing on a close-up of a woman on her patio looking at her phone with a calm smile. One continuous stylish move, warm golden light, soft haze, cinematic, no cut."
+  "prompt": "A drone shot flies smoothly over a quiet leafy neighborhood at golden hour, high above the rooftops and palm trees, then the camera descends in a smooth corkscrew, spiraling down around a vertical axis, swooping down into one backyard and landing on a close-up of a woman on her patio looking at her phone with a calm smile. One continuous stylish move, warm golden light, soft haze, cinematic, no cut."
  },
  {
   "name": "drone_open",
@@ -49,7 +49,7 @@
   "last": "x_drone_cu_{a}",
   "first_strength": 0.8,
   "last_strength": 1.0,
-  "prompt": "A drone shot flies smoothly over a quiet leafy neighborhood at golden hour, high above the rooftops and palm trees, then the camera banks and does a graceful twisting barrel roll as it descends in a spiral, swooping down into one backyard and landing on a close-up of a woman on her patio looking at her phone with a calm smile. One continuous stylish move, warm golden light, soft haze, cinematic, no cut."
+  "prompt": "A drone shot flies smoothly over a quiet leafy neighborhood at golden hour, high above the rooftops and palm trees, then the camera descends in a smooth corkscrew, spiraling down around a vertical axis, swooping down into one backyard and landing on a close-up of a woman on her patio looking at her phone with a calm smile. One continuous stylish move, warm golden light, soft haze, cinematic, no cut."
  },
  {
   "name": "monk",
