@@ -1,0 +1,592 @@
+[
+ {
+  "name": "drone_wide",
+  "mode": "still",
+  "aspect": "16:9",
+  "prompt": "An overhead high-angle aerial drone photograph of a quiet leafy Southern California neighborhood at golden hour: rows of houses with gardens, backyards and tall palm trees, long warm shadows, soft golden haze, low sun from the left.",
+  "seed": 6661
+ },
+ {
+  "name": "drone_cu",
+  "mode": "still",
+  "aspect": "16:9",
+  "prompt": "A close-up portrait of a woman in her thirties sitting on her backyard patio at golden hour, looking down at her smartphone with a calm soft smile, the phone glowing in her hands. Palm trees and rooftops softly blurred behind her. The same warm low sun from the left as an aerial view of the neighborhood, golden rim light on her hair, soft haze.",
+  "seed": 6662
+ },
+ {
+  "name": "drone_wide",
+  "mode": "still",
+  "aspect": "9:16",
+  "prompt": "An overhead high-angle aerial drone photograph of a quiet leafy Southern California neighborhood at golden hour: rows of houses with gardens, backyards and tall palm trees, long warm shadows, soft golden haze, low sun from the left.",
+  "seed": 6661
+ },
+ {
+  "name": "drone_cu",
+  "mode": "still",
+  "aspect": "9:16",
+  "prompt": "A close-up portrait of a woman in her thirties sitting on her backyard patio at golden hour, looking down at her smartphone with a calm soft smile, the phone glowing in her hands. Palm trees and rooftops softly blurred behind her. The same warm low sun from the left as an aerial view of the neighborhood, golden rim light on her hair, soft haze.",
+  "seed": 6662
+ },
+ {
+  "name": "drone_open",
+  "mode": "fflf",
+  "aspect": "16:9",
+  "secs": 7,
+  "takes": 2,
+  "first": "x_drone_wide_{a}",
+  "last": "x_drone_cu_{a}",
+  "first_strength": 0.8,
+  "last_strength": 1.0,
+  "prompt": "A drone shot flies smoothly over a quiet leafy neighborhood at golden hour, high above the rooftops and palm trees, then the camera banks and does a graceful twisting barrel roll as it descends in a spiral, swooping down into one backyard and landing on a close-up of a woman on her patio looking at her phone with a calm smile. One continuous stylish move, warm golden light, soft haze, cinematic, no cut."
+ },
+ {
+  "name": "drone_open",
+  "mode": "fflf",
+  "aspect": "9:16",
+  "secs": 7,
+  "takes": 2,
+  "first": "x_drone_wide_{a}",
+  "last": "x_drone_cu_{a}",
+  "first_strength": 0.8,
+  "last_strength": 1.0,
+  "prompt": "A drone shot flies smoothly over a quiet leafy neighborhood at golden hour, high above the rooftops and palm trees, then the camera banks and does a graceful twisting barrel roll as it descends in a spiral, swooping down into one backyard and landing on a close-up of a woman on her patio looking at her phone with a calm smile. One continuous stylish move, warm golden light, soft haze, cinematic, no cut."
+ },
+ {
+  "name": "monk",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "After a profound meditation, a Buddhist monk opens his eyes to a breathtaking world bathed in golden light. Lush hills roll into the distance, covered in vibrant greenery that shimmers with life. Delicate wildflowers bloom in brilliant reds, deep blues and sunny yellows. Crystal-clear waters trickle over smooth stones. Majestic mountains rise in the background, their peaks kissed by clouds, while serene lakes reflect the azure sky. Birds soar overhead and butterflies flit among the blossoms. Each moment feels suspended in beauty and peace. Photoreal, cinematic."
+ },
+ {
+  "name": "monk",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "After a profound meditation, a Buddhist monk opens his eyes to a breathtaking world bathed in golden light. Lush hills roll into the distance, covered in vibrant greenery that shimmers with life. Delicate wildflowers bloom in brilliant reds, deep blues and sunny yellows. Crystal-clear waters trickle over smooth stones. Majestic mountains rise in the background, their peaks kissed by clouds, while serene lakes reflect the azure sky. Birds soar overhead and butterflies flit among the blossoms. Each moment feels suspended in beauty and peace. Photoreal, cinematic."
+ },
+ {
+  "name": "window_prism",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A moving landscape shot as seen from the inside of a moving vehicle looking out the side window as the landscape scrolls past from right to left: a tropical paradise, many palm trees and tropical plants and waterfalls with a bright blue sky, arriving at a jungle retreat. A calm, introspective arthouse mood. The visual style is natural yet stylized, blending realistic textures with ethereal elements, a highly imaginative photoreal cinematic experience. No people in the scene. Faceted prism mirrors briefly occupy parts of the frame as vertical stripes refracting and reflecting the landscape, amber glass refraction, caustics, light scatter, soft chromatic aberration, spectrum lens flare."
+ },
+ {
+  "name": "window_prism",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A moving landscape shot as seen from the inside of a moving vehicle looking out the side window as the landscape scrolls past from right to left: a tropical paradise, many palm trees and tropical plants and waterfalls with a bright blue sky, arriving at a jungle retreat. A calm, introspective arthouse mood. The visual style is natural yet stylized, blending realistic textures with ethereal elements, a highly imaginative photoreal cinematic experience. No people in the scene. Faceted prism mirrors briefly occupy parts of the frame as vertical stripes refracting and reflecting the landscape, amber glass refraction, caustics, light scatter, soft chromatic aberration, spectrum lens flare."
+ },
+ {
+  "name": "backyard",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A quiet nighttime backyard gathering beneath glowing string lights, framed by tall palm trees and a clear starlit sky. Friends sit together engaging in casual conversation with relaxed body language, laughing softly, interacting naturally with the environment. Slow orbital rotation around the group. Warm string lights, blurry bokeh lights, dust particles in the air, photoreal cinematic."
+ },
+ {
+  "name": "backyard",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A quiet nighttime backyard gathering beneath glowing string lights, framed by tall palm trees and a clear starlit sky. Friends sit together engaging in casual conversation with relaxed body language, laughing softly, interacting naturally with the environment. Slow orbital rotation around the group. Warm string lights, blurry bokeh lights, dust particles in the air, photoreal cinematic."
+ },
+ {
+  "name": "coast",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A misty coastal landscape at twilight, soft fog rolling over rocky shores and scattered driftwood under a dimming sky, a lone person sitting in meditation on a rock facing the sea. Subtle handheld camera drift for a natural documentary feel. Marine layer, god rays, volumetric light, endless summer twilight glow, photoreal cinematic."
+ },
+ {
+  "name": "coast",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A misty coastal landscape at twilight, soft fog rolling over rocky shores and scattered driftwood under a dimming sky, a lone person sitting in meditation on a rock facing the sea. Subtle handheld camera drift for a natural documentary feel. Marine layer, god rays, volumetric light, endless summer twilight glow, photoreal cinematic."
+ },
+ {
+  "name": "stream",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A clear stream running through a lush green forest filled with trees and mossy rocks, reflective water, leaves and ferns, sunset light streaming through the trees, golden hour, magical, shallow depth of field. The camera glides slowly low over the water upstream. Photoreal, highly detailed, cinematic."
+ },
+ {
+  "name": "stream",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A clear stream running through a lush green forest filled with trees and mossy rocks, reflective water, leaves and ferns, sunset light streaming through the trees, golden hour, magical, shallow depth of field. The camera glides slowly low over the water upstream. Photoreal, highly detailed, cinematic."
+ },
+ {
+  "name": "yoga_prism",
+  "mode": "ff",
+  "aspect": "16:9",
+  "image": "yoga_{a}_v1",
+  "secs": 5,
+  "prompt": "Slow lateral tracking shot along the row of people as they flow together out of warrior pose and raise their arms overhead, breathing in unison. Faceted prism mirrors briefly drift through parts of the frame as vertical stripes refracting and reflecting the room, amber glass refraction, caustics, light scatter, spectrum lens flare. Smooth, steady camera."
+ },
+ {
+  "name": "yoga_prism",
+  "mode": "ff",
+  "aspect": "9:16",
+  "image": "yoga_{a}_v1",
+  "secs": 5,
+  "prompt": "Slow lateral tracking shot along the row of people as they flow together out of warrior pose and raise their arms overhead, breathing in unison. Faceted prism mirrors briefly drift through parts of the frame as vertical stripes refracting and reflecting the room, amber glass refraction, caustics, light scatter, spectrum lens flare. Smooth, steady camera."
+ },
+ {
+  "name": "phone_in_more",
+  "mode": "fflf",
+  "aspect": "16:9",
+  "secs": 5,
+  "takes": 2,
+  "first": "phone_in_{a}",
+  "last": "cave_{a}_v0",
+  "prompt": "The camera pushes slowly forward toward the phone screen and passes through it, the glowing salt cave on the screen grows until it fills the whole frame and becomes the real salt cave room. Smooth, continuous, magical push-in, no cut."
+ },
+ {
+  "name": "phone_in_more",
+  "mode": "fflf",
+  "aspect": "9:16",
+  "secs": 5,
+  "takes": 2,
+  "first": "phone_in_{a}",
+  "last": "cave_{a}_v0",
+  "prompt": "The camera pushes slowly forward toward the phone screen and passes through it, the glowing salt cave on the screen grows until it fills the whole frame and becomes the real salt cave room. Smooth, continuous, magical push-in, no cut."
+ },
+ {
+  "name": "cave_filmic",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6704,
+  "prompt": "Inside a Himalayan salt cave relaxation room at a modern wellness center. The walls and arched ceiling are built from glowing amber and rose salt bricks lit from behind, the floor is a bed of fine white salt crystals. People recline on cushioned zero-gravity loungers wrapped in soft cream blankets, eyes closed, peaceful. Warm low glow, a faint haze in the air. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "cave_filmic",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6704,
+  "prompt": "Inside a Himalayan salt cave relaxation room at a modern wellness center. The walls and arched ceiling are built from glowing amber and rose salt bricks lit from behind, the floor is a bed of fine white salt crystals. People recline on cushioned zero-gravity loungers wrapped in soft cream blankets, eyes closed, peaceful. Warm low glow, a faint haze in the air. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "yoga_filmic",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6704,
+  "prompt": "A bright sunlit yoga studio with warm oak floors and tall floor-to-ceiling windows that look out onto lush green trees. A small class of adults on natural-color mats hold warrior two pose, an instructor in front guides them with a warm smile. Hanging plants, golden morning sunbeams across the room. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "yoga_filmic",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6704,
+  "prompt": "A bright sunlit yoga studio with warm oak floors and tall floor-to-ceiling windows that look out onto lush green trees. A small class of adults on natural-color mats hold warrior two pose, an instructor in front guides them with a warm smile. Hanging plants, golden morning sunbeams across the room. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "session_filmic",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6707,
+  "prompt": "A calm sound healing session in a softly lit treatment room with linen curtains and candles. A practitioner with kind eyes kneels beside a woman lying on a cushioned mat under a light blanket, and plays a large frosted crystal singing bowl with a mallet. More bowls of different sizes sit around them, dried flowers, warm candlelight. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "session_filmic",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6707,
+  "prompt": "A calm sound healing session in a softly lit treatment room with linen curtains and candles. A practitioner with kind eyes kneels beside a woman lying on a cushioned mat under a light blanket, and plays a large frosted crystal singing bowl with a mallet. More bowls of different sizes sit around them, dried flowers, warm candlelight. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "connect_filmic",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6707,
+  "prompt": "A warm tea lounge at a wellness center in the late afternoon. Friends sit on floor cushions around a low wooden table with clay teacups and a teapot, laughing together mid-conversation. Big windows with greenery behind them, woven textures, plants, warm golden light. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "connect_filmic",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6707,
+  "prompt": "A warm tea lounge at a wellness center in the late afternoon. Friends sit on floor cushions around a low wooden table with clay teacups and a teapot, laughing together mid-conversation. Big windows with greenery behind them, woven textures, plants, warm golden light. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "retreat_filmic",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6707,
+  "prompt": "An open-air wooden pavilion retreat surrounded by lush tropical greenery, ferns and tall palms, soft morning mist drifting through the jungle. A small group of people walk along a wooden boardwalk toward the pavilion carrying rolled yoga mats, chatting and smiling. Golden hour light through the leaves. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "retreat_filmic",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6707,
+  "prompt": "An open-air wooden pavilion retreat surrounded by lush tropical greenery, ferns and tall palms, soft morning mist drifting through the jungle. A small group of people walk along a wooden boardwalk toward the pavilion carrying rolled yoga mats, chatting and smiling. Golden hour light through the leaves. Cinematic film still from an arthouse feature, shot on 35mm Kodak Vision3 500T film with an anamorphic lens. Dramatic low-key contrast lighting: one strong motivated key light, deep shadows, rich blacks, subtle halation, heavy film grain, muted earthy palette with warm highlights. Moody, intimate, quiet. Natural clear healthy skin, real everyday adults. No text, no logos."
+ },
+ {
+  "name": "cave_filmic_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_cave_filmic_{a}",
+  "prompt": "Slow smooth dolly forward through the glowing salt cave between the loungers. The people breathe slowly and rest, one woman pulls her blanket a little higher and smiles with her eyes closed. Warm light flickers softly across the salt walls. Calm, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "cave_filmic_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_cave_filmic_{a}",
+  "prompt": "Slow smooth dolly forward through the glowing salt cave between the loungers. The people breathe slowly and rest, one woman pulls her blanket a little higher and smiles with her eyes closed. Warm light flickers softly across the salt walls. Calm, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "yoga_filmic_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_yoga_filmic_{a}",
+  "prompt": "Slow lateral tracking shot along the row of people as they flow together out of warrior pose and raise their arms overhead, breathing in unison. The instructor smiles and nods. Sunbeams shift gently across the floor. Smooth, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "yoga_filmic_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_yoga_filmic_{a}",
+  "prompt": "Slow lateral tracking shot along the row of people as they flow together out of warrior pose and raise their arms overhead, breathing in unison. The instructor smiles and nods. Sunbeams shift gently across the floor. Smooth, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "session_filmic_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_session_filmic_{a}",
+  "prompt": "Slow gentle push in toward the practitioner as she circles the mallet around the rim of the crystal bowl. The woman on the mat breathes deeply and her face softens. Candle flames flicker. Calm, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "session_filmic_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_session_filmic_{a}",
+  "prompt": "Slow gentle push in toward the practitioner as she circles the mallet around the rim of the crystal bowl. The woman on the mat breathes deeply and her face softens. Candle flames flicker. Calm, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "connect_filmic_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_connect_filmic_{a}",
+  "prompt": "Slow orbiting camera around the low table as the friends laugh and talk, one pours tea for another, someone leans in and touches a friend's shoulder. Lively, warm, natural moment. Smooth, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "connect_filmic_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_connect_filmic_{a}",
+  "prompt": "Slow orbiting camera around the low table as the friends laugh and talk, one pours tea for another, someone leans in and touches a friend's shoulder. Lively, warm, natural moment. Smooth, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "retreat_filmic_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_retreat_filmic_{a}",
+  "prompt": "Slow rising crane shot as the group walks along the boardwalk toward the pavilion, mist drifting through the trees, leaves moving in a light breeze, birds crossing the light. Smooth, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "retreat_filmic_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_retreat_filmic_{a}",
+  "prompt": "Slow rising crane shot as the group walks along the boardwalk toward the pavilion, mist drifting through the trees, leaves moving in a light breeze, birds crossing the light. Smooth, steady camera. Moody cinematic film look, high contrast, deep shadows, film grain, anamorphic."
+ },
+ {
+  "name": "cave_empty",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6804,
+  "prompt": "A Himalayan salt cave relaxation room at a wellness center, walls and arched ceiling of glowing amber and rose salt bricks lit from behind, a floor of white salt crystals, a row of empty cushioned loungers with neatly folded cream blankets, warm haze. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "cave_empty",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6804,
+  "prompt": "A Himalayan salt cave relaxation room at a wellness center, walls and arched ceiling of glowing amber and rose salt bricks lit from behind, a floor of white salt crystals, a row of empty cushioned loungers with neatly folded cream blankets, warm haze. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "yoga_empty",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6804,
+  "prompt": "A bright sunlit yoga studio with warm oak floors and tall windows onto lush green trees, natural-color yoga mats laid out in neat rows, hanging plants, golden morning sunbeams and dust motes. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "yoga_empty",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6804,
+  "prompt": "A bright sunlit yoga studio with warm oak floors and tall windows onto lush green trees, natural-color yoga mats laid out in neat rows, hanging plants, golden morning sunbeams and dust motes. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "session_empty",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6807,
+  "prompt": "A softly lit sound healing room with linen curtains, a cushioned mat with a folded blanket, frosted crystal singing bowls of different sizes, dried flowers and glowing candles. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "session_empty",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6807,
+  "prompt": "A softly lit sound healing room with linen curtains, a cushioned mat with a folded blanket, frosted crystal singing bowls of different sizes, dried flowers and glowing candles. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "connect_empty",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6807,
+  "prompt": "A warm tea lounge at a wellness center in late afternoon, floor cushions around a low wooden table with clay teacups and a steaming teapot, big windows with greenery, woven textures and plants, golden light. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "connect_empty",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6807,
+  "prompt": "A warm tea lounge at a wellness center in late afternoon, floor cushions around a low wooden table with clay teacups and a steaming teapot, big windows with greenery, woven textures and plants, golden light. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "retreat_empty",
+  "mode": "still",
+  "aspect": "16:9",
+  "look": false,
+  "seed": 6807,
+  "prompt": "An open-air wooden pavilion retreat in lush tropical greenery, ferns and tall palms, a wooden boardwalk leading to it, soft morning mist through the jungle, golden light through the leaves. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "retreat_empty",
+  "mode": "still",
+  "aspect": "9:16",
+  "look": false,
+  "seed": 6807,
+  "prompt": "An open-air wooden pavilion retreat in lush tropical greenery, ferns and tall palms, a wooden boardwalk leading to it, soft morning mist through the jungle, golden light through the leaves. Completely empty, no people anywhere in the scene. Photoreal cinematic photograph, soft natural light, gentle film grain, full-frame cinema camera, 35mm lens, shallow depth of field. No text, no logos, no signage."
+ },
+ {
+  "name": "cave_empty_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_cave_empty_{a}",
+  "prompt": "Slow smooth dolly forward down the aisle between the empty loungers, warm haze drifting in the glow of the salt walls. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "cave_empty_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_cave_empty_{a}",
+  "prompt": "Slow smooth dolly forward down the aisle between the empty loungers, warm haze drifting in the glow of the salt walls. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "yoga_empty_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_yoga_empty_{a}",
+  "prompt": "Slow lateral tracking shot along the rows of empty yoga mats, sunbeams and dust motes drifting, leaves moving outside the windows. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "yoga_empty_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_yoga_empty_{a}",
+  "prompt": "Slow lateral tracking shot along the rows of empty yoga mats, sunbeams and dust motes drifting, leaves moving outside the windows. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "session_empty_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_session_empty_{a}",
+  "prompt": "Slow gentle push in toward the crystal singing bowls, candle flames flickering, a curtain moving softly in the breeze. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "session_empty_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_session_empty_{a}",
+  "prompt": "Slow gentle push in toward the crystal singing bowls, candle flames flickering, a curtain moving softly in the breeze. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "connect_empty_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_connect_empty_{a}",
+  "prompt": "Slow orbit around the low table as steam curls up from the teapot and teacups, golden light shifting across the cushions. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "connect_empty_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_connect_empty_{a}",
+  "prompt": "Slow orbit around the low table as steam curls up from the teapot and teacups, golden light shifting across the cushions. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "retreat_empty_clip",
+  "mode": "ff",
+  "aspect": "16:9",
+  "secs": 5,
+  "image": "x_retreat_empty_{a}",
+  "prompt": "Slow rising crane shot over the boardwalk toward the empty pavilion, mist drifting through the trees, leaves moving in a light breeze. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "retreat_empty_clip",
+  "mode": "ff",
+  "aspect": "9:16",
+  "secs": 5,
+  "image": "x_retreat_empty_{a}",
+  "prompt": "Slow rising crane shot over the boardwalk toward the empty pavilion, mist drifting through the trees, leaves moving in a light breeze. Completely empty, no people anywhere in the scene. Calm, steady camera."
+ },
+ {
+  "name": "tour_courtyard",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, walking slowly through the entrance of a serene modern wellness center: a stone path through a zen courtyard garden with a koi pond, bamboo and maple trees, then through tall wooden doors into a warm lobby with plants and soft light. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "tour_courtyard",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, walking slowly through the entrance of a serene modern wellness center: a stone path through a zen courtyard garden with a koi pond, bamboo and maple trees, then through tall wooden doors into a warm lobby with plants and soft light. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "tour_spa",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, gliding slowly down a calm spa corridor of warm wood and stone, past glowing candles and plants, turning a corner into a glowing amber Himalayan salt cave room with empty loungers. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "tour_spa",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, gliding slowly down a calm spa corridor of warm wood and stone, past glowing candles and plants, turning a corner into a glowing amber Himalayan salt cave room with empty loungers. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "tour_jungle",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, walking slowly along a wooden boardwalk through a lush tropical jungle in morning mist, ferns and palms on both sides, arriving at an open-air wooden yoga pavilion. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "tour_jungle",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, walking slowly along a wooden boardwalk through a lush tropical jungle in morning mist, ferns and palms on both sides, arriving at an open-air wooden yoga pavilion. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "tour_garden",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, walking slowly through a Japanese zen garden at dawn, raked gravel, moss, stone lanterns and red maple leaves, crossing a small wooden bridge over a still pond. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "tour_garden",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "First-person POV walking tour on a smooth gimbal, walking slowly through a Japanese zen garden at dawn, raked gravel, moss, stone lanterns and red maple leaves, crossing a small wooden bridge over a still pond. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_valley",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A slow aerial drone shot over a breathtaking mountain valley at sunrise, snow-capped peaks, lush green forested hills, clouds rolling slowly through the valley, sunlight casting long shadows, a vast serene untouched landscape. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_valley",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A slow aerial drone shot over a breathtaking mountain valley at sunrise, snow-capped peaks, lush green forested hills, clouds rolling slowly through the valley, sunlight casting long shadows, a vast serene untouched landscape. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_waterfall",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A slow cinematic glide toward a tall waterfall in a lush tropical jungle, mist rising from a turquoise pool, ferns and vines, god rays through the canopy. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_waterfall",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A slow cinematic glide toward a tall waterfall in a lush tropical jungle, mist rising from a turquoise pool, ferns and vines, god rays through the canopy. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_zen",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A slow dolly across a Japanese rock garden at dawn, raked gravel patterns, moss-covered stones, a single red maple, soft fog and the first warm light. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_zen",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A slow dolly across a Japanese rock garden at dawn, raked gravel patterns, moss-covered stones, a single red maple, soft fog and the first warm light. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_coast",
+  "mode": "t2v",
+  "aspect": "16:9",
+  "secs": 6,
+  "prompt": "A slow aerial drone shot along dramatic ocean cliffs at golden hour, waves rolling onto a quiet cove, sea mist and warm light, a vast calm seascape. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ },
+ {
+  "name": "land_coast",
+  "mode": "t2v",
+  "aspect": "9:16",
+  "secs": 6,
+  "prompt": "A slow aerial drone shot along dramatic ocean cliffs at golden hour, waves rolling onto a quiet cove, sea mist and warm light, a vast calm seascape. No people anywhere. Photoreal, cinematic, smooth steady camera."
+ }
+]

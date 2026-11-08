@@ -20,6 +20,10 @@ Where Nightshift goes after the first video. Nothing here is built yet.
   lyric coverage can't rank takes without real words, and lip-sync anchors need recognizable lines. Instead: rank takes
   without coverage (or by vocal presence), and find vocal phrases from the separated vocal stem's energy (where singing
   starts and stops) to place lip-sync shots and HUD sections. Zero's MiniMax runs today: ~450 s for a 3-minute track.
+- **Prompt and workflow refinement session** (hexe, planned): A/B tests to find the wording each model responds to, starting
+  from `docs/findings/2026-11-07-wellness-poc.md` and the picks in `examples/wellness_poc/PICKS.md`. Includes the filmic vs
+  commercial look, wide-shot people and birds, plastic-looking rocks, and faces drifting after ~6 s.
+- **Birds out of wide shots**: no birds in prompts, "birds" in the default negative for wide and aerial shots.
 - **Can LTX 2.3 use the character sheet as a reference?** Today LTX gets the identity-edited first frame (and a last
   frame on first/last-frame shots). Check the current LTX 2.3 docs and ComfyUI nodes for an identity/reference input, or
   whether a sheet crop placed as a keyframe helps faces hold through a shot.
@@ -63,4 +67,11 @@ Canon and workflow presets for a look, usable with any format:
 - **Blender clay renders** for complex camera moves and precise character blocking, used as guides for the video model
 - **hexe-viewer animated elements** in the overlay
 - **Image glitch effects** (an FL Glitch utility graph was used during the first video)
+- **Structured camera control** for signature moves (a true corkscrew drone descent landing on a close-up): camera paths
+  from Blender or a keyframe guide instead of prompt wording alone
+- **Strip ComfyUI metadata on publish**: an export option (and a check) so files leaving Nightshift carry no embedded
+  prompt or workflow; keep the metadata on the working copies
+- **Promo / launch-video template** from the wellness proof of concept: phone push-in and pull-back (FLUX 3 screen
+  composite + first/last frame), location stills, empty-space and tour b-roll, an ambient track under the whole cut
+- **Overnight queue runner** with GPU rests and a hot-reloaded shot list (`examples/wellness_poc/promo_tonight.py`)
 - **Model download links**, or a script, for every file the workflows load
