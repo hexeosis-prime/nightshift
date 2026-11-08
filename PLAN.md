@@ -31,6 +31,15 @@ attribution · no black gaps in anything that plays continuously · every re-rel
 
 ## Phase 1: Fix first
 
+**Progress, Nov 7 night** (on `next`, tests pass):
+- **Vertical: fixed, different root cause.** The graphs were fine; the starter project.json carried explicit 16:9 sizes that
+  beat `"aspect": "9:16"` in hand-built projects. The aspect now owns the sizes.
+- **Bricked projects: fixed.** A bad profile / aspect / image_model opens with a warning and the default; `write_doc`
+  refuses to write one.
+- **Watchdog: interim fix.** Video and song jobs count log silence only after half their own time limit. Progress-based
+  detection still to do.
+- **Workflow audit: written** (`docs/workflow-audit.md`), hexe's checklist for the ComfyUI re-export.
+
 - [ ] **Vertical renders come out landscape** (Z, H). The LTX latent size is wired through calculator nodes to fixed
   1280x768 values, so the size setter silently does nothing. Fix: rewire every LTX workflow so the latent takes free
   width and height inputs. Test: build a 9:16 project and check the clip size.
