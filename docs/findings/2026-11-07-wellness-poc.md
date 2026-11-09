@@ -48,3 +48,12 @@ ComfyUI's SaveImage and SaveVideo embed the full prompt and workflow (every prom
 chunks, MP4 `prompt` / `workflow` tags. Dragging the file into ComfyUI restores the graph, which is handy for us, but
 raw outputs posted publicly give away the prompts. Checked: the demo cuts made by ffmpeg with a filter graph carry no
 ComfyUI tags, and Nightshift's `out/pass01*.mp4` carry none either. Anything posted straight out of ComfyUI does.
+
+## Prompt order: image vs video (hexe, Nov 9)
+
+- **Image models: subject first, location last.** On a still, the location is the background. Nightshift's FLUX 3
+  caption already does this: shot + person + outfit + action, then "Setting: ...", then style.
+- **Video models: location first, like a screenplay.** Scene heading (where, when), then who is there, then what happens,
+  then camera, then look and sound. In a film, the location is where the crew drives at 4 am. Nightshift's video prompts
+  are free text from the plan today, so this order isn't enforced; hexe's 8-part LTX prompt assembly (to be exported as
+  an API workflow) is the model for a video prompt builder.
