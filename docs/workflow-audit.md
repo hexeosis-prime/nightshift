@@ -43,20 +43,24 @@ Things to check when fixing:
 
 ## Proposed standard for every LTX graph
 
-One set of inputs, titled `ns:<role>` so Nightshift finds them without a map entry:
+One set of inputs, titled `ns_<role>` so Nightshift finds them without a map entry:
 
 | Title | Node | Meaning |
 | --- | --- | --- |
-| `ns:width`, `ns:height` | PrimitiveInt | final output size (1280x768 or 768x1280) |
-| `ns:frames` | PrimitiveInt | length in frames, always 8n+1 (Nightshift computes it) |
-| `ns:fps` | PrimitiveFloat | frame rate, fed to every node that needs it |
-| `ns:prompt`, `ns:negative`, `ns:seed` | as today | |
+| `ns_width`, `ns_height` | PrimitiveInt | final output size (1280x768 or 768x1280) |
+| `ns_frames` | PrimitiveInt | length in frames, always 8n+1 (Nightshift computes it) |
+| `ns_fps` | PrimitiveFloat | frame rate, fed to every node that needs it |
+| `ns_prompt`, `ns_negative`, `ns_seed` | as today | |
 
 Everything else is derived inside the graph the same way in all four: one stage recipe (from the A/B in note 1), conditioning image
-resized to the output's longer edge, audio frames from `ns:frames` and `ns:fps`. With that, the maps shrink to almost
+resized to the output's longer edge, audio frames from `ns_frames` and `ns_fps`. With that, the maps shrink to almost
 nothing, and the graphs behave the same whether Nightshift or a person runs them.
 
 7. **lipsync's stage count** wasn't traced here (it resizes the input image to the full size first); check it when
    re-exporting.
 
 Not covered here: the FLUX 3 still / edit / sheet graphs (those already share one size formula) and the MiniMax song graph.
+
+**Naming rule (hexe, Nov 9):** underscores only, `ns_<kind>_<name>`, e.g. `ns_width`, `ns_fixed_negative`,
+`ns_toggle_lighting`, `ns_slot_location`. The same name then works as a node title, a Set/Get name and a file name
+(no `:`, which Windows forbids in file names, and no spaces).
