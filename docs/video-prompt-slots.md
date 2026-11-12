@@ -25,3 +25,9 @@ hexe's original order: 1 genre, 2 subject, 3 action, 4 location, 5 camera, 6 lig
 - The wellness run's camera-move prompts broke these rules: the yoga move opens with the camera, mixes action and
   light ("sunbeams shift"), and the retreat move put birds in. The video prompts get rewritten into slots for the
   refinement session.
+
+## Locked-off camera: same image as first and last frame (hexe, Nov 11)
+
+For any fixed-camera shot (a stand-up news reporter, a performer singing to a locked-off camera), load the same image
+as both the first and the last frame. LTX holds the frame like a locked-off camera, and character consistency improves.
+Worked for lip-sync too. Nightshift: prefer first + last = same still whenever a shot's camera move is "static".
