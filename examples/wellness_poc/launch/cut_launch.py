@@ -10,7 +10,9 @@ PICKS = {
     "A": [("s1_push_in", 1, 5.04, None), ("s2_cave", 0, 3.0, "cut"), ("s3_yoga", 0, 3.5, "cut"),
           ("s4_session", 0, 3.0, "cut"), ("s5_connect", 1, 3.5, "cut"), ("s6_retreat", 0, 3.5, "cut"),
           ("s7_pull_out", 0, 5.04, "xf"), ("s8_end", 1, 3.5, "cut")],
-    "B": [("s1_push_in", 0, 5.04, None), ("s2_cave", 1, 4.5, "cut"), ("s3_yoga", 1, 4.5, "xf"),
+    # B: the push-in eases out as it lands and the cave shot eases in, so the join pauses. Cut on motion instead:
+    # end the push-in while it still moves (4.0 s), start the cave shot after its ease-in (0.6 s).
+    "B": [("s1_push_in", 0, 4.0, None), ("s2_cave", 1, 4.5, "cut", 0.6), ("s3_yoga", 1, 4.5, "xf"),
           ("s4_session", 1, 4.5, "xf"), ("s5_connect", 0, 4.5, "xf"), ("s6_retreat", 0, 4.5, "xf"),
           ("s7_pull_out", 0, 5.04, "xf"), ("s8_end", 0, 4.5, "cut")],
 }
@@ -32,8 +34,10 @@ def cut(look, picks=None):
     picks = picks or PICKS[look]
     os.makedirs(CUT, exist_ok=True)
     ins, f, xf = [], [], XF[look]
-    for i, (shot, take, secs, _) in enumerate(picks):
-        ins += ["-i", os.path.join(OUT, f"{look}_{shot}_t{take}.mp4")]
+    for i, pick in enumerate(picks):
+        shot, take, secs = pick[:3]
+        start = pick[4] if len(pick) > 4 else 0      # optional: skip the first seconds (cut on motion)
+        ins += ["-ss", str(start), "-i", os.path.join(OUT, f"{look}_{shot}_t{take}.mp4")]
         lb = LETTERBOX.get((look, shot), "")
         f.append(f"[{i}:v]trim=0:{secs},setpts=PTS-STARTPTS,{lb}scale=1920:1080:force_original_aspect_ratio=increase:flags=lanczos,crop=1920:1080,fps=24,"
                  f"format=yuv420p,setsar=1,settb=1/24[v{i}]")
@@ -49,19 +53,20 @@ def cut(look, picks=None):
     txt = (f"drawtext=fontfile={FONT}:text='{LINE}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=h*0.86:"
            f"shadowcolor=black@0.75:shadowx=3:shadowy=3:alpha='if(lt(t,{t - last + 0.4}),0,min(1,(t-{t - last + 0.4})/0.6))'")
     f.append(f"[{cur}]{txt},fade=t=in:st=0:d=0.3,fade=t=out:st={t - 0.7:.3f}:d=0.7[out]")
-    pic = os.path.join(CUT, f"launch_{look}_picture.mp4")
+    tag = os.environ.get("CUT_TAG", "")
+    pic = os.path.join(CUT, f"launch_{look}{tag}_picture.mp4")
     run(["ffmpeg", "-y", "-loglevel", "error", *ins, "-filter_complex", ";".join(f), "-map", "[out]", "-c:v", "libx264",
          "-preset", "medium", "-crf", "17", "-pix_fmt", "yuv420p", "-movflags", "+faststart", pic])
     d = dur(pic)
     music = [os.path.join(OUT, x) for x in os.listdir(OUT) if x.startswith(f"{look}_music")][0]
-    full = os.path.join(CUT, f"launch_{look}.mp4")
+    full = os.path.join(CUT, f"launch_{look}{tag}.mp4")
     run(["ffmpeg", "-y", "-loglevel", "error", "-i", pic, "-i", music, "-map", "0:v", "-map", "1:a",
          "-af", f"atrim=0:{d},afade=t=in:st=0:d=0.2,afade=t=out:st={d - 2}:d=2,alimiter=limit=0.89",
          "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-shortest", "-movflags", "+faststart", full])
-    small = os.path.join(CUT, f"launch_{look}_email.mp4")
+    small = os.path.join(CUT, f"launch_{look}{tag}_email.mp4")
     rate = int(8.5 * 8 * 1000 / d) - 128      # about 8.5 MB, so both looks fit one email
     for p in (1, 2):
-        run(["ffmpeg", "-y", "-loglevel", "error", "-i", full, "-c:v", "libx264", "-preset", "slow", "-b:v", f"{rate}k",
+        run(["ffmpeg", "-y", "-loglevel", "error", "-i", full, "-c:v", "libx264", "-preset", "medium", "-b:v", f"{rate}k",
              "-pass", str(p), "-passlogfile", f"/tmp/launch_{look}"] +
             (["-an", "-f", "mp4", "/dev/null"] if p == 1 else ["-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", small]))
     print(full, round(d, 2), "s;", small, round(os.path.getsize(small) / 1e6, 1), "MB")

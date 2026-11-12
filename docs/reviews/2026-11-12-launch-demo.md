@@ -102,3 +102,16 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   a 2.5D card. Fixes: generate the phone-in-hand frame in one pass with the app screen described in the prompt (no
   edit), or keep the edit tight to the screen only and check the grip: fingers wrap the phone, the phone shares her
   focus and light. Add a QC check for hand contact on held objects.
+
+## B (cinematic): overall
+
+- **Much better overall.** The darkness hides a lot of small generation faults (low-key light as a practical cover,
+  not only a look), and the opening push-in really works.
+- **A pause where shots 1 and 2 join.** Should fix. Measured frame-to-frame motion: the push-in accelerates to a peak
+  around 3.5 s, then eases almost to a stop as it lands on its last frame (4.5-5 s); the cave shot then eases in from
+  rest. Ease-out + ease-in = a stall at the join. Fix (done, `launch_B_v2.mp4`): cut on motion. The push-in ends at
+  4.0 s while still moving, and the cave shot starts 0.6 s in, after its ease-in. The stall is gone. Rule: first/last
+  frame shots land softly; when chaining them, trim the landing and the next shot's start. Longer term: put the last
+  frame guide a little before the clip's end, so the move arrives at speed.
+- **Idea (hexe):** open with the push-in, but end with the corkscrew move from the earlier drone test instead of the
+  straight pull-back: spiral up and out of the retreat and land on the phone.
