@@ -60,3 +60,10 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   could match.
 - hexe: certain combinations work better because they're well represented in the training data. Prompt refinement
   should find and bank those combos (prompt-part bank, tested entries).
+
+## A, shot 5: tea lounge, five friends
+
+- **Really good.** Can slide: the toasting arm motions read more like clinking beer bottles than tea cups (the training
+  data again: toasting is a beer/wine gesture). Five people held together here because they share one simple,
+  common social action (laughing, pouring, a touch on the shoulder). Worth noting against the cast-size rule: five
+  works when the action is common and shared.

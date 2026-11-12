@@ -70,6 +70,8 @@ re-roll one over the cap. In the action slot, every person in the still gets a l
 
 **Labels, not pronouns:** name each person by role or placement ("the practitioner", "the client on the mat",
 "the woman at left") and repeat the same label every time. Never "she" or "he" when two people could match.
+Exceptions (hexe): one person in the shot = pronouns are fine. Don't over-label; too verbose has its own costs,
+so the A/B below sets how far to go.
 
 ## Anchored modifiers and repeated labels (hexe, Nov 12; to A/B)
 
