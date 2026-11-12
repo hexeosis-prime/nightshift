@@ -70,3 +70,15 @@ re-roll one over the cap. In the action slot, every person in the still gets a l
 
 **Labels, not pronouns:** name each person by role or placement ("the practitioner", "the client on the mat",
 "the woman at left") and repeat the same label every time. Never "she" or "he" when two people could match.
+
+## Anchored modifiers and repeated labels (hexe, Nov 12; to A/B)
+
+Newer models seem to bind descriptions better when every modifier sits next to its noun:
+"wearing a blue shirt, a cotton shirt, an untucked shirt" rather than "wearing a blue cotton untucked shirt".
+For characters, repeat the whole label in every sentence:
+"The tall man in the white shirt walks to frame left. The tall man in the white shirt lifts his right hand and tips
+his hat. The tall man in the white shirt leaves the room through the front door." rather than
+"A man walks left, tips his hat and leaves."
+Why it may work: each modifier-noun pair is its own clear match for the text encoder, so attributes and actions don't
+drift to the wrong object or person (the floating blanket, the bowl/brush swap). Test in the refinement session: same
+seed and still, compact vs anchored/repeated wording, on a 2-3 person shot and the benchmark reporter.
