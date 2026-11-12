@@ -35,3 +35,22 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   for a class), framing closer (medium wide, front row only), the face-detail pass for wide shots (roadmap), a bigger
   render or a better upscaler. What worked: one action for the whole group ("together they flow ... in unison") moved
   everyone coherently, a good pattern for crowds that must move as one.
+
+## A, shot 4: sound healing session
+
+- **Visually right, actions wrong for the context.** Must fix. People, space, camera and light all read real and stay
+  consistent; the details and the actions don't. The singing-bowl mallet turns into a paintbrush, then into a basting
+  brush ("basting a roast with BBQ sauce"); the woman lying down makes odd motions; candles and bowls blur together.
+  Prompt (action slot): "She circles the mallet around the rim of a large crystal bowl; the woman breathes deeply and her
+  face softens."
+  Causes: (1) playing a singing bowl is a rare, specialized motion, so LTX substitutes a common one with a similar
+  hand path (brushing, basting); (2) "mallet" is vague and the object becomes whatever fits the motion it chose;
+  (3) in the still, white bowls and white pillar candles look alike, so they merge; (4) "breathes deeply" on a lying
+  body gives the model license to move it.
+  Fixes: pick actions with lots of real-world footage behind them, or keep the specialized one minimal (a single gentle
+  strike, then stillness while it rings; or hands hovering still above the client, reiki-style); make the still
+  readable (2 or 3 bowls, candles set apart and a different shape/color); direct the client to lie completely still,
+  eyes closed. Stillness is a valid action and the easiest one to get right.
+- **hexe's pattern from many tests:** faces in close-ups and medium shots look fully real; LTX builds coherent spaces;
+  human motion, and especially interaction with objects in context, is where it struggles.
+  Rule: choose actions LTX has seen a thousand times; the rarer the action, the smaller and slower it should be.
