@@ -84,3 +84,18 @@ his hat. The tall man in the white shirt leaves the room through the front door.
 Why it may work: each modifier-noun pair is its own clear match for the text encoder, so attributes and actions don't
 drift to the wrong object or person (the floating blanket, the bowl/brush swap). Test in the refinement session: same
 seed and still, compact vs anchored/repeated wording, on a 2-3 person shot and the benchmark reporter.
+
+## Heads and tails: LTX's "take-over" frames (hexe, Nov 12)
+
+For the first few frames (up to ~12) LTX slowly takes over the first frame and partly redoes it, and it does the same
+as it approaches a last frame. It has better spatial understanding than the image model, so it corrects depth,
+lighting mismatches, face features and proportions, usually for the better. The further a frame is from reality, the
+more it changes, and the change shows in the first and last ~10 frames, sometimes as visible morphing. Shots also take
+a beat to get going: action and camera ramp up in the first second, as if LTX learned from raw takes as well as
+finished edits (the Nov 12 motion measurement showed the same ease-in and ease-out).
+
+Practice: render **handles**, as in VFX delivery. Shots that don't join exactly get ~1 s of head (and tail, when
+there's a last frame) and the edit trims them. Exceptions: shots whose exact first or last frame matters (chained
+shots, a move that must start on a specific frame). For those, trim the soft landing instead and start the next shot
+after its ease-in (cut on motion). To measure: frame difference against the source still over the first second, per
+mode, to set the handle length from data rather than by eye.
