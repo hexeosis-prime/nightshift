@@ -67,3 +67,15 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   data again: toasting is a beer/wine gesture). Five people held together here because they share one simple,
   common social action (laughing, pouring, a touch on the shoulder). Worth noting against the cast-size rule: five
   works when the action is common and shared.
+
+## A, shot 6 into shot 7: jungle retreat, then the pull-back
+
+- **Far faces smooshy, foreground three OK.** Should fix. Same scale limit as shot 3: faces too small for the first
+  stage. Fixes as shot 3 (fewer people deep in frame, closer framing, face-detail pass).
+- **A break where shot 6 joins shot 7.** Must fix. Cause: my edit. The pull-back (shot 7) was built with the retreat
+  STILL as its first frame, the same frame shot 6 starts from. So after 3.5 s of shot 6 the walkers jump back to their
+  starting positions, and the short dissolve can't hide it. Fix: chain them. Shot 7's first frame = the last frame
+  shot 6 actually uses (extract it), so the pull-back starts exactly where shot 6 leaves off. Or drop shot 6 and let
+  the pull-back's own first seconds be the retreat moment. Rule: a shot that continues another starts from that
+  shot's last used frame, never from the shared source still. (Nightshift's chained first/last-frame shots already
+  do this; the demo script didn't.)
