@@ -57,3 +57,13 @@ showed 3 stages clearly beating 2 and settled the LoRA set and the single ConvRo
 > contact with the viewer
 
 Run it again before trusting any change: LTX 2.5, a new LoRA, a stage recipe, the upscaler A/B.
+
+## Direct every actor (hexe, Nov 12)
+
+An LTX shot is a scene: the prompt directs every person in the frame by name or label (the woman in the red shirt,
+the instructor, the man nearest camera) and says what each does and when. People in the frame who aren't mentioned
+mostly stand there, or at worst do something random (the floating blanket was an action given to no clear owner).
+
+**Cast size:** fewer people, less to go wrong. A group is 5 to 7 people at most; 3 is often better than 5. Set the
+headcount at the still (the still decides the cast), and Nightshift can count faces in a still (`score.people_in`) and
+re-roll one over the cap. In the action slot, every person in the still gets a line of direction.

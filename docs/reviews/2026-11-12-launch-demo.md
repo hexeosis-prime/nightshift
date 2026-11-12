@@ -24,3 +24,5 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   self-contained actions (breathing, a slow head turn, eyes opening) or name the exact person and place ("the man in
   the red shirt, nearest lounger"); add "objects moving by themselves, floating fabric" to the negative.
   Rule: an object-interaction action needs one clear owner in the frame.
+- hexe's broader rule from his group-shot tests: direct every actor by label with action and timing; cap groups at
+  5-7, prefer 3. Logged in `docs/video-prompt-slots.md`.
