@@ -42,3 +42,18 @@ Worked for lip-sync too. Nightshift: prefer first + last = same still whenever a
   lyrics we do see are good, but she turns away and the face is lost by mid-shot.
 - **Rule:** a shot flagged *must show the words* (a key lyric line, dialogue, a reporter) = first = last frame, medium
   close-up, neutral still. Every other lip-sync shot may move freely.
+
+## The benchmark shot (hexe's A/B reference, Nov 11)
+
+hexe's locked-seed test for every model / LoRA / stage change: a news reporter at a sunny waterfront, medium close-up,
+neutral start (image kept on the PC as `_promo_poc/ltx_test/bench_reporter.png`). Same image and seed every time; it
+showed 3 stages clearly beating 2 and settled the LoRA set and the single ConvRot model. Prompt:
+
+> Style: realistic - cinematic - The woman smiles confidently and is speaking clearly in a professional, articulate voice
+> with Australian English accent, "Good morning, viewers. We're live here at the waterfront, where preparations are
+> underway for the upcoming festival. It looks like a perfect summer day, everything is going well so far." Gentle waves
+> lap against the seawall, creating a soft, rhythmic sound, as a news reporter's microphone subtly picks up ambient
+> sounds of the harbor—distant boat horns. She gestures slightly with her right hand as she speaks, maintaining eye
+> contact with the viewer
+
+Run it again before trusting any change: LTX 2.5, a new LoRA, a stage recipe, the upscaler A/B.
