@@ -31,3 +31,14 @@ hexe's original order: 1 genre, 2 subject, 3 action, 4 location, 5 camera, 6 lig
 For any fixed-camera shot (a stand-up news reporter, a performer singing to a locked-off camera), load the same image
 as both the first and the last frame. LTX holds the frame like a locked-off camera, and character consistency improves.
 Worked for lip-sync too. Nightshift: prefer first + last = same still whenever a shot's camera move is "static".
+
+### Test, Nov 11 (vid_ltx, 6 s 9:16 lip-sync, vocals isolated)
+
+- **Locked (first = last frame):** the lip-sync matches the lyric, but anything in the still repeats for the whole shot.
+  Her hand stayed raised in the same place and the start-frame mouth shape kept coming back, which reads oddly. The
+  trick needs a **neutral still**: medium close-up, mouth closed, hands relaxed or out of frame. hexe's news reporter
+  test (medium close-up, neutral) worked well.
+- **Free (first frame only, "camera arcs slowly around her"):** creatively the better shot; the arc is lovely and the
+  lyrics we do see are good, but she turns away and the face is lost by mid-shot.
+- **Rule:** a shot flagged *must show the words* (a key lyric line, dialogue, a reporter) = first = last frame, medium
+  close-up, neutral still. Every other lip-sync shot may move freely.
