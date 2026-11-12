@@ -1,0 +1,12 @@
+{
+ "workflow": "vid_ltx.json",
+ "kind": "ltx",
+ "description": "hexe's single LTX 2.3 video workflow (Nov 11): first frame, or first + last frame (ns_toggle_use_LF), with generated sound or the song as audio in (ns_toggle_use_audio_in), vocals isolated for lip-sync (ns_toggle_isolate_vocals). 3 stages, the INT8 ConvRot model. Inputs are found by their ns_ titles. Both frame loaders always need a real file (ComfyUI checks them even on the unused branch): pass the first frame twice for first-frame-only jobs. Same image as first and last frame = a locked-off camera.",
+ "defaults": [
+  {
+   "node": "5417",
+   "input": "value",
+   "value": true
+  }
+ ]
+}

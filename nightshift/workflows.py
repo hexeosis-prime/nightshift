@@ -83,20 +83,33 @@ class Workflow:
         return Workflow(self.name, copy.deepcopy(self.graph), self.spec, self.path)
 
     # ---- role lookup -------------------------------------------------------------------------------
+    TITLE_ALIASES = {"load_first_frame": "image", "load_last_frame": "last_image", "load_audio": "audio",
+                     "audio_start_time": "audio_start", "save": "output"}
+
+    @staticmethod
+    def title_role(title):
+        """The role a node title names, or None. "ns_<role>" (hexe's naming rule, Nov 9) or the older "ns:<role>";
+        "ns_load_first_frame" -> "image", "ns_save" -> "output", "ns_toggle_use_LF" -> "toggle_use_lf". Anything after
+        the first space is a note for people ("ns_ff_strength (best 0.6-0.9)")."""
+        t = title.strip().split(" ")[0]
+        if not re.match(r"(?i)^ns[:_.]", t):
+            return None
+        role = re.sub(r"[:.]", "_", t[3:]).strip("_").lower().replace("-", "_")
+        return Workflow.TITLE_ALIASES.get(role, role) or None
+
     def _titles(self):
-        """Merge "ns:<role>" node titles into the role table (the map file wins)."""
+        """Merge "ns_<role>" node titles into the role table (the map file wins)."""
         roles = self.spec.setdefault("roles", {})
         outs = self.spec.setdefault("outputs", {})
         for nid, node in self.graph.items():
-            title = (node.get("_meta") or {}).get("title", "")
-            if not title.lower().startswith("ns:"):
+            role = self.title_role((node.get("_meta") or {}).get("title", ""))
+            if not role:
                 continue
-            role = title[3:].strip()
             inp = next((k for k in TITLE_INPUTS if k in node.get("inputs", {})), None)
             if not inp:
                 continue
             if role.startswith("output"):
-                outs.setdefault(role.split(":", 1)[1] if ":" in role else "main", {"node": nid, "input": "filename_prefix"})
+                outs.setdefault(role.split("_", 1)[1] if "_" in role else "main", {"node": nid, "input": "filename_prefix"})
             else:
                 roles.setdefault(role, {"node": nid, "input": inp})
 
