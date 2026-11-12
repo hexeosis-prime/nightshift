@@ -144,3 +144,29 @@ Check LTX 2.5 first; it may change what's worth building.
   in ComfyUI and re-exports UI + API versions.
 - **Still to share:** the v2v / Blender workflow research. The drone prompt uses "corkscrew" for now; the exact one comes
   with the prompt refinement session.
+
+## Added Nov 9-11 (from the shared doc)
+
+**Phase 1 progress:** hexe rebuilt the four LTX graphs as one, `vid_ltx` (`workflows/vid_ltx.json`, found by `ns_`
+titles): one INT8 ConvRot model, one LoRA set, 3 stages everywhere, toggles for first+last frame, song audio in and
+isolated vocals. All 7 mode tests passed Nov 11 (`scripts/ltx_test.py`). Next: switch the builder to it.
+
+**Findings** (`docs/video-prompt-slots.md`, `docs/findings/`): video prompts in screenplay order (location before
+subject), hexe's 8 slots with include/exclude rules; 3 stages beat 2; same still as first and last frame = locked-off
+camera; lip-sync with first + last frame works with two different stills of the same character; a "must show the
+words" shot needs first + last frame, a medium close-up and a neutral start; the locked-seed reporter benchmark.
+
+**New items:**
+- Video prompt builder in screenplay order; prompt-part bank in the Library (one folder per slot, `## name` entries);
+  builders separate from models; text labeled `ns_fixed_` / `ns_toggle_` / `ns_slot_`.
+- Shots match the song's mood: the song's mood and energy set shot length, edit pace, camera speed, transitions, look and
+  expressions, for performers and abstract videos alike.
+- Prompt variables (`[COLOR-1]`), filled from the Show kit or swept across a run.
+- Render size by card (24 GB: 1280x768 + upscale; 32 GB+: native 1920x1088); upscaler A/B against hexe's After Effects
+  Detail-preserving Upscale.
+- A small Nightshift node pack, later: `ns_inputs`, `ns_prompt_video` / `ns_prompt_image`, `ns_prompt_bank` (named
+  entries in a dropdown, lists from Library files), `ns_save` with metadata strip.
+- One-shot frames from references (character sheet + location plate) instead of text-then-face-edit.
+- The backlot: location presets with location sheets, like character sheets.
+- Load 3D (core node) for composing stills from 3D models.
+- Archive option for ComfyUI's duplicate outputs; a sweep of the local Nightshift folder.
