@@ -79,3 +79,26 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   the pull-back's own first seconds be the retreat moment. Rule: a shot that continues another starts from that
   shot's last used frame, never from the shared source still. (Nightshift's chained first/last-frame shots already
   do this; the demo script didn't.)
+
+## A, shot 7: the pull-back
+
+- **The concept doesn't read.** Must fix; it's the payoff of the whole idea. A doesn't pull back into the phone: it
+  dissolves (in-model and in my edit) to a woman holding a phone, and her screen shows a different picture and place
+  (a mountain landscape, not the retreat). I saw the wrong card when checking the app frames and let it pass; it
+  should have been redone. Fixes: the app frame's card must show the exact place we pull back from (re-roll until it
+  does, or composite the still into the screen directly); start the pull-back from the walking shot's last frame (see
+  shot 6); cut it straight, no dissolve. B's pull-back (retreat shrinking into the phone in her hand) is the model.
+- **People walk backwards, and some walk impossibly.** Must fix. Seen in both looks. Likely cause: a first+last frame
+  shot asks LTX to get every walker from their spots in the first frame to a frame where they no longer exist (inside
+  a phone), while the camera moves the other way; some walkers get solved by reversing. Separately, walking in wide
+  shots is a known weak motion. Fixes to test: transition shots use still or slow subjects (standing, seated, a calm
+  pause), not walkers; walking lives in its own shot with no last frame. Rule: a morph or transition and complex
+  human motion don't mix in one shot. hexe has workflow ideas to test too.
+
+## A, shot 8: the end shot
+
+- **The phone floats in front of her hand,** not in the same focal plane. Must fix. Cause: the app-screen edit
+  rebuilt the phone as a pasted layer (bigger, sharper, not gripped), and the slow push-in separates it further, like
+  a 2.5D card. Fixes: generate the phone-in-hand frame in one pass with the app screen described in the prompt (no
+  edit), or keep the edit tight to the screen only and check the grip: fingers wrap the phone, the phone shares her
+  focus and light. Add a QC check for hand contact on held objects.
