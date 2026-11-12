@@ -67,3 +67,6 @@ mostly stand there, or at worst do something random (the floating blanket was an
 **Cast size:** fewer people, less to go wrong. A group is 5 to 7 people at most; 3 is often better than 5. Set the
 headcount at the still (the still decides the cast), and Nightshift can count faces in a still (`score.people_in`) and
 re-roll one over the cap. In the action slot, every person in the still gets a line of direction.
+
+**Labels, not pronouns:** name each person by role or placement ("the practitioner", "the client on the mat",
+"the woman at left") and repeat the same label every time. Never "she" or "he" when two people could match.

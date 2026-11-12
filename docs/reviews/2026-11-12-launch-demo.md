@@ -54,3 +54,9 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
 - **hexe's pattern from many tests:** faces in close-ups and medium shots look fully real; LTX builds coherent spaces;
   human motion, and especially interaction with objects in context, is where it struggles.
   Rule: choose actions LTX has seen a thousand times; the rarer the action, the smaller and slower it should be.
+- hexe on the prompt itself: "She circles the mallet..." and "the woman breathes..." never say WHICH woman; both are
+  women, and the pronoun flips between them. Rule: name each character by role or placement ("the practitioner",
+  "the client on the mat", "the woman at left") and repeat that label every time; never use she/he when two people
+  could match.
+- hexe: certain combinations work better because they're well represented in the training data. Prompt refinement
+  should find and bank those combos (prompt-part bank, tested entries).
