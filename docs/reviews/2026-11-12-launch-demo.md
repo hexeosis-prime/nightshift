@@ -26,3 +26,12 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   Rule: an object-interaction action needs one clear owner in the frame.
 - hexe's broader rule from his group-shot tests: direct every actor by label with action and timing; cap groups at
   5-7, prefer 3. Logged in `docs/video-prompt-slots.md`.
+
+## A, shot 3: yoga class
+
+- **Mostly OK; faces a bit smooshy.** Should fix (can slide for a demo). Cause: about 12 people in a wide shot, so each
+  face is roughly 20-30 px tall at 1280x768, and only a few latent pixels in the first stage (640x384). LTX can't hold
+  detail that small, and the 1.5x upscale shows it. Fixes, cheapest first: fewer people (the cast-size rule: 5 or so
+  for a class), framing closer (medium wide, front row only), the face-detail pass for wide shots (roadmap), a bigger
+  render or a better upscaler. What worked: one action for the whole group ("together they flow ... in unison") moved
+  everyone coherently, a good pattern for crowds that must move as one.
