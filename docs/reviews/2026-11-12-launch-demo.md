@@ -125,3 +125,14 @@ card showing that same retreat; new end shot from that app frame; 1 s head handl
 Edit: the chained pull-back holds the walk ~3.5 s before pulling back, so it carries the retreat moment and the
 separate walk shot was dropped. Noticed: a 4th walker appears during the pull-back (from 3 in the still), and the end
 line sits over the phone as the push-in closes in. Both can slide for a demo; hexe to judge.
+
+## B4 "lively" alt (Nov 12 night), `launch_B4_lively.mp4` (32.8 s, no tag line)
+
+Same look, open and close as B v3; inside, each place gets a close-up face reaction plus the wide (tea: CU, wide, CU),
+straight cuts, ~2-2.5 s shots, a livelier 104 BPM track (of 2 takes, the one that builds steadily; the other had
+dropouts at 25 s and 35 s), a bowl-free session (hands resting on the client's shoulders, both still).
+Close-ups = hexe's crop-and-scale trick + a FLUX 3 re-photograph pass (crop as ref 0, full still as ref 1). First
+pass with the filmic look darkened the sunny yoga close-up into a moody one; re-run with "keep the light and color of
+ref 1" matched. Faces read real at close-up scale, as hexe's tests predicted. Watch: the re-photograph pass can drift
+identity (the yoga instructor came out older than the woman in the wide); one cave close-up take had the woman turn
+away and leave frame (other take used). Shared the queue with Zero's vertical re-render all evening without trouble.

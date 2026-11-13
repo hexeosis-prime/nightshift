@@ -4,7 +4,7 @@ import os, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT, CUT = os.path.join(HERE, "out"), os.path.join(HERE, "cut")
 FONT = "/usr/share/fonts/truetype/lato/Lato-Medium.ttf"
-LINE = "A wellness center in your pocket."
+LINE = os.environ.get("CUT_LINE", "A wellness center in your pocket.")   # CUT_LINE="" = no end line
 # shot, take, seconds used, join into this shot ("cut" = straight cut, "xf" = dissolve)
 PICKS = {
     "A": [("s1_push_in", 1, 5.04, None), ("s2_cave", 0, 3.0, "cut"), ("s3_yoga", 0, 3.5, "cut"),
@@ -21,8 +21,14 @@ PICKS = {
            # the chained pull-back holds the walk for ~3.5 s before it pulls back, so it carries the retreat moment
            # itself and the separate walk shot is dropped
            ("s7_pull_out", 0, 4.6, "xf"), ("s8_end", 0, 4.5, "cut", 1.0)],
+    # B4 = the lively alt: close-up + wide per place, straight cuts, livelier music (files copied in as B4_*)
+    "B4": [("s1_push_in", 0, 4.0, None), ("s2_cave", 1, 2.5, "cut", 0.6), ("C_cave", 1, 2.0, "cut", 1.0),
+           ("C_yoga", 0, 2.0, "cut", 1.0), ("s3_yoga", 1, 2.5, "cut", 0.5),
+           ("C_session", 1, 2.0, "cut", 1.0), ("session_wide", 0, 2.5, "cut", 1.0),
+           ("C_tea1", 0, 1.8, "cut", 1.0), ("s5_connect", 0, 2.5, "cut", 1.0), ("C_tea2", 0, 1.8, "cut", 1.0),
+           ("s7_pull_out", 0, 4.6, "cut"), ("s8_end", 0, 4.5, "cut", 1.0)],
 }
-XF = {"A": 0.35, "B": 0.75, "B3": 0.75}
+XF = {"A": 0.35, "B": 0.75, "B3": 0.75, "B4": 0.3}
 # the filmic retreat still came out letterboxed (FLUX drew cinema bars): crop them off those shots
 LETTERBOX = {("B", "s6_retreat"): "crop=1280:604:0:62,", ("B", "s7_pull_out"): "crop=1280:604:0:62,"}
 GRADE = {"A": "", "B": ""}
@@ -58,7 +64,8 @@ def cut(look, picks=None):
     last = picks[-1][2]
     txt = (f"drawtext=fontfile={FONT}:text='{LINE}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=h*0.86:"
            f"shadowcolor=black@0.75:shadowx=3:shadowy=3:alpha='if(lt(t,{t - last + 0.4}),0,min(1,(t-{t - last + 0.4})/0.6))'")
-    f.append(f"[{cur}]{txt},fade=t=in:st=0:d=0.3,fade=t=out:st={t - 0.7:.3f}:d=0.7[out]")
+    txt = txt + "," if LINE else ""
+    f.append(f"[{cur}]{txt}fade=t=in:st=0:d=0.3,fade=t=out:st={t - 0.7:.3f}:d=0.7[out]")
     tag = os.environ.get("CUT_TAG", "")
     pic = os.path.join(CUT, f"launch_{look}{tag}_picture.mp4")
     run(["ffmpeg", "-y", "-loglevel", "error", *ins, "-filter_complex", ";".join(f), "-map", "[out]", "-c:v", "libx264",
