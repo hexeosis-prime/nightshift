@@ -115,3 +115,13 @@ Priority tiers (hexe: knowing which metrics matter is a creative-director skill)
   frame guide a little before the clip's end, so the move arrives at speed.
 - **Idea (hexe):** open with the push-in, but end with the corkscrew move from the earlier drone test instead of the
   straight pull-back: spiral up and out of the retreat and land on the phone.
+
+## B v3 (Nov 12): spa, tea, walk and pull-back redone with the rules above
+
+`launch_B_v3.mp4` (28.2 s) + email copy. Changes: spa = new still (bowls and candles apart), one strike then stillness,
+labels not pronouns; tea = each woman directed by position, only the woman at left touches the pot; walk = new still,
+3 labeled walkers going away from camera, no letterbox; pull-back chained from the walk's last used frame, with an app
+card showing that same retreat; new end shot from that app frame; 1 s head handles on the new shots.
+Edit: the chained pull-back holds the walk ~3.5 s before pulling back, so it carries the retreat moment and the
+separate walk shot was dropped. Noticed: a 4th walker appears during the pull-back (from 3 in the still), and the end
+line sits over the phone as the push-in closes in. Both can slide for a demo; hexe to judge.

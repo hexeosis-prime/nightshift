@@ -15,8 +15,14 @@ PICKS = {
     "B": [("s1_push_in", 0, 4.0, None), ("s2_cave", 1, 4.5, "cut", 0.6), ("s3_yoga", 1, 4.5, "xf"),
           ("s4_session", 1, 4.5, "xf"), ("s5_connect", 0, 4.5, "xf"), ("s6_retreat", 0, 4.5, "xf"),
           ("s7_pull_out", 0, 5.04, "xf"), ("s8_end", 0, 4.5, "cut")],
+    # B3 = B v2 with the redone spa, tea, walk and a chained pull-back (files copied in as B3_*; B2 takes have a 1 s head)
+    "B3": [("s1_push_in", 0, 4.0, None), ("s2_cave", 1, 4.5, "cut", 0.6), ("s3_yoga", 1, 4.5, "xf"),
+           ("s4_session", 1, 4.5, "xf", 1.0), ("s5_connect", 0, 4.5, "xf", 1.0),
+           # the chained pull-back holds the walk for ~3.5 s before it pulls back, so it carries the retreat moment
+           # itself and the separate walk shot is dropped
+           ("s7_pull_out", 0, 4.6, "xf"), ("s8_end", 0, 4.5, "cut", 1.0)],
 }
-XF = {"A": 0.35, "B": 0.75}
+XF = {"A": 0.35, "B": 0.75, "B3": 0.75}
 # the filmic retreat still came out letterboxed (FLUX drew cinema bars): crop them off those shots
 LETTERBOX = {("B", "s6_retreat"): "crop=1280:604:0:62,", ("B", "s7_pull_out"): "crop=1280:604:0:62,"}
 GRADE = {"A": "", "B": ""}
