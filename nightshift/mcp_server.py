@@ -23,7 +23,7 @@ try:   # MCP Python SDK 2.x
 except ImportError:  # 1.x
     from mcp.server.fastmcp import FastMCP as _Server, Image
 
-from .project import Project, check_config, init as init_project
+from .project import Project, check_config, check_shots, init as init_project
 
 INSTRUCTIONS = """Nightshift makes music videos with a local ComfyUI (images: Flux 2 Klein, video: LTX 2.3, song: MiniMax Music 3).
 A project is a folder: canon.json (characters, wardrobe, never-lists), shots.json (shot list), song/caption.md + song/lyrics.txt,
@@ -195,10 +195,9 @@ def write_doc(project: str, name: str, content: str) -> str:
     path = _safe(p, name)
     if name.endswith(".json"):
         doc = json.loads(content)
-        if name == "project.json":
-            bad = check_config(doc)
-            if bad:
-                raise ValueError("not written: " + "; ".join(bad))
+        bad = check_config(doc) if name == "project.json" else check_shots(doc, p.canon) if name == "shots.json" else []
+        if bad:
+            raise ValueError(f"{name} not written: " + "; ".join(bad))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -211,6 +210,16 @@ def patch_shot(project: str, shot_id: str, fields: dict, file: str = "shots.json
     """Change fields of one shot (null deletes a field). Patch shots.json for lasting changes; shots_resolved.json for this
     pass only (it is regenerated when shots.json changes)."""
     return _project(project).patch_shot(shot_id, fields, file)
+
+
+@server.tool()
+def publish(project: str, files: list, dest: str = "") -> list:
+    """Clean copies for sharing: ComfyUI hides the prompt and workflow inside every PNG, video and song it saves. Give
+    project files or globs ("stills/s02_edit_*.png", "clips/s05_*.mp4"); copies go to out/publish/ (or dest inside the
+    project). Finished passes in out/ are already clean."""
+    from . import publish as PUB
+    p = _project(project)
+    return PUB.publish(p, files, _safe(p, dest) if dest else None)
 
 
 @server.tool()
@@ -257,13 +266,18 @@ def pipeline_run(project: str, start: str = "", until: str = "", yolo: bool = Fa
 
 @server.tool()
 def pipeline_status(project: str) -> dict:
-    """Where the pass is: step, checkpoint waiting for review (with its packet of files), queue, recent log lines."""
+    """Where the pass is: step, checkpoint waiting for review (with its packet of files), queue, recent log lines, and
+    health: running / rendering / waiting / failed (step + error naming the shot and field) / stopped / stalled, with
+    advice when someone has to act."""
     from . import comfy, pipeline
     p = _project(project)
     st = pipeline.state(p)
     out = {"state": st, "queue": comfy.status(p)}
+    alive = None
     if st.get("task"):
         out["task"] = task_status(project, st["task"])
+        alive = out["task"].get("running")
+    out["health"] = pipeline.health(p, alive=alive)
     return out
 
 

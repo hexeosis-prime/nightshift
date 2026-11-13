@@ -475,6 +475,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
         <div class="panel" id="nowPanel">
           <div class="phead"><h3 id="nowTitle">Ready</h3><span class="label" id="nowSub"></span></div>
           <div class="status"><span class="big mono" id="nowJobs"></span><div class="bar"><i id="nowBar" style="width:0"></i></div></div>
+          <p class="err hide" id="nowHealth" style="margin:12px 0 0"></p>
         </div>
         <div class="panel cp hide" id="cpPanel">
           <div class="phead"><h3 id="cpTitle"></h3><span class="label">checkpoint</span></div>
@@ -889,6 +890,12 @@ function render(v){
   $("nowJobs").textContent = v.running && total ? `${fin}/${total}` : "";
   $("nowBar").style.width = (v.running && total ? Math.round(100 * fin / total) : v.step === "done" ? 100 : 0) + "%";
   $("nowPanel").querySelector(".status").classList.toggle("hide", !(v.running && total) && v.step !== "done");
+  // health: a failed step names the step (and the shot and field); a run that ended mid-step or went quiet says what to do
+  const h = v.health || {}, hurt = ["failed", "stopped", "stalled"].includes(h.status);
+  if (hurt && !v.running) $("nowTitle").textContent = h.status === "failed" ? "Stopped on an error" : "Stopped mid-step";
+  if (h.status === "stalled") $("nowTitle").textContent = "Looks stalled";
+  $("nowHealth").classList.toggle("hide", !hurt);
+  $("nowHealth").textContent = hurt ? (h.error ? h.error + ". " : "") + (h.advice ? h.advice.charAt(0).toUpperCase() + h.advice.slice(1) + "." : "") : "";
   if (sig === lastView) return; lastView = sig;
   // checkpoint
   const w = v.waiting;
@@ -907,7 +914,7 @@ function render(v){
       } else if (ch.kind === "song") {
         html += `<div class="songs">` + ch.options.map(o => `<div class="song ${ch.picked_file === o.file ? "on" : ""}"
           onclick='pick(${JSON.stringify({kind:"song", file:o.file})}); this.parentNode.querySelectorAll(".song").forEach(x=>x.classList.toggle("on", x===this))'>
-          <div class="cov"><b>${Math.round(o.score * 100)}%</b>${esc(o.by)}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}" onclick="event.stopPropagation()"></audio>
+          <div class="cov">${o.score == null ? "" : `<b>${Math.round(o.score * 100)}%</b>`}${esc(o.by)}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}" onclick="event.stopPropagation()"></audio>
           <div class="cov">${esc(o.file.split("/").pop())}</div></div>`).join("") + `</div><div class="note">Click a song to choose it, then approve.</div>`;
       }
     }

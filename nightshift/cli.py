@@ -196,7 +196,7 @@ def cmd_watch(a):
 def cmd_status(a):
     from . import comfy, pipeline
     p = _p(a)
-    _show({"pipeline": pipeline.state(p), "queue": comfy.status(p)})
+    _show({"health": pipeline.health(p), "pipeline": pipeline.state(p), "queue": comfy.status(p)})
 
 
 def cmd_score(a):
@@ -271,6 +271,12 @@ def cmd_overlay(a):
     elif a.action == "encode":
         _show(O.encode(p.path("overlay", "frames"), p.path(a.out or "overlay/chunks"),
                        chunk_frames=round(p.cfg["finish"]["chunk_seconds"] * p.cfg["fps"]), fps=p.cfg["fps"]))   # same pieces as finish
+
+
+def cmd_publish(a):
+    from . import publish
+    for r in publish.publish(_p(a), a.files, a.to):
+        print(f"{r['file']}  (removed: {', '.join(r['removed']) or 'nothing'})")
 
 
 def cmd_run(a):
@@ -387,6 +393,9 @@ def main(argv=None):
     s = sub.add_parser("overlay", help="HUD overlay steps"); s.add_argument("action", choices=["track", "prep", "render", "encode"])
     s.add_argument("--edl"); s.add_argument("--first", type=int, default=0); s.add_argument("--last", type=int); s.add_argument("--out"); s.set_defaults(f=cmd_overlay)
 
+    s = sub.add_parser("publish", help="clean copies (no prompts or workflow inside) of stills, takes, songs -> out/publish/")
+    s.add_argument("files", nargs="+"); s.add_argument("--to", help="folder for the clean copies"); s.set_defaults(f=cmd_publish)
+
     s = sub.add_parser("run", help="run the pass (stops at checkpoints in director mode)")
     s.add_argument("--from", dest="start"); s.add_argument("--until"); s.add_argument("--yolo", action="store_true")
     s.add_argument("--seconds", type=float, help="stop cleanly after about this long while jobs render (run again to carry on)"); s.set_defaults(f=cmd_run)
@@ -417,7 +426,13 @@ def main(argv=None):
     s.add_argument("--comfy-url", help="ComfyUI for projects made over MCP"); s.add_argument("--comfy-dir"); s.set_defaults(f=cmd_mcp)
 
     a = ap.parse_args(argv)
-    return a.f(a) or 0
+    try:
+        return a.f(a) or 0
+    except Exception as e:
+        if type(e).__name__ != "StepError":
+            raise
+        print(f"FAILED: {e}\nFix what it names, then run again: finished renders are kept.", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

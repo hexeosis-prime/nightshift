@@ -38,7 +38,8 @@ my-video/
 | `workflows` | see `workflows/` | which graph does which job; point any role at your own export |
 | `grade.look`, `grade.lifts` | `A2_portra_dusk_plus`, `[]` | see `nightshift/grade.py`; lifts are per-shot shadow lifts `[t0, t1, k]` |
 | `overlay` | disabled | docs/overlay.md |
-| `watchdog` | stall 6 min | when a running job counts as stuck |
+| `watchdog` | progress 10 min, log 6 min, idle 20 min | when a running job counts as stuck (no progress from ComfyUI's websocket and no log line), and when a step with nothing queued counts as stalled |
+| `instrumental` | from the lyrics | true: no words to check or time; songs are offered in render order and cuts follow the beats |
 
 ## 1. sheets (`sheets status|build|pick` · `sheets_status`, `sheets_review`, `pick_sheet`)
 

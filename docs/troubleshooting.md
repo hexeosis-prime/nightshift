@@ -1,10 +1,20 @@
 # Troubleshooting
 
 **ComfyUI "stalls": the job shows as running, the GPU fans go quiet, nothing happens.** It happened on long LTX jobs,
-especially a 225-frame first/last-frame shot (three times in a row). The watchdog interrupts a running job when ComfyUI's log
-has been silent for `watchdog.stall_minutes` (needs `comfy.dir`, so it can see the log) or when the job runs past its time
-limit, and re-queues it once. If the same shot stalls again: shorten it (fflf at 185 frames or under on 24 GB), or render it
-with the lip-sync graph, which handled the same length.
+especially a 225-frame first/last-frame shot (three times in a row). The watchdog listens to ComfyUI's own progress messages
+(its websocket: a tick per sampler step, a message per node, decode progress) and interrupts a running job after
+`watchdog.progress_stall_minutes` (10) with no sign of life and no line in the log, or when it runs past its time limit;
+then it re-queues it once. Without the websocket (an old ComfyUI, a proxy in the way) it falls back to log silence alone
+(needs `comfy.dir`). If the same shot stalls again: shorten it (fflf at 185 frames or under on 24 GB), or render it with the
+lip-sync graph, which handled the same length.
+
+**The run went quiet between steps.** `nightshift status` (MCP: `pipeline_status`, Studio: the project view) reports
+`health`: running, rendering, waiting at a checkpoint, failed (the step, and the shot and field when it is about one),
+stopped (the process ended mid-step: run again, finished renders are kept) or stalled (nothing for
+`watchdog.idle_minutes`, 20, with nothing queued on ComfyUI: stop and run again).
+
+**"shots.json has N problem(s)".** The shot list is checked before anything renders, and when an agent writes it
+(`write_doc`, `patch_shot` refuse a bad value). Each problem names the shot and the field: fix those and run again.
 
 **CUDA out of memory.** Usually something else is on the GPU: another app, a second ComfyUI job you started by hand, a local
 LLM. The watchdog frees ComfyUI's memory and retries once. If it keeps happening, restart ComfyUI and keep the GPU to itself

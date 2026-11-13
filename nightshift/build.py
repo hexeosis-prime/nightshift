@@ -31,8 +31,21 @@ NEG = {
     "t2v": ", text, letters, subtitles, captions, scene cut",
     "fflf_people": ", microphone, captions, text on clothing, extra people, crowd, bystanders, duplicate person, spinning, turning around, morphing face",
 }
+BIRDS = ", birds, flock of birds, birds chirping"   # LTX adds birds (and their sound) to about a third of wide outdoor shots
+NEG = {k: v + BIRDS for k, v in NEG.items()}
 VOICES = {"woman": ("sings", "singing", "warm, expressive singing style"), "man": ("sings", "singing", "warm, expressive singing style")}
 STILL_MODES = ("ff", "lipsync", "fflf")
+
+
+class ShotError(ValueError):
+    """A shot that can't be built, named: shot, stage and the field at fault."""
+
+
+def _why(e):
+    if isinstance(e, KeyError):
+        k = e.args[0] if e.args else "?"
+        return f"field '{k}' is missing" if isinstance(k, str) and " " not in k else str(k).strip("'\"")
+    return str(e)
 
 
 class Builder:
@@ -56,6 +69,13 @@ class Builder:
         c.setdefault("possessive", "his" if c["noun"] == "man" else "her")
         c.setdefault("signature", "")
         return c
+
+    def ref(self, s, field):
+        """The shot another shot points at (start_shot, end_shot, still_from), or a ShotError naming the field."""
+        target = self.by_id.get(s.get(field))
+        if target is None:
+            raise ShotError(f"shot {s['id']}, field '{field}': '{s.get(field)}' is not a shot id")
+        return target
 
     def world(self, s):
         return s.get("world") or self.canon.get("default_world", "real")
@@ -97,7 +117,7 @@ class Builder:
         c = self.char(ch_key)
         p = override or (c.get("sheet") or {}).get(world) or (c.get("sheet") or {}).get("real")
         if not p:
-            raise ValueError(f"character {ch_key} has no sheet for world {world} in canon.json")
+            raise ValueError(f"character '{ch_key}' has no sheet for world '{world}' in canon.json (run the sheets step, or set sheet_ref)")
         return self.input_file(p)
 
     def save(self, wf, name, meta):
@@ -313,7 +333,7 @@ class Builder:
             wf.apply_defaults()
             self.size(wf)
             src_id = s.get("start_shot") or s.get("still_from")
-            src = self.by_id[src_id] if src_id else s
+            src = self.ref(s, "start_shot" if s.get("start_shot") else "still_from") if src_id else s
             if s.get("still_from") and src.get("dropped"):   # loop seam: end on the first live shot's still
                 src = next(x for x in self.shots if not x.get("dropped") and x["mode"] in STILL_MODES and not x.get("still_from"))
             if s.get("first_frame"):
@@ -324,7 +344,7 @@ class Builder:
             if s.get("last_frame"):
                 end = self.input_file(s["last_frame"])
             elif s.get("end_shot"):
-                end, _ = self.stage_still(self.by_id[s["end_shot"]], s.get("end_still"))
+                end, _ = self.stage_still(self.ref(s, "end_shot"), s.get("end_still"))
             wf.set("image", img)
             wf.set("last_image", end)
             wf.set("prompt", self.names(s["video"], s))
@@ -339,8 +359,7 @@ class Builder:
                 wf.set("arrive_frame", int(s["arrive_frame"]))
             if s.get("arrive_strength"):
                 wf.set("last_strength", float(s["arrive_strength"]))
-            if s.get("chars"):
-                wf.append("negative", self.neg["fflf_people"])
+            wf.append("negative", self.neg["fflf_people"] if s.get("chars") else BIRDS)
             meta["frames"] = secs * self.fps + 1
             name = f"{sid}_fflf_{label}"
         elif mode == "lipsync":
@@ -386,6 +405,14 @@ class Builder:
                         written.append(p)
             except FileNotFoundError as e:
                 skipped.append(f"{s['id']}: {e}")
+            except ShotError:
+                raise
+            except (KeyError, ValueError, TypeError, StopIteration) as e:
+                raise ShotError(f"shot {s.get('id')}, {stage} step: {_why(e) or type(e).__name__} (in {self.shots_name})") from e
+            except Exception as e:
+                if type(e).__name__ != "WorkflowError":
+                    raise
+                raise ShotError(f"shot {s.get('id')}, {stage} step: {e}") from e
         return {"written": [self.p.rel(w) for w in written], "skipped": skipped}
 
 

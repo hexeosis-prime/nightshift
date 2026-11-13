@@ -40,24 +40,38 @@ attribution · no black gaps in anything that plays continuously · every re-rel
   detection still to do.
 - **Workflow audit: written** (`docs/workflow-audit.md`), hexe's checklist for the ComfyUI re-export.
 
-- [ ] **Vertical renders come out landscape** (Z, H). The LTX latent size is wired through calculator nodes to fixed
+**Progress, Nov 13** (on `next`, tests pass):
+- **Errors name the step, the shot and the field.** The shot list is checked before anything renders and whenever an agent
+  writes it (`write_doc` and `patch_shot` refuse a bad value); planner errors name the plan field.
+- **Watchdog on progress, not log silence.** It listens to ComfyUI's websocket (standard library, one client id per
+  project so a resumed run still hears its jobs): no sampler step, node or preview for 10 min and no log line = stalled.
+  No websocket: the old log rule.
+- **Run health** in Studio, `nightshift status` and `pipeline_status`: running, rendering, waiting, failed (with the error),
+  stopped mid-step, or stalled (20 min with nothing queued), each with what to do.
+- **Abstract and instrumental plans:** `"abstract": true`, no cast, no lip-sync; an instrumental song skips the lyric
+  check and timing, and the cuts follow the beats.
+- **No prompts in shared files:** every Nightshift encode drops metadata; `nightshift publish` / MCP `publish` makes
+  clean copies of stills, takes and songs (ComfyUI hides the prompt and workflow in each).
+- **Birds** are in the default video negatives (and for empty-place moves).
+
+- [x] **Vertical renders come out landscape** (Z, H). The LTX latent size is wired through calculator nodes to fixed
   1280x768 values, so the size setter silently does nothing. Fix: rewire every LTX workflow so the latent takes free
   width and height inputs. Test: build a 9:16 project and check the clip size.
-- [ ] **The watchdog kills healthy long renders** (Z, H). Fix: judge progress from ComfyUI's progress events, not log
+- [x] **The watchdog kills healthy long renders** (Z, H). Fix: judge progress from ComfyUI's progress events, not log
   silence; verify the first/last-frame decode is tiled; show the watchdog settings in Studio. Test: a synthetic 2-shot run.
-- [ ] **One bad value bricks a project for good** (Z). Fix: validate at write time with a clear error; open with defaults
+- [x] **One bad value bricks a project for good** (Z). Fix: validate at write time with a clear error; open with defaults
   plus a warning.
-- [ ] **Runs go silent between steps** (Z). Fix: detect no progress for N minutes outside a checkpoint, then resume
+- [x] **Runs go silent between steps** (Z). Fix: detect no progress for N minutes outside a checkpoint, then resume
   automatically or show "looks stalled, restart?".
-- [ ] **Plan errors don't say what failed** (Z, H). Fix: every error names the field and the shot.
-- [ ] **Abstract and instrumental videos can't be planned** (Z). Fix: an "abstract" plan mode with no cast and no lyrics.
+- [x] **Plan errors don't say what failed** (Z, H). Fix: every error names the field and the shot.
+- [x] **Abstract and instrumental videos can't be planned** (Z). Fix: an "abstract" plan mode with no cast and no lyrics.
 - [ ] ~~ComfyUI API from the Mac~~ moved out: internal studio setup for Zero, not Nightshift (H).
-- [ ] **Published files carry our prompts** (E, R). Fix: a publish/export step that strips metadata.
+- [x] **Published files carry our prompts** (E, R). Fix: a publish/export step that strips metadata.
 - [ ] **Dependency pin** (H): streamlit 1.50.0 pins packaging<26 and pillow<12.
 
 - [x] **Older project shows the wrong finished video** (E): fixed Nov 7 on `next`, the player keys on project + file.
 
-Also (R): keep birds out of wide-shot prompts and add "birds" to the default negative.
+Also (R): keep birds out of wide-shot prompts and add "birds" to the default negative (done Nov 13).
 
 ## Phase 2: Director Mode UX
 

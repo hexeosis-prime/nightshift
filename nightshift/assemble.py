@@ -124,7 +124,7 @@ class Cut:
                     warnings.append(f"{s['id']}: clip has {have} frames for a {n}-frame slot (last frame holds)")
                 inp, pre = ["-ss", str(s.get("in", 0.0)), "-i", src], (f"setpts=PTS/{s['speed']}," if s.get("speed") else "")
             _run(["ffmpeg", "-v", "error", "-y", *inp, "-vf", pre + self.vf() + f",tpad=stop_mode=clone:stop_duration={n / self.fps + 1}",
-                  "-frames:v", str(n), "-an", "-c:v", "libx264", "-preset", "fast", "-crf", "16", "-r", str(self.fps), seg + ".part.mp4"])
+                  "-frames:v", str(n), "-an", "-c:v", "libx264", "-preset", "fast", "-crf", "16", "-r", str(self.fps), "-map_metadata", "-1", seg + ".part.mp4"])
             os.replace(seg + ".part.mp4", seg)
             on_event(f"seg {i:03d} {s['id']} {n}f")
         return warnings
@@ -140,7 +140,7 @@ class Cut:
             f.write("".join(f"file '{p}'\n" for p in segs))
         total = self.fr[-1] / self.fps
         _run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-ss", str(self.start), "-t", str(total), "-i", self.song,
-              "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "320k", "-movflags", "+faststart", "-shortest", out])
+              "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "320k", "-movflags", "+faststart", "-shortest", "-map_metadata", "-1", out])
         edl = os.path.splitext(out)[0] + "_edl.csv"
         with open(edl, "w", newline="") as f:
             w = csv.writer(f)

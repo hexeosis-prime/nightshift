@@ -35,6 +35,74 @@ class Paused(Exception):
     """run(..., seconds=N) ran out of time while ComfyUI still has jobs: run again to carry on."""
 
 
+class StepError(RuntimeError):
+    """A step failed: the message names the step (and the shot and field when it is about one)."""
+
+
+IDLE_MINUTES = 20      # no event and no ComfyUI job for this long while a step runs = looks stalled
+
+
+def _beating(project, on_event):
+    """on_event that also leaves a heartbeat (heartbeat.json: time, last message, process id) for health()."""
+    def ev(msg):
+        try:
+            project.save("heartbeat.json", {"t": time.time(), "msg": str(msg)[:300], "pid": os.getpid()})
+        except OSError:
+            pass
+        return on_event(msg)
+    return ev
+
+
+def _pid_alive(pid):
+    if not pid:
+        return None
+    try:
+        if os.name == "nt":            # os.kill(pid, 0) would terminate the process on Windows
+            import subprocess
+            out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}"], capture_output=True, text=True).stdout
+            return str(pid) in out
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def health(project, idle_minutes=None, alive=None):
+    """Is the pass healthy? status: idle | running | rendering | waiting | failed | stopped | stalled | done, with
+    "advice" for anything a person has to act on. alive: whether the process running the pass is alive, when the caller
+    knows (the Studio's thread); otherwise the heartbeat's process id is checked."""
+    st = state(project)
+    if st.get("waiting"):
+        return {"status": "waiting", "checkpoint": st["waiting"]["checkpoint"], "since": st["waiting"].get("since")}
+    if st.get("error"):
+        e = st["error"]
+        return {"status": "failed", "step": e.get("step"), "error": e.get("message"), "since": e.get("t"),
+                "advice": "fix what the error names, then run again: finished renders are kept"}
+    step = st.get("step")
+    if step in (None, "done"):
+        return {"status": "done" if step == "done" else "idle"}
+    hb = project.load("heartbeat.json", {}) or {}
+    if alive is None:
+        alive = _pid_alive(hb.get("pid"))
+    marks = [hb.get("t") or 0]
+    for f in ("queue.json", "state.json"):
+        if os.path.exists(project.path(f)):
+            marks.append(os.path.getmtime(project.path(f)))
+    quiet = time.time() - max(marks)
+    out = {"step": step, "quiet_minutes": round(quiet / 60, 1), "last": hb.get("msg")}
+    if alive is False:
+        return dict(out, status="stopped", advice="the run ended in the middle of a step (closed, crashed or the machine "
+                                                   "restarted): run again to carry on, finished renders are kept")
+    from . import comfy as C
+    if any(j["status"] in ("queued", "running") for j in C.load_state(project)["jobs"]):
+        return dict(out, status="rendering")      # ComfyUI jobs are the watchdog's to judge
+    limit = (idle_minutes or project.cfg["watchdog"].get("idle_minutes") or IDLE_MINUTES) * 60
+    if quiet > limit:
+        return dict(out, status="stalled", advice=f"nothing has happened for {quiet / 60:.0f} min in the {step} step "
+                                                  "and ComfyUI has nothing queued: stop and run again to restart the step")
+    return dict(out, status="running")
+
+
 _DEADLINE = {}
 
 
@@ -144,6 +212,15 @@ def step_song(project, st, on_event):
         rendered = project.renders("songs", "*.mp3") + project.renders("songs", "*.wav") + project.renders("songs", "*.flac")
     if not rendered:
         raise RuntimeError("no songs rendered; check ComfyUI and the song workflow")
+    if lyrics.instrumental(project):         # nothing sung to check: the songs are offered in render order
+        rows = [{"file": project.rel(f), "lyric_coverage": None} for f in rendered]
+        project.save("review/songs.json", {"songs": rows, "instrumental": True})
+        if project.cfg.get("mode") == "yolo":
+            song.choose(project, rows[0]["file"])
+            on_event(f"picked {rows[0]['file']} (instrumental)")
+            return []
+        _checkpoint(project, st, "song", on_event, ["review/songs.json"] + [r["file"] for r in rows])
+        return []
     sheet = lyrics.sheet_lines(open(project.path("song", "lyrics.txt"), encoding="utf-8").read())
     rows = []
     for f in rendered:
@@ -191,6 +268,10 @@ def _vocal_stem(project, on_event):
 def step_analyze(project, st, on_event):
     from . import lyrics
     if os.path.exists(project.path("song", "lines.json")) and os.path.exists(project.path("song", "beatmap.json")):
+        return []
+    if lyrics.instrumental(project):
+        r = lyrics.analyze(project)
+        on_event(f"song: {r['duration_s']} s, {r['bpm']} bpm, instrumental: cuts follow the beats")
         return []
     stem = _vocal_stem(project, on_event) if project.cfg.get("lyrics_stem", True) else None
     r = lyrics.analyze(project, stem=stem)
@@ -454,13 +535,37 @@ def run(project: Project, start=None, until=None, on_event=print, seconds=None):
         return st
     if seconds:
         _DEADLINE[project.root] = time.time() + seconds
+    on_event = _beating(project, on_event)
+    if st.pop("error", None):
+        save_state(project, st)
     try:
         return _run(project, st, start, until, on_event)
     except Paused as e:
         on_event(f"paused: {e}; run again to carry on")
         return state(project)
+    except Exception as e:
+        if type(e).__name__ == "Cancelled":      # the Studio's stop button
+            raise
+        step = state(project).get("step") or "start"
+        msg = str(e) or type(e).__name__
+        if not isinstance(e, StepError) and step not in msg:
+            msg = f"{step} step: {msg}"
+        st = state(project)
+        st["error"] = {"step": step, "message": msg, "type": type(e).__name__, "t": time.strftime("%Y-%m-%d %H:%M")}
+        save_state(project, st)
+        project.log("step_failed", step=step, error=msg)
+        on_event(f"FAILED {msg}")
+        raise StepError(msg) from e
     finally:
         _DEADLINE.pop(project.root, None)
+
+
+def check_plan(project):
+    """The shot list's problems, each naming the shot and the field (empty = fine)."""
+    from .project import check_shots
+    if not os.path.exists(project.path("shots.json")):
+        return []
+    return check_shots(project.load("shots.json"), project.canon)
 
 
 def _run(project, st, start, until, on_event):
@@ -470,6 +575,12 @@ def _run(project, st, start, until, on_event):
     steps = STEPS[STEPS.index(start):] if start else STEPS
     if until:
         steps = steps[:steps.index(until) + 1]
+    if any(x in steps for x in ("stills", "sheetedits", "videos")):
+        bad = check_plan(project)                 # before an hour of rendering, not halfway through it
+        if bad:
+            st["step"] = "plan check"
+            save_state(project, st)
+            raise StepError(f"shots.json has {len(bad)} problem(s): " + "; ".join(bad[:8]) + (" ..." if len(bad) > 8 else ""))
     for name in steps:
         on_event(f"== {name}")
         st["step"] = name

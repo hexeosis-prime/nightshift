@@ -18,6 +18,7 @@ folder at <output_subdir>/<stills|clips|songs>/. Put the project inside ComfyUI'
 or downloads them.
 """
 import glob
+import hashlib
 import json
 import os
 import shutil
@@ -44,7 +45,8 @@ DEFAULTS = {
     "timeline": {"min_seconds": 1.0, "max_seconds": 12.0, "max_fit_seconds": 15.0, "snap": 0.35},
     "grade": {"look": "A2_portra_dusk_plus", "lifts": []},
     "finish": {"chunk_seconds": 9.0, "halftone": None, "grain": 9},
-    "watchdog": {"stall_minutes": 6, "max_minutes_per_frame": 0.12, "min_minutes": 4, "retries": 1, "poll_seconds": 10},
+    "watchdog": {"stall_minutes": 6, "progress_stall_minutes": 10, "idle_minutes": 20, "max_minutes_per_frame": 0.12,
+                 "min_minutes": 4, "retries": 1, "poll_seconds": 10},
     "overlay": {},
 }
 
@@ -102,6 +104,63 @@ def check_config(file_cfg):
     w = []
     presets(file_cfg, w)
     return [x.split(" (using")[0].split(" (ignored")[0] for x in w]
+
+
+SHOT_MODES = ("ff", "fflf", "lipsync", "t2v", "reuse")
+FRAMINGS = ("close", "medium", "wide")
+
+
+def check_shots(doc, canon=None):
+    """Problems in a shots.json, each naming the shot and the field: ["shot s04, field 'mode': 'ffl' is not a mode
+    (ff, fflf, lipsync, t2v, reuse)", ...]. Empty list = fine. canon (canon.json) also checks character and world keys."""
+    shots = doc.get("shots") if isinstance(doc, dict) else doc
+    if not isinstance(shots, list):
+        return ["shots.json needs a \"shots\" list"]
+    canon = canon or {}
+    chars = canon.get("characters")          # None: no canon to check against; {}: a cast-less (abstract) project
+    worlds = canon.get("worlds") or {}
+    out, ids = [], [s.get("id") for s in shots if isinstance(s, dict)]
+    for i, s in enumerate(shots):
+        if not isinstance(s, dict):
+            out.append(f"shot #{i + 1}: not an object")
+            continue
+        sid = s.get("id")
+        who = f"shot {sid}" if sid else f"shot #{i + 1}"
+        bad = lambda field, why: out.append(f"{who}, field '{field}': {why}")
+        if not sid:
+            bad("id", "missing")
+        elif ids.count(sid) > 1 and ids.index(sid) == i:
+            bad("id", f"used by {ids.count(sid)} shots")
+        mode = s.get("mode")
+        if mode not in SHOT_MODES:
+            bad("mode", (f"'{mode}' is not a mode" if mode else "missing") + f" ({', '.join(SHOT_MODES)})")
+        if s.get("dropped"):
+            continue
+        if mode == "reuse":
+            if not s.get("src"):
+                bad("src", "a reuse shot needs the take to reuse")
+        elif mode in SHOT_MODES and not (s.get("video") or "").strip():
+            bad("video", "missing: every rendered shot needs a motion prompt")
+        if s.get("framing") is not None and s.get("framing") not in FRAMINGS:
+            bad("framing", f"'{s['framing']}' ({', '.join(FRAMINGS)})")
+        if "chars" in s and not isinstance(s["chars"], list):
+            bad("chars", "must be a list of character keys")
+        elif chars is not None:
+            for c in s.get("chars") or []:
+                if c not in chars:
+                    bad("chars", f"'{c}' is not a character in canon.json ({', '.join(chars) or 'it has none'})")
+        if s.get("add") and chars is not None and (s["add"] or {}).get("char") not in chars:
+            bad("add.char", f"'{(s['add'] or {}).get('char')}' is not a character in canon.json")
+        if s.get("world") and worlds and s["world"] not in worlds:
+            bad("world", f"'{s['world']}' is not a world in canon.json ({', '.join(worlds)})")
+        for f in ("start_shot", "end_shot", "still_from"):
+            if s.get(f) and s[f] not in ids:
+                bad(f, f"'{s[f]}' is not a shot id")
+        if "seed" in s and not isinstance(s["seed"], int):
+            bad("seed", f"{s['seed']!r} is not a whole number")
+        if bool(s.get("edit_ref")) != bool(s.get("edit_prompt")):
+            bad("edit_ref" if not s.get("edit_ref") else "edit_prompt", "edit_ref and edit_prompt go together")
+    return out
 
 
 def _merge(a, b):
@@ -219,6 +278,10 @@ class Project:
                         s.pop(k, None)
                     else:
                         s[k] = v
+                if name == "shots.json":
+                    bad = [b for b in check_shots(doc, self.canon) if b.startswith(f"shot {sid},")]
+                    if bad:
+                        raise ValueError(f"shot {sid} not patched: " + "; ".join(bad))
                 self.save(name, doc)
                 return s
         raise KeyError(f"no shot {sid} in {name}")
@@ -234,7 +297,10 @@ class Project:
     def client(self):
         if self._client is None:
             from .comfy import Comfy
-            self._client = Comfy(self.cfg["comfy"]["url"], self.comfy_dir)
+            # one client id per project, the same in every run: ComfyUI sends progress messages only to the client id
+            # that queued the prompt, so a run that picks up jobs queued by an earlier run still hears them
+            cid = "nightshift-" + hashlib.sha1(self.root.encode("utf-8")).hexdigest()[:10]
+            self._client = Comfy(self.cfg["comfy"]["url"], self.comfy_dir, client_id=cid)
         return self._client
 
     def stage_input(self, src, name=None):

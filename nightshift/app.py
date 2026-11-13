@@ -254,6 +254,11 @@ class Studio:
         outs = sorted([f for f in os.listdir(p.path("out")) if re.match(r"pass\d+\.mp4$", f)]) if os.path.isdir(p.path("out")) else []
         busy = self.busy()
         ext = external_run(p, st)
+        mine = bool(busy and busy["project"] == name)
+        hb_pid = (p.load("heartbeat.json", {}) or {}).get("pid")
+        # a pass in this Studio's thread, or an agent's background run, is alive; one that last beat from this process but
+        # has no thread now has ended; otherwise (a terminal `nightshift run`) health checks the heartbeat's process
+        health = pipeline.health(p, alive=True if (mine or ext) else (False if hb_pid == os.getpid() else None))
         return {
             "name": name, "running": bool(busy and busy["project"] == name) or ext, "by_agent": ext,
             "busy_other": bool(busy and busy["project"] != name),
@@ -262,7 +267,7 @@ class Studio:
             "comfy": p.cfg["comfy"]["url"],
             "pass": st.get("pass"), "step": st.get("step"), "done": [h["step"] for h in st.get("history", [])],
             "steps": pipeline.STEPS, "jobs": counts, "waiting": packet,
-            "finished": [f"out/{f}" for f in outs], "renders": self.renders(p),
+            "finished": [f"out/{f}" for f in outs], "renders": self.renders(p), "health": health,
         }
 
     def choices(self, p, checkpoint):
@@ -283,7 +288,8 @@ class Studio:
         if checkpoint == "song_pick":
             rows = (p.load("review/songs.json") or {}).get("songs", [])
             return [{"kind": "song", "picked": p.cfg.get("song"), "picked_file": picks.get("song"),
-                     "options": [{"file": r["file"], "score": r["lyric_coverage"], "by": "of the lyric sheet sung"} for r in rows]}]
+                     "options": [{"file": r["file"], "score": r["lyric_coverage"],
+                                  "by": "instrumental" if r["lyric_coverage"] is None else "of the lyric sheet sung"} for r in rows]}]
         return []
 
     def pick(self, name, body):
