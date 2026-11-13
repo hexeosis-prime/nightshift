@@ -89,6 +89,31 @@ Plus length (short / medium / long) and aspect. Style pairs with a format by def
 any Format; the channel-flip anthology is a format of formats. Internal kits stay private, with generic public presets
 derived from them. First pair to build: app demo + commercial style, seeded from the wellness proof of concept.
 
+### Styles (decided Nov 13)
+
+Nine Styles, named in the words clients write in briefs. Each ships with a 5-10 s reference loop: briefs carry a look with
+tone words plus reference videos, not look names (hexONE's research, Nov 7), so the name is the label and the loop is the
+brief.
+
+| Style | Was (working title) | The look | Prove |
+| --- | --- | --- | --- |
+| Cinematic | Cinematic | 35mm, shallow focus, volumetric backlight, filmic grade, grain | 2 |
+| Premium Commercial | Clean commercial | huge soft light sources, reflections tracing the product, seamless background, no camera shake | 3 |
+| Broadcast | Broadcast + Live TV news | evenly lit studio, symmetrical frames, controlled color; news graphics from the News Package | 1 |
+| Handheld | Indie handmade (split) | phone-shot candid: handheld shake, quick reframes, natural window light | 4 |
+| Vintage | new | VHS, camcorder, 8mm: scan lines, tape wobble, 4:3 | 5 |
+| Cyber Future | Cyber future | neon, haze, wet reflective surfaces, magenta and cyan rim light | 6 |
+| Handmade | Indie handmade (split) | felt, clay, stop-motion, craft textures | 7 |
+| Documentary | new | long-lens observational, natural light | 8 |
+| Performance | new | music-video gloss: colored backlight, smoke, hard sun | 9 |
+
+- A Style fills prompt slots (lighting, camera, style, sound of the 8-slot prompt) plus FLUX still words, LTX video words,
+  negatives and a default grade; it is not adjectives on the end.
+- Every Style word is marked proven, likely or to prove; to-prove words go through the prompt refinement session first.
+- Live TV news is no longer a Style: Broadcast carries the look, the news Format the structure. The news Format's graphics
+  module is the **News Package**: bug, lower third, ticker, chyron.
+- hexe's location bank (36 locations, in image testing) fills the location slot and starts the backlot.
+
 ## Edit engine
 
 - [ ] Snappy 2-3 s shots (E, Z) · [ ] rhythm patterns like 2,2,6,2,2,6,2,6,4 (E) · [ ] dissolves, the channel-flip glitch,
@@ -137,7 +162,7 @@ Check LTX 2.5 first; it may change what's worth building.
   lifestyle ad, 3) app demo template.
 - **User Library:** every install gets a Library folder set in Settings, outside the app folder, for the user's own
   songs, characters, show kits and presets. Updates never touch it. Our private kits are our Library.
-- **Style names (working titles):** Cinematic, Indie handmade, Broadcast, Cyber future, Live TV news, Clean commercial.
+- **Style names (working titles):** Cinematic, Indie handmade, Broadcast, Cyber future, Live TV news, Clean commercial. **Decided Nov 13** from hexONE's research: see Phase 3, Styles.
   **Research: hexONE** — what words clients and briefs use for these looks, and which prompt words the models respond to
   for each. Claude builds with the working titles meanwhile.
 - **Workflow consistency audit** (Phase 1): Claude lists how each workflow sets size, frames and seconds; hexe fixes them
