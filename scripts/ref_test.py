@@ -101,7 +101,7 @@ def queue(only=None):
     print("queued", len(st))
 
 
-def report():
+def report(order="ABCDE"):
     from nightshift import score
     from nightshift.comfy import Comfy
     c = Comfy(os.environ.get("COMFY_URL", "http://10.0.1.171:8188"))
@@ -129,7 +129,7 @@ def report():
     _, sfs = score.faces(cv2.imread(SHEET))
     sheet_yaws = sorted(round(score.yaw(f), 2) for f in sfs)
     table = {}
-    for v in "ABCDE":
+    for v in order:
         for sid, *_ in SHOTS:
             f = os.path.join(out, f"{v}_{sid}.png")
             if not os.path.exists(f):
@@ -138,7 +138,7 @@ def report():
             table[(v, sid)] = (round(m, 2) if m is not None else None, turn(f), times.get(f"{v}_{sid}"))
     print("sheet faces' head turn:", sheet_yaws)
     print("variant " + "  ".join(f"{sid:>16}" for sid, *_ in SHOTS) + "   mean")
-    for v in "ABCDE":
+    for v in order:
         cells = [table.get((v, sid)) for sid, *_ in SHOTS]
         ms = [x[0] for x in cells if x and x[0] is not None]
         print(f"{v:7} " + "  ".join(f"{(str(x[0]) + ' yaw ' + str(x[1])) if x else '-':>16}" for x in cells)
@@ -146,7 +146,7 @@ def report():
     json.dump({f"{k[0]}_{k[1]}": v for k, v in table.items()}, open(os.path.join(out, "scores.json"), "w"), indent=1)
     # contact sheet: a row per variant
     F = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    for v in "ABCDE":
+    for v in order:
         ins, fl = [], ""
         for k, (sid, *_) in enumerate(SHOTS):
             f = os.path.join(out, f"{v}_{sid}.png")
@@ -158,11 +158,105 @@ def report():
         subprocess.run(["ffmpeg", "-v", "error", "-y", *ins, "-filter_complex",
                         fl + "".join(f"[a{k}]" for k in range(len(SHOTS))) + f"hstack={len(SHOTS)}", "-frames:v", "1",
                         os.path.join(out, f"row_{v}.png")], check=True)
-    rows = [os.path.join(out, f"row_{v}.png") for v in "ABCDE"]
+    rows = [os.path.join(out, f"row_{v}.png") for v in order]
     subprocess.run(["ffmpeg", "-v", "error", "-y", *sum([["-i", r] for r in rows], []), "-filter_complex",
-                    f"vstack={len(rows)}", "-q:v", "3", os.path.join(out, "ref_test_sheet.jpg")], check=True)
-    print(os.path.join(out, "ref_test_sheet.jpg"))
+                    f"vstack={len(rows)}", "-q:v", "3", os.path.join(out, f"ref_test_{''.join(order)}.jpg")], check=True)
+    print(os.path.join(out, f"ref_test_{''.join(order)}.jpg"))
+
+
+# ---- part 2: which character reference works best (no style image; light in words; 16 steps cfg 1, upsampler on) ----
+LIGHT = {"r1": "soft blue-hour dusk light with the warm glow of the bulbs on her face",
+         "r2": "cool night light with neon colour spill and wet reflections",
+         "r3": "warm tungsten diner light", "r4": "bright midday California sun with crisp shadows",
+         "r5": "low sunset backlight with long shadows", "r6": "dim bus interior light, cool blue street light through the rain"}
+REFS = {  # variant: (reference files, how the prompt names them)
+    "S3": (["refs/sheets/lead_real.png"], "the woman from the character sheet in the first reference image"),
+    "S7": (["refs/sheet7.png"], "the woman from the seven-panel character sheet in the first reference image"),
+    "F2": (["refs/body.png", "refs/face_front.png"],
+           "the woman shown full-body in the first reference image, whose face is shown close up in the second reference image"),
+    "F2q": (["refs/body.png", "refs/face_34.png"],
+            "the woman shown full-body in the first reference image, whose face is shown close up in the second reference image"),
+}
+
+
+def prompt2(shot, who):
+    sid, framing, action, loc = shot
+    return (f"Create a photograph of {who}, in a {framing} for a pop music video lifestyle b-roll section. Preserve her "
+            f"exact identity: {WHO}. {action}. Dress her in {OUTFIT}. The location is {loc}. Lighting: {LIGHT[sid]}. "
+            f"Candid 35mm film photograph, shallow depth of field.")
+
+
+def sheets():
+    """The seven-panel sheet of the same woman, made from the three-panel one (base model, 50 steps cfg 3)."""
+    from nightshift.comfy import Comfy
+    from nightshift.workflows import Workflow
+    c = Comfy(os.environ.get("COMFY_URL", "http://10.0.1.171:8188"))
+    wf = Workflow.load("sheet7_from_image_flux3", [os.path.join(ROOT, "workflows")]); wf.apply_defaults()
+    wf.set("model", "flux3_image_klein_int8_convrot.safetensors")
+    wf.set("image1", c.upload(SHEET, "ref_test"))
+    wf.set("prompt", wf.graph["4"]["inputs"]["text"].replace("[reference_image]", "<ref_image_0>"))
+    wf.seed(77); wf.output("ref_test/sheet7")
+    json.dump({"sheet7": c.queue_prompt(wf.to_api())}, open(os.path.join(PROJ, "sheet7_state.json"), "w"))
+    print("queued the seven-panel sheet")
+
+
+def crops():
+    """Fetch the seven-panel sheet; cut the body panels and the front close-up from the three-panel sheet, and the
+    three-quarter close-up from the seven-panel one."""
+    from PIL import Image
+    from nightshift import score
+    from nightshift.comfy import Comfy
+    c = Comfy(os.environ.get("COMFY_URL", "http://10.0.1.171:8188"))
+    r = c.result(json.load(open(os.path.join(PROJ, "sheet7_state.json")))["sheet7"])
+    s7 = os.path.join(PROJ, "refs", "sheet7.png")
+    c.download([f for f in r["files"] if f["filename"].endswith(".png")][0], s7)
+    im = Image.open(SHEET)
+    w, h = im.size
+    im.crop((0, 0, int(w * 0.645), h)).save(os.path.join(PROJ, "refs", "body.png"))
+    im.crop((int(w * 0.65), 0, w, h)).save(os.path.join(PROJ, "refs", "face_front.png"))
+    cv2 = score._cv()
+    img = cv2.imread(s7)
+    small, fs = score.faces(img)
+    k = img.shape[1] / small.shape[1]
+    big = sorted(fs, key=lambda f: -f[2] * f[3])[:3]            # the three close-ups
+    turned = max(big, key=lambda f: abs(score.yaw(f)) if abs(score.yaw(f)) < 0.6 else -1)   # the 3/4 one, not the profile
+    x, y, fw, fh = [v * k for v in turned[:4]]
+    cx, cy, side = x + fw / 2, y + fh / 2, max(fw, fh) * 2.6
+    box = (max(0, cx - side / 2), max(0, cy - side * 0.45), min(img.shape[1], cx + side / 2), min(img.shape[0], cy + side * 0.55))
+    Image.open(s7).crop(tuple(int(v) for v in box)).save(os.path.join(PROJ, "refs", "face_34.png"))
+    print("refs ready; 3/4 close-up yaw", round(score.yaw(turned), 2), "box", [int(v) for v in box])
+
+
+def queue2():
+    from nightshift.comfy import Comfy
+    from nightshift.workflows import Workflow
+    c = Comfy(os.environ.get("COMFY_URL", "http://10.0.1.171:8188"))
+    st_path = os.path.join(PROJ, "ref_state2.json")
+    st = {}
+    for v, (files, who) in REFS.items():
+        up = [c.upload(os.path.join(PROJ, f), "ref_test") for f in files]
+        for i, shot in enumerate(SHOTS):
+            wf = Workflow.load("img_flux3", [os.path.join(ROOT, "workflows")]); wf.apply_defaults()
+            wf.set("text_to_image", False); wf.use_refs(len(up))
+            for j, u in enumerate(up):
+                wf.set(f"image{j + 1}", u)
+            wf.set("prompt_enhancer", True)
+            wf.set("prompt", prompt2(shot, who))
+            wf.set("width", 1280); wf.set("height", 768); wf.set("steps", 16); wf.set("cfg", 1.0)
+            wf.seed(2000 + i); wf.output(f"ref_test/{v}_{shot[0]}")
+            st[f"{v}_{shot[0]}"] = c.queue_prompt(wf.to_api())
+    json.dump(st, open(st_path, "w"), indent=1)
+    print("queued", len(st))
+
+
+def report2():
+    global VARIANTS
+    st = json.load(open(os.path.join(PROJ, "ref_state.json")))
+    st.update(json.load(open(os.path.join(PROJ, "ref_state2.json"))))
+    json.dump(st, open(os.path.join(PROJ, "ref_state.json"), "w"), indent=1)
 
 
 if __name__ == "__main__":
-    {"setup": setup, "queue": lambda: queue(sys.argv[2] if len(sys.argv) > 2 else None), "report": report}[sys.argv[1]]()
+    {"setup": setup, "queue": lambda: queue(sys.argv[2] if len(sys.argv) > 2 else None), "report": report,
+     "sheets": sheets, "crops": crops, "queue2": queue2,
+     "report2": lambda: (report2(), report(["A", "C", "S3", "S7", "F2", "F2q"]))}[sys.argv[1]]()
