@@ -251,11 +251,13 @@ class Comfy:
         h = self.history(prompt_id).get(prompt_id)
         if h:
             st = h.get("status", {})
-            files = []
+            files, texts = [], []
             for node_out in h.get("outputs", {}).values():
-                for v in node_out.values():
+                for k, v in node_out.items():
                     if isinstance(v, list):
                         files += [x for x in v if isinstance(x, dict) and "filename" in x]
+                        if k == "text":          # Preview as Text: e.g. the prompt the FLUX 3 upsampler wrote
+                            texts += [x for x in v if isinstance(x, str)]
             err, t0, t1 = None, None, None
             for name, msg in st.get("messages", []):
                 if name == "execution_start":
@@ -268,7 +270,7 @@ class Comfy:
                     err = {"exception_type": "interrupted"}
             ok = st.get("status_str") == "success" and not err
             secs = round((t1 - t0) / 1000, 1) if t0 and t1 else None
-            return {"status": "success" if ok else "error", "files": files, "error": err, "seconds": secs}
+            return {"status": "success" if ok else "error", "files": files, "texts": texts, "error": err, "seconds": secs}
         q = self.queue()
         if prompt_id in q["running"]:
             return {"status": "running"}

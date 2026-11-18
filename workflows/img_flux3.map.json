@@ -1,0 +1,85 @@
+{
+ "workflow": "img_flux3.json",
+ "kind": "image",
+ "ref_syntax": "flux3",
+ "description": "hexe's all-in-one FLUX 3 Image Klein workflow (Nov 17): text to image (ns_text_to_image true) or edit / reference generation from up to four reference images (<ref_image_0>..<ref_image_3>), with the FLUX 3 prompt upsampler (Qwen3.5 9B) on a toggle. Nightshift resolves the switches and unhooks unused reference slots (Workflow.use_refs) before queueing. The rewritten prompt, when the upsampler is on, comes back from the 'Preview as Text' node.",
+ "roles": {
+  "prompt": {
+   "node": "5696",
+   "input": "value"
+  },
+  "negative": {
+   "node": "5697",
+   "input": "value"
+  },
+  "width": {
+   "node": "5701",
+   "input": "value"
+  },
+  "height": {
+   "node": "5703",
+   "input": "value"
+  },
+  "seed": {
+   "node": "5721",
+   "input": "value"
+  },
+  "image1": {
+   "node": "5698",
+   "input": "image"
+  },
+  "image2": {
+   "node": "5715",
+   "input": "image"
+  },
+  "image3": {
+   "node": "5743",
+   "input": "image"
+  },
+  "image4": {
+   "node": "5754",
+   "input": "image"
+  },
+  "text_to_image": {
+   "node": "5809",
+   "input": "value"
+  },
+  "prompt_enhancer": {
+   "node": "5738",
+   "input": "switch"
+  },
+  "steps": [
+   {
+    "node": "7",
+    "input": "steps"
+   },
+   {
+    "node": "5786",
+    "input": "steps"
+   }
+  ],
+  "cfg": [
+   {
+    "node": "7",
+    "input": "cfg"
+   },
+   {
+    "node": "5786",
+    "input": "cfg"
+   }
+  ]
+ },
+ "outputs": {
+  "image": {
+   "node": "9",
+   "input": "filename_prefix"
+  }
+ },
+ "defaults": [
+  {
+   "node": "5700",
+   "input": "value",
+   "value": true
+  }
+ ]
+}

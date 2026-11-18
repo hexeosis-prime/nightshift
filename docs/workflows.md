@@ -11,9 +11,7 @@ you can point any job at your own graph.
 | `sheet_image` | `sheet_from_image` | the same layout made from a picture of the character |
 | `edit2` | `edit_flux_2image` | Flux 2 Klein 9B edit with two images (identity edits, relights, environment changes) |
 | `edit3` | `edit_flux_3image` | the same with a third image (a second character) |
-| `ff` | `vid_ltx_ff` | LTX 2.3 image to video from a first frame, two-stage with x2 spatial upscale |
-| `fflf` | `vid_ltx_fflf` | LTX 2.3 first + last frame with song audio, guide strengths and an arrive frame |
-| `lipsync` | `vid_ltx_lipsync` | LTX 2.3 image to video driven by a song section (vocal separated with MelBand RoFormer inside the graph) |
+| `ff` / `fflf` / `lipsync` | `vid_ltx` | hexe's single LTX 2.3 graph (3 stages, INT8 ConvRot): first frame, first + last frame (also a locked-off camera: the same still twice), generated sound or the song section in, vocals isolated for lip-sync. The builder sets the toggles per shot and cuts the song to the shot. The older per-mode graphs (`vid_ltx_ff`, `vid_ltx_fflf`, `vid_ltx_lipsync`) still work: point a job at them in `project.json` |
 | `t2v` | `vid_ltx_t2v` | LTX 2.3 text to video |
 | `song` | `song_minimax_m3` | MiniMax Music 3 text to song |
 
@@ -32,6 +30,17 @@ sheet from text), 50 steps at cfg 1 for the reference edits (identity edits, she
 undersampled faces; to use it, set the roles `model`, `steps` and `cfg`. Mirrors with other file names work as is (e.g.
 DeepBeepMeep/Flux3's `flux3_image_klein_int8_convrot.safetensors` is the full model): Nightshift matches the file ComfyUI has.
 
+**All-in-one graphs.** hexe's graphs keep every path in one file behind toggles (`ns_toggle_*`, If/Else switches), so the
+settings are tuned in one place. Before queueing, Nightshift resolves every switch whose value is fixed and drops the nodes
+no output needs. ComfyUI checks every loader it can reach, even on a branch a switch won't take, so without this a
+first-frame-only job would need a dummy last frame and a text-to-image job dummy reference images. Switches computed at
+run time (math nodes) are left alone.
+
+`img_flux3` (Nov 17) is the FLUX 3 all-in-one: text to image (`text_to_image` true) or an edit / reference generation from
+up to four references (`image1`..`image4` = `<ref_image_0>`..`<ref_image_3>`; `Workflow.use_refs(n)` unhooks the unused
+slots), and the FLUX 3 prompt upsampler (Qwen3.5 9B) behind `prompt_enhancer`. Roles `steps` and `cfg` set both samplers.
+Core nodes only.
+
 Video-to-video and an image glitch utility were tried during the first video and left out for now (see ROADMAP.md).
 
 ## Custom nodes
@@ -40,10 +49,10 @@ A recent ComfyUI has the LTX 2.3, MiniMax Music 3, seed and switch nodes in core
 
 | pack | used by |
 |---|---|
-| [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) | all LTX graphs (VAE loader, resize, NAG, preview override, calculator, constants) |
+| [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) | all LTX graphs (VAE loader, resize, NAG, preview override, calculator, constants); `vid_ltx` needs only this, INT8-Fast and MelBandRoFormer |
 | [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) | `vid_ltx_ff`, `vid_ltx_t2v` (GGUF model and text encoder) |
-| [ComfyUI-INT8-Fast](https://github.com/BobJohnson24/ComfyUI-INT8-Fast) | `vid_ltx_fflf`, `vid_ltx_lipsync` (int8 ConvRot model loader) |
-| [ComfyUI-MelBandRoFormer](https://github.com/kijai/ComfyUI-MelBandRoFormer) | `vid_ltx_lipsync` |
+| [ComfyUI-INT8-Fast](https://github.com/BobJohnson24/ComfyUI-INT8-Fast) | `vid_ltx`, `vid_ltx_fflf`, `vid_ltx_lipsync` (int8 ConvRot model loader) |
+| [ComfyUI-MelBandRoFormer](https://github.com/kijai/ComfyUI-MelBandRoFormer) | `vid_ltx`, `vid_ltx_lipsync` |
 | [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) | `vid_ltx_fflf`, `vid_ltx_lipsync` |
 | [rgthree-comfy](https://github.com/rgthree/rgthree-comfy) | `vid_ltx_fflf`, `still_flux`, `sheet_from_text` (Power Lora Loader, Any Switch) |
 | [ComfyUI_essentials](https://github.com/cubiq/ComfyUI_essentials) | edits, `sheet_from_image` (image resize) |

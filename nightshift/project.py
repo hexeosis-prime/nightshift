@@ -38,7 +38,7 @@ DEFAULTS = {
     "takes": {"default": 1, "complex": 4},
     "workflows": {
         "still": "still_flux", "edit2": "edit_flux_2image", "edit3": "edit_flux_3image",
-        "ff": "vid_ltx_ff", "fflf": "vid_ltx_fflf", "lipsync": "vid_ltx_lipsync", "t2v": "vid_ltx_t2v",
+        "ff": "vid_ltx", "fflf": "vid_ltx", "lipsync": "vid_ltx", "t2v": "vid_ltx_t2v",   # hexe's single LTX graph (Nov 17)
         "song": "song_minimax_m3", "sheet_text": "sheet_from_text", "sheet_image": "sheet_from_image", "vocals": "vocals_melband",
     },
     "sheets": {"candidates": 3, "approve": True, "yolo_source": "text", "seed": 7001},

@@ -304,11 +304,71 @@ class Builder:
         who = c["noun"]
         return f'{self.names(s["video"], s)} The {who} {verb} the lyric words "{s["lyric"]}"\n\n([{who}], [{gerund}]): "{s["lyric"]}", {style}\n'
 
+    def audio_clip(self, s, seconds):
+        """The song cut to this shot (start .. start + seconds), staged for ComfyUI's core Load Audio (no start time)."""
+        from .song import song_path
+        src = song_path(self.p)
+        start = float(s.get("audio_start", s.get("start", 0.0)))
+        dst = self.p.path("song", "clips", f"{s['id']}_{start:.3f}_{seconds:.3f}.wav")
+        if not os.path.exists(dst):
+            import subprocess
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{start:.3f}", "-t", f"{seconds:.3f}", "-i", src,
+                            "-map_metadata", "-1", "-ac", "2", "-ar", "48000", dst], check=True)
+        return self.p.stage_input(dst, os.path.basename(dst))
+
+    def ltx_job(self, s, wf, n):
+        """ff, fflf and lip-sync through hexe's single LTX graph (vid_ltx): toggles pick the path, Nightshift resolves the
+        switches, so a first-frame-only job needs no last frame and a silent one no audio file."""
+        mode = s["mode"]
+        wf.apply_defaults()
+        self.size(wf)
+        wf.try_set("toggle_api_inputs", True)
+        wf.try_set("fps", float(self.fps))
+        if mode == "fflf":
+            src_id = s.get("start_shot") or s.get("still_from")
+            src = self.ref(s, "start_shot" if s.get("start_shot") else "still_from") if src_id else s
+            if s.get("still_from") and src.get("dropped"):   # loop seam: end on the first live shot's still
+                src = next(x for x in self.shots if not x.get("dropped") and x["mode"] in STILL_MODES and not x.get("still_from"))
+            img, label = (self.input_file(s["first_frame"]), "file") if s.get("first_frame") else self.stage_still(src)
+            end = img
+            if s.get("last_frame"):
+                end = self.input_file(s["last_frame"])
+            elif s.get("end_shot"):
+                end, _ = self.stage_still(self.ref(s, "end_shot"), s.get("end_still"))
+        else:
+            img, label = (self.input_file(s["first_frame"]), "file") if s.get("first_frame") else self.stage_still(s)
+            end = img if s.get("locked") else None          # locked: the same still first and last = a locked-off camera
+        wf.set("image", img)
+        wf.set("toggle_use_lf", end is not None)
+        if end is not None:
+            wf.set("last_image", end)
+        audio_in = mode == "lipsync" or (mode == "fflf" and bool(s.get("audio")) and s.get("audio_in", True))
+        wf.set("toggle_use_audio_in", audio_in)
+        wf.set("toggle_isolate_vocals", mode == "lipsync")
+        if audio_in:
+            wf.set("audio", self.audio_clip(s, (n - 1) / self.fps + 0.05))
+        wf.set("frames", n)
+        wf.set("prompt", self.sung(s) if mode == "lipsync" else self.names(s["video"], s))
+        neg = {"ff": self.neg["ff"], "lipsync": self.neg["lipsync"]}.get(mode) or (self.neg["fflf_people"] if s.get("chars") else BIRDS)
+        wf.append("negative", neg)
+        if s.get("arrive_frame") is not None:   # the end guide lands mid-shot (multiple of 8); free performance after
+            wf.try_set("end_frame_idx", int(s["arrive_frame"]))
+        if s.get("arrive_strength"):
+            wf.try_set("lf_strength", float(s["arrive_strength"]))
+        if s.get("first_strength"):
+            wf.try_set("ff_strength", float(s["first_strength"]))
+        return wf, f"{s['id']}_{mode}_{label}"
+
     def video_job(self, s):
         mode, sid = s["mode"], s["id"]
         n = self.frames(s)
         meta = {"kind": mode, "shot": sid, "seed": s["seed"], "frames": n}
-        if mode == "ff":
+        one = self.p.workflow(mode) if mode in ("ff", "fflf", "lipsync") else None
+        if one is not None and one.kind == "ltx":
+            wf, name = self.ltx_job(s, one, n)
+            label = name.rsplit("_", 1)[1]
+        elif mode == "ff":
             wf = self.p.workflow("ff")
             wf.apply_defaults()
             self.size(wf)
