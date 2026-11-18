@@ -202,9 +202,18 @@ class Comfy:
         as mirrors of the same file often are). Swap in the name ComfyUI actually has when it is the same name otherwise."""
         cache = self.__dict__.setdefault("_choices", {})
         norm = lambda s: s.lower().replace("-", "_").replace(" ", "_")
-        # known mirrors that name the same checkpoint differently (DeepBeepMeep/Flux3: no suffix = the full model, _sd_ = distilled)
-        alias = {"flux3_image_klein_base_int8_convrot.safetensors": "flux3_image_klein_int8_convrot.safetensors",
-                 "flux3_image_klein_int8_convrot.safetensors": "flux3_image_klein_sd_int8_convrot.safetensors"}
+        # FLUX 3 Klein files: the names cross over between releases. ComfyUI's templates: "flux3-image-klein-int8-convrot"
+        # (hyphens) = distilled, "...-base-..." = base. The underscore mirror: "flux3_image_klein_int8_convrot" = base,
+        # "..._sd_..." = distilled. So the two "klein_int8_convrot" names are different models: never swap one for the other.
+        family = {"flux3_image_klein_base_int8_convrot.safetensors": "base", "flux3_image_klein_int8_convrot.safetensors|_": "base",
+                  "flux3_image_klein_int8_convrot.safetensors|-": "distilled", "flux3_image_klein_sd_int8_convrot.safetensors": "distilled"}
+
+        def fam(name):
+            b = os.path.basename(name)
+            n = norm(b)
+            if n == "flux3_image_klein_int8_convrot.safetensors":
+                return family[n + ("|-" if "-" in b else "|_")]
+            return family.get(n)
         for node in prompt.values():
             if not isinstance(node, dict):
                 continue
@@ -221,9 +230,11 @@ class Comfy:
                         cache[cls] = {}
                 have = cache[cls].get(k) or []
                 if have and v not in have:
-                    want = norm(os.path.basename(v))
-                    alt = next((h for h in have if isinstance(h, str) and norm(os.path.basename(h)) == want), None) or \
-                        next((h for h in have if isinstance(h, str) and norm(os.path.basename(h)) == alias.get(want)), None)
+                    if fam(v):          # a FLUX 3 Klein file: only the same model, under any of its names
+                        alt = next((h for h in have if isinstance(h, str) and fam(h) == fam(v)), None)
+                    else:
+                        want = norm(os.path.basename(v))
+                        alt = next((h for h in have if isinstance(h, str) and norm(os.path.basename(h)) == want), None)
                     if alt:
                         node["inputs"][k] = alt
         return prompt

@@ -162,7 +162,7 @@ class Builder:
         wf.set("text_to_image", refs == 0)
         if refs:
             wf.use_refs(refs)
-        wf.try_set("prompt_enhancer", bool((self.p.cfg.get("image_rewrite") or {}).get(kind, False)))
+        wf.try_set("prompt_enhancer", bool((self.p.cfg.get("image_rewrite") or {}).get(kind, kind == "sheet")))
 
     def still_job(self, s):
         wf = self.p.workflow("still")
@@ -247,7 +247,81 @@ class Builder:
         except Exception:
             return 1
 
+    # ---- frames made straight from the character sheet (hexe, Nov 18) ------------------------------------------
+    FRAMING_WORDS = {"close": "close-up", "medium": "medium shot", "wide": "wide full-body shot"}
+
+    def from_sheet(self, s):
+        """Character frames made straight from the sheet (no text still, no face edit): FLUX 3 all-in-one graph only.
+        project.json "frames_from_sheet" (default true when the edit graph can do it); a shot can opt out with
+        "from_sheet": false."""
+        if not (s.get("chars") and s.get("still") == "edit" and s.get("from_sheet", True)):
+            return False
+        on = self.p.cfg.get("frames_from_sheet")
+        if on is None:
+            on = self.p.workflow("edit2").has("text_to_image")
+        return bool(on)
+
+    def sheet_frame_job(self, s, seed=None, tag="edit"):
+        """One frame from the character sheet(s) plus any location plates: the sheet is <ref_image_0> (a second
+        character's sheet next), location plates after them. The prompt says who, how they look, what they do, the
+        framing, the place and the light; the face comes from the sheet. 16 steps cfg 1 (image_rewrite "sheet": true)."""
+        world = self.world(s)
+        keys = list(s["chars"][:2]) + ([s["add"]["char"]] if s.get("add") and len(s["chars"]) < 2 else [])
+        refs = [self.sheet(k, (s["add"].get("world", world) if s.get("add") and k == s["add"]["char"] else world),
+                           s.get("sheet_ref") if i == 0 else None) for i, k in enumerate(keys)]
+        plates = list(s.get("location_refs") or self.world_cfg(s).get("location_refs") or [])[:4 - len(refs)]
+        refs += [self.input_file(x) for x in plates]
+        ordinal = ["first", "second", "third", "fourth"]
+        framing = self.FRAMING_WORDS.get(s.get("framing", "medium"), s.get("framing", "medium shot"))
+        people = []
+        for i, k in enumerate(keys):
+            c = self.char(k)
+            outfit = (c.get(f"outfit_{world}") or c.get("outfit") or {}).get(s.get("framing", "medium"), "")
+            sent = (f"the {c['noun']} from the character sheet in the {ordinal[i]} reference image. Preserve {c['possessive']} "
+                    f"exact identity: {c.get('person', '')}.")
+            if outfit:
+                sent += f" {c['pronoun'].capitalize()} wears {outfit}."
+            people.append(sent)
+        text = f"Create a photograph, a {framing}, of " + " And ".join(people)
+        if s.get("add") and len(keys) > 1:
+            text += f" The {self.char(keys[1])['noun']} is {s['add'].get('where', 'in the shot with them')}."
+        act = s.get("action", "")
+        expr = s.get("expr")
+        lead = self.char(keys[0])
+        if act or expr:
+            text += f" {lead['pronoun'].capitalize()} " + ", ".join(x for x in (act, f"looking {expr}" if expr else "") if x) + "."
+        loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
+              (", " + s["location_extra"] if s.get("location_extra") else "")
+        if plates:
+            n0 = len(keys)
+            which = " and ".join(f"the {ordinal[n0 + j]} reference image" for j in range(len(plates)))
+            text += f" The location is the place shown in {which}" + (f": {loc}." if loc else ".")
+        elif loc:
+            text += f" The location is {loc}."
+        if s.get("light"):
+            text += f" Lighting: {s['light']}."
+        style = self.world_cfg(s).get("style")
+        if style:
+            text += f" {style[0].upper() + style[1:]}."
+        wf = self.p.workflow("edit2")
+        wf.apply_defaults()
+        self.flux3_mode(wf, "sheet", len(refs))
+        self.size(wf)
+        for i, r in enumerate(refs):
+            wf.set(f"image{i + 1}", r)
+        wf.set("prompt", text)
+        never = ", ".join(self.char(k).get("never", "") for k in keys if self.char(k).get("never"))
+        if never:
+            wf.append("negative", ", " + never)
+        seed = s["seed"] if seed is None else seed
+        wf.seed(seed)
+        wf.output(self.p.prefix("stills", f"{s['id']}_{tag}"))
+        return self.save(wf, f"{s['id']}_{tag}.json", {"kind": "edit", "shot": s["id"], "seed": seed, "label": tag,
+                                                     "from_sheet": True, "refs": len(refs)})
+
     def sheet_job(self, s, wording=None, seed=None, tag="edit"):
+        if self.from_sheet(s):
+            return self.sheet_frame_job(s, seed=seed, tag=tag)
         ch_key = s["chars"][0]
         world = self.world(s)
         base_label = s.get("edit_base") or self.default_model(s)
@@ -465,7 +539,8 @@ class Builder:
             if s.get("dropped") or s["mode"] == "reuse":
                 continue
             try:
-                if stage == "stills" and s["mode"] in STILL_MODES and not s.get("still_from") and not s.get("first_frame"):
+                if stage == "stills" and s["mode"] in STILL_MODES and not s.get("still_from") and not s.get("first_frame") \
+                        and not self.from_sheet(s):      # frames from the sheet are made in the sheetedits stage
                     written.append(self.still_job(s))
                 elif stage == "sheetedits" and s.get("chars") and s.get("still") == "edit" and s["mode"] in STILL_MODES:
                     written.append(self.sheet_job(s))

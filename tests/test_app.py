@@ -79,7 +79,7 @@ def main(keep=False, stay=False):
         p = Project(os.path.join(comfy, "output", "nightshift", name))
         assert p.renders_in_place
         assert p.cfg["work_size"] == [768, 1280] and p.cfg["final_size"] == [1080, 1920]
-        assert p.cfg["workflows"]["still"] == "img_flux3" and p.cfg["workflows"]["sheet_image"] == "sheet7_from_image_flux3"
+        assert p.cfg["workflows"]["still"] == "img_flux3" and p.cfg["workflows"]["sheet_image"] == "sheet_from_image_flux3"
         assert p.canon["characters"]["lead"]["reference"] == "refs/lead.png"
         dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
                                     p.path("song", "song.mp3")], capture_output=True, text=True).stdout)
@@ -129,9 +129,11 @@ def main(keep=False, stay=False):
         assert len([f for f in os.listdir(p.path("jobs")) if f.startswith("s02_vC") and f.endswith(".meta.json")]) == 2, "two identity edits per shot"
         edit = json.load(open(p.path("jobs", ej)))
         txt = edit["5696"]["inputs"]["value"]          # hexe's all-in-one FLUX 3 graph: ns_prompt
-        assert "<ref_image_1>" in txt and "[reference_image" not in txt, txt[:200]
+        # FLUX 3 projects make character frames straight from the sheet (no text still, no face edit)
+        assert "character sheet in the first reference image" in txt and "[reference_image" not in txt, txt[:200]
         assert (edit["5701"]["inputs"]["value"], edit["5703"]["inputs"]["value"]) == (768, 1280)
-        assert "5743" not in edit and "5754" not in edit and "17" in edit   # 2 references: slots 3 and 4 unhooked and dropped
+        assert "5715" not in edit and "5743" not in edit and "17" in edit   # 1 reference (the sheet): other slots dropped
+        assert not os.path.exists(p.path("jobs", "s02_still.json")), "no text still for a frame made from the sheet"
         ff_job = next(f for f in sorted(os.listdir(p.path("jobs"))) if f.endswith("_video.meta.json")
                       and json.load(open(p.path("jobs", f)))["kind"] == "ff")
         vid = json.load(open(p.path("jobs", ff_job.replace(".meta.json", ".json"))))

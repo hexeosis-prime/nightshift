@@ -55,7 +55,9 @@ DEFAULTS = {
 #   aspect       16:9 or 9:16 (stills, edits, video renders, crop and delivery size all follow)
 #   image_model  flux2 = Flux 2 Klein 9B (the first video); flux3 = FLUX 3 Image Klein through hexe's all-in-one graph
 #                (img_flux3: stills and identity edits, distilled model, 15-16 steps); flux3_split = the earlier per-job graphs
-#   image_rewrite  {"still": false, "edit": false}: the FLUX 3 prompt upsampler per job kind (img_flux3 only)
+#   image_rewrite  {"still": false, "edit": false, "sheet": true}: the FLUX 3 prompt upsampler per job kind (img_flux3 only)
+#   frames_from_sheet  character frames made straight from the sheet (default: true when the edit graph is img_flux3)
+#   face_min  {"close": 0.5, "medium": 0.45, "wide": 0.3}: below this, a frame from the sheet gets two more seeds
 PROFILES = {
     "full": {},
     "short": {
@@ -77,8 +79,9 @@ ASPECTS = {
 }
 IMAGE_MODELS = {
     "flux2": {},
+    # FLUX 3 through hexe's all-in-one graph: character frames made straight from the three-panel sheet (Nov 18 tests)
     "flux3": {"workflows": {"still": "img_flux3", "edit2": "img_flux3", "edit3": "img_flux3",
-                            "sheet_text": "sheet7_from_text_flux3", "sheet_image": "sheet7_from_image_flux3"}},
+                            "sheet_text": "sheet_from_text_flux3", "sheet_image": "sheet_from_image_flux3"}},
     # the per-job FLUX 3 graphs used before hexe's all-in-one (Nov 18): base model, 50 steps
     "flux3_split": {"workflows": {"still": "still_flux3", "edit2": "edit_flux3_2image", "edit3": "edit_flux3_3image",
                                   "sheet_text": "sheet7_from_text_flux3", "sheet_image": "sheet7_from_image_flux3"}},

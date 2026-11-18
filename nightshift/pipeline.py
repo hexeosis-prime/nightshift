@@ -295,7 +295,7 @@ def step_stills(project, st, on_event):
     b = B.Builder(project)
     need = []
     for s in b.shots:
-        if s.get("dropped") or s["mode"] not in B.STILL_MODES or s.get("still_from") or s.get("first_frame"):
+        if s.get("dropped") or s["mode"] not in B.STILL_MODES or s.get("still_from") or s.get("first_frame") or b.from_sheet(s):
             continue
         base = s.get("edit_base") if s.get("still") == "edit" else b.still_label(s)
         if not _has_still(project, s, base or b.default_model(s)) and not _has_still(project, s, b.still_label(s)):
@@ -329,6 +329,12 @@ def step_sheetedits(project, st, on_event):
             if not cands:
                 continue
             ranked = score.rank(project, cands, s["chars"][0], s.get("world", "real"))
+            floor = {"close": 0.5, "medium": 0.45, "wide": 0.3, **(project.cfg.get("face_min") or {})}.get(s.get("framing", "medium"), 0.45)
+            if b.from_sheet(s) and (ranked[0].get("face") or 0) < floor:   # a weak face: two more seeds, once
+                on_event(f"{s['id']}: best face {ranked[0].get('face')} under {floor}, two more seeds")
+                more = [project.rel(b.sheet_job(s, seed=s["seed"] + 7000 + 1000 * k, tag=f"vR{k}")) for k in range(2)]
+                _run_jobs(project, more, on_event)
+                ranked = score.rank(project, project.renders("stills", f"{s['id']}_v*_*"), s["chars"][0], s.get("world", "real"))
             best = ranked[0]["file"]
             label = os.path.basename(best)[len(s["id"]) + 1:].split("_")[0]
             project.patch_shot(s["id"], {"still": label}, "shots_resolved.json")
