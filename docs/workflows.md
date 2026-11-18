@@ -36,6 +36,14 @@ no output needs. ComfyUI checks every loader it can reach, even on a branch a sw
 first-frame-only job would need a dummy last frame and a text-to-image job dummy reference images. Switches computed at
 run time (math nodes) are left alone.
 
+**Which FLUX 3 file is which (tested Nov 18).** The names changed between releases. ComfyUI's own templates load the
+distilled model as `flux3-image-klein-int8-convrot` (hyphens) and the base as `flux3-image-klein-base-int8-convrot`; the
+older underscore mirror `flux3_image_klein_int8_convrot` is the base. Same prompt and seed: the hyphen file at 15 steps,
+cfg 1 (er_sde) matches its 50-step cfg 3.5 render in about 5 s instead of 35 s; the underscore file at 15 steps breaks
+poses (undertrained steps = base). For edits the distilled file gave the same result at 16 steps cfg 1 (12 s) as at 50
+steps cfg 3.5 (58 s). Cfg 1 means "no guidance"; cfg 0 is not a valid off switch. The edit template's note ("50 steps, cfg
+3.5") disagrees with its own sampler (cfg 1).
+
 `img_flux3` (Nov 17) is the FLUX 3 all-in-one: text to image (`text_to_image` true) or an edit / reference generation from
 up to four references (`image1`..`image4` = `<ref_image_0>`..`<ref_image_3>`; `Workflow.use_refs(n)` unhooks the unused
 slots), and the FLUX 3 prompt upsampler (Qwen3.5 9B) behind `prompt_enhancer`. Roles `steps` and `cfg` set both samplers.
