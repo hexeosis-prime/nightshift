@@ -289,7 +289,17 @@ class Builder:
         expr = s.get("expr")
         lead = self.char(keys[0])
         if act or expr:
-            text += f" {lead['pronoun'].capitalize()} " + ", ".join(x for x in (act, f"looking {expr}" if expr else "") if x) + "."
+            pron = lead["pronoun"].capitalize()
+            first = act.split(" ", 1)[0] if act else ""
+            if act and (first[:1].isupper() or first.lower() in ("she", "he", "they", "her", "his", "the")):
+                said = act.rstrip(".")                        # already a sentence ("She laughs ...")
+            elif first.endswith("ing"):
+                said = f"{pron} {'are' if lead['pronoun'] == 'they' else 'is'} {act}"   # "walking slowly ..." -> "She is walking slowly ..."
+            else:
+                said = f"{pron} {act}" if act else ""
+            if expr:
+                said = (said + f", looking {expr}") if said else f"{pron} looks {expr}"
+            text += f" {said}."
         loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
               (", " + s["location_extra"] if s.get("location_extra") else "")
         if plates:
