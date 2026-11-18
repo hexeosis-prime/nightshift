@@ -214,17 +214,9 @@ def crops():
     w, h = im.size
     im.crop((0, 0, int(w * 0.645), h)).save(os.path.join(PROJ, "refs", "body.png"))
     im.crop((int(w * 0.65), 0, w, h)).save(os.path.join(PROJ, "refs", "face_front.png"))
-    cv2 = score._cv()
-    img = cv2.imread(s7)
-    small, fs = score.faces(img)
-    k = img.shape[1] / small.shape[1]
-    big = sorted(fs, key=lambda f: -f[2] * f[3])[:3]            # the three close-ups
-    turned = max(big, key=lambda f: abs(score.yaw(f)) if abs(score.yaw(f)) < 0.6 else -1)   # the 3/4 one, not the profile
-    x, y, fw, fh = [v * k for v in turned[:4]]
-    cx, cy, side = x + fw / 2, y + fh / 2, max(fw, fh) * 2.6
-    box = (max(0, cx - side / 2), max(0, cy - side * 0.45), min(img.shape[1], cx + side / 2), min(img.shape[0], cy + side * 0.55))
-    Image.open(s7).crop(tuple(int(v) for v in box)).save(os.path.join(PROJ, "refs", "face_34.png"))
-    print("refs ready; 3/4 close-up yaw", round(score.yaw(turned), 2), "box", [int(v) for v in box])
+    s7w = Image.open(s7).size[0]          # the middle of the three close-up panels on the right = the three-quarter view
+    Image.open(s7).crop((int(s7w * 0.57), 0, int(s7w * 0.827), Image.open(s7).size[1])).save(os.path.join(PROJ, "refs", "face_34.png"))
+    print("refs ready")
 
 
 def queue2():
