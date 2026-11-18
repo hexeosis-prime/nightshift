@@ -27,3 +27,27 @@ The FLUX 3 edits keep the base still almost unchanged (pose, light, face); the u
 T-shirt) and a little of the face. Reference size and padding make no difference. Flux 2 edits replace the face with the
 sheet's (freckles, eye shape) but recompose more. So identity stays on Flux 2 (`image_model` flux2, the default) until a
 FLUX 3 wording or setting carries the face; FLUX 3 is the faster, cleaner choice for stills and scene edits.
+
+## Frames made straight from the character sheet (hexe's method)
+
+hexe's tests (workflow_test_bin): the sheet as `<ref_image_0>`, a style image as `<ref_image_1>`, no scene still, a prompt
+that describes the new shot, 50 steps cfg 3.5, upsampler on: face match 0.90 / 0.91 on close-ups that copy the sheet's
+close-up pose, 0.64 on a full-body dance. Then six varied shots (singing close-up, night profile, laugh, walk, wide dance,
+pensive three-quarter), same seeds, `scripts/ref_test.py`, `runs/ref-test`:
+
+| variant | r1 sing | r2 profile | r3 laugh | r4 walk | r5 dance (wide) | r6 pensive | mean | time per frame |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A current: Flux 2 still, then Flux 2 face edit | 0.64 | 0.60 | 0.56 | 0.68 | 0.59 | 0.42 | 0.58 | ~47 s + 60-166 s |
+| B from the sheet, 50 steps cfg 3.5, upsampler | 0.77 | 0.52 | 0.62 | 0.83 | 0.41 | 0.69 | 0.64 | 108 s |
+| C from the sheet, 16 steps cfg 1, upsampler | 0.87 | 0.62 | 0.62 | 0.83 | 0.40 | 0.75 | 0.68 | 27 s |
+| D as B, no upsampler, `<ref_image_N>` tags | 0.70 | 0.54 | 0.62 | 0.82 | 0.52 | 0.75 | 0.66 | 99 s |
+| E as D, "the first / second reference image" | 0.69 | 0.53 | 0.65 | 0.79 | 0.51 | 0.76 | 0.65 | 99 s |
+
+- Expressions and angles follow the prompt (head turn from frontal to full profile); the sheet's close-up pose is not
+  copied once the shot asks for something else. The freckles, eyes and hair hold in every frame.
+- C, the fast setting, scores as well as the slow ones: 27 s a frame against 108 s.
+- The upsampler carries the style image's golden-hour light into every shot (a dusk rooftop turns golden); without it the
+  prompt's light and location are followed more literally. Style images only when the user asks for that look.
+- Tags or words: with the upsampler off, `<ref_image_0>` and "the first reference image" give near-identical images.
+- Weak spot: small faces in wide shots (0.40-0.52).
+- The A edits ran 166 s each when FLUX 3 and Flux 2 jobs alternated in the queue (model swaps).
