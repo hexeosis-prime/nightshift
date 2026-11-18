@@ -10,7 +10,13 @@ of the face. Approve them before anything else renders; every still is identity-
 take is scored against them. On the first video the sheets kept moving while shots were being made, and the lead ended up
 as four or five slightly different people across the cut; every later fix was a repair of that.
 
-**Identity edit, then score.** Shots with `"still": "edit"` go through a two-image Flux edit: image 1 is the shot's still
+**Frames straight from the sheet (FLUX 3, Nov 18).** With `"image_model": "flux3"`, a character shot's first frame is made
+straight from the character sheet: the sheet is the first reference image, location plates come after it, and the prompt
+describes the shot (who, identity words, outfit, action, framing, location, light in words). No text still, no face edit.
+It scored 0.71 against 0.58 for the edit route below, at ~16-27 s a frame, with expressions and angles that follow the
+prompt. Keep style images for when a look is asked for: one carried its golden-hour light into every shot.
+
+**Identity edit, then score (Flux 2).** Shots with `"still": "edit"` go through a two-image Flux edit: image 1 is the shot's still
 (pose, framing, light), image 2 the sheet (face, hair, body, wardrobe). Render a small grid of seeds x wordings
 (`nightshift variants --ids c01,c02 --wordings AC --per 3`) and let the face scorer rank them. SFace cosine against the sheet:
 ~0.36 is the usual same-person line; moving a shot from 0.28 to 0.41, or 0.35 to 0.56, was visible to everyone.

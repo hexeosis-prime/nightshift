@@ -20,9 +20,8 @@ graphs, all core ComfyUI nodes (0.41+), no custom node packs:
 
 | job | file | what it does |
 |---|---|---|
-| `still` | `still_flux3` | text to image from one caption the builder writes (shot, person, outfit, action, setting, the world's `style`) |
-| `sheet_text` / `sheet_image` | `sheet7_from_text_flux3` / `sheet7_from_image_flux3` | a seven-panel character sheet (front, 3/4, profile and back full-body; front, 3/4 and profile close-ups), from the description (cfg 3.5) or from a picture (cfg 3, which keeps the layout even from a face-only photo); about 55 s and 90 s. The three-view `sheet_from_*_flux3` graphs are kept for older projects |
-| `edit2` / `edit3` | `edit_flux3_2image` / `edit_flux3_3image` | multi-reference edits through `Set Reference Multi Latent`; prompts written for Flux 2's "[reference_image2]" / "image 2" are rewritten to `<ref_image_1>` automatically |
+| `still` / `edit2` / `edit3` | `img_flux3` | hexe's all-in-one graph: scene stills (text to image), and character frames made straight from the sheet (the sheet as the first reference, location plates after it; 16 steps cfg 1, upsampler on). Won the Nov 18 tests: face match 0.71 against 0.58 for text still + identity edit (`docs/findings/2026-11-18-flux3-allinone.md`) |
+| `sheet_text` / `sheet_image` | `sheet_from_text_flux3` / `sheet_from_image_flux3` | the three-panel character sheet (full-body front with the face covered, full-body back, face close-up), from the description or from a picture. It beat a seven-panel sheet and split body/face references in the Nov 18 tests. `flux3_split` keeps the earlier per-job graphs (`still_flux3`, `edit_flux3_*`, `sheet7_*`) |
 
 They load the full (base) int8 checkpoint with Comfy's template settings: 50 steps at cfg 3.5 for text to image (still,
 sheet from text), 50 steps at cfg 1 for the reference edits (identity edits, sheet from a photo). About 30 s per still and

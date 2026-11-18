@@ -1,5 +1,9 @@
 # Nightshift: the Comfy challenge entry
 
+_This page records the entry as submitted (git tag `contest-2026-10`). Nightshift has changed since: FLUX 3 projects now use
+three-panel sheets and make every character frame straight from the sheet, and video runs through one LTX graph. See the
+README._
+
 Nightshift was built before Comfy's open-source creator app challenge (October 2026) was
 announced: the first commit in this repo is the pipeline as it was used to make "What Do You Want?", a 2:49 music
 video. The commits after it (dated October 29, 2026) adapt it to the challenge's brief, *"build a working app that makes it

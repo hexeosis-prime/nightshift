@@ -213,6 +213,8 @@ class Comfy:
             n = norm(b)
             if n == "flux3_image_klein_int8_convrot.safetensors":
                 return family[n + ("|-" if "-" in b else "|_")]
+            if n.startswith("qwen3.5_9b_flux3_prompt_upsampler"):   # the upsampler in any quantization (int8, w4a8)
+                return "upsampler"
             return family.get(n)
         for node in prompt.values():
             if not isinstance(node, dict):
