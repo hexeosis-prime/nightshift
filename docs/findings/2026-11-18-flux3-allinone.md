@@ -51,3 +51,22 @@ pensive three-quarter), same seeds, `scripts/ref_test.py`, `runs/ref-test`:
 - Tags or words: with the upsampler off, `<ref_image_0>` and "the first reference image" give near-identical images.
 - Weak spot: small faces in wide shots (0.40-0.52).
 - The A edits ran 166 s each when FLUX 3 and Flux 2 jobs alternated in the queue (model swaps).
+
+## Which character reference (same 6 shots, 16 steps cfg 1, upsampler on, light in words, no style image)
+
+| reference | r1 | r2 | r3 | r4 | r5 | r6 | mean | s/frame |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| S3 hexe's three-panel sheet (front, back, face close-up) | 0.88 | 0.51 | 0.68 | 0.71 | 0.46 | 0.72 | 0.66 | 20 |
+| S7 seven-panel sheet made from it | 0.70 | 0.53 | 0.57 | 0.66 | 0.54 | 0.51 | 0.58 | 19 |
+| F2 body panels + the face close-up, as two references | 0.64 | 0.58 | 0.67 | 0.68 | 0.28 | 0.75 | 0.60 | 25 |
+| F2q body panels + the seven-panel sheet's three-quarter close-up | 0.60 | 0.58 | 0.57 | 0.50 | 0.40 | 0.61 | 0.54 | 24 |
+| (A current way 0.58; C three-panel sheet + style image 0.68) | | | | | | | | |
+
+- The three-panel sheet alone wins: one reference slot, the best scores, the others free for location plates.
+- A sheet made from a sheet loses identity: the seven-panel one came out with lighter freckles and a softer face, and every
+  frame made from it inherits that. Keep the original sheet; make new views from the source photo if needed.
+- Splitting the sheet into body + face references gains nothing (the face is the same pixels); worth one more test with
+  the original source photo as the face reference.
+- With the light in words each frame matches its location (blue-hour rooftop, neon night, tungsten diner, midday sun,
+  sunset, bus at night); the style image had made them all golden hour. Row A still has the moodier, darker light and
+  deeper focus falloff.
