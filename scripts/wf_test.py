@@ -48,6 +48,16 @@ IMAGES = [  # name, size, refs, prompt, enhancer, cfg
     ("i_edit2_on", H, [f"{P}/connect_h_v0.png", f"{G}/stills/s04_edit_00001_.png"],
      "The tea lounge from <ref_image_0>. The woman from <ref_image_1> sits at the low table with the friends, holding a "
      "cup of tea and laughing. Same light and colors as <ref_image_0>.", True, 3.5),
+    # which file is which: the templates call the distilled file flux3-image-klein-int8-convrot (15-16 steps, cfg 1)
+    # and the base flux3-image-klein-base-int8-convrot; the Comfy blog's underscore names say the opposite
+    ("i_t2i_15cfg1", H, [], YOGA, False, {"steps": 15, "cfg": 1.0, "sampler": "er_sde"}),
+    ("i_t2i_old_file", H, [], YOGA, False, {"unet": "flux3_image_klein_int8_convrot.safetensors"}),
+    ("i_t2i_old_15cfg1", H, [], YOGA, False, {"unet": "flux3_image_klein_int8_convrot.safetensors", "steps": 15, "cfg": 1.0,
+                                             "sampler": "er_sde"}),
+    ("i_edit1_16cfg1", H, [f"{P}/yoga_h_v0.png"],
+     "<ref_image_0> at dusk: the windows show a deep blue evening sky and warm paper lamps glow along the walls. "
+     "Everything else exactly as in <ref_image_0>.", False, {"steps": 16, "cfg": 1.0}),
+    ("i_t2i_on_t2isys", H, [], YOGA, True, {"t2i_system": True}),
     ("i_edit4", H, [f"{P}/cave_h_v0.png", f"{P}/yoga_h_v0.png", f"{P}/connect_h_v0.png", f"{G}/stills/s04_edit_00001_.png"],
      "A calm wellness center lobby. Through an arch at left, the salt cave room from <ref_image_0>; through an arch at "
      "right, the yoga studio from <ref_image_1>. In front, the low tea table and cushions from <ref_image_2>. The woman "
@@ -66,7 +76,7 @@ def queue(only=None):
     os.makedirs(OUT, exist_ok=True)
     st = json.load(open(ST)) if os.path.exists(ST) else {}
     for name, (w, h), first, last, audio, prompt, secs in VIDEO:
-        if only and only not in name:
+        if only and name not in only.split(","):
             continue
         wf = Workflow.load("vid_ltx", WF); wf.apply_defaults()
         wf.set("image", c.upload(first, "wf_test"))
@@ -81,14 +91,25 @@ def queue(only=None):
         wf.seed(4440); wf.output(f"wf_test/{name}")
         st[name] = c.queue_prompt(wf.to_api()); print("queued", name)
     for name, (w, h), refs, prompt, enh, cfg in IMAGES:
-        if only and only not in name:
+        if only and name not in only.split(","):
             continue
         wf = Workflow.load("img_flux3", WF); wf.apply_defaults()
         wf.set("text_to_image", not refs); wf.set("prompt_enhancer", enh)
         for i, r in enumerate(refs):
             wf.set(f"image{i + 1}", c.upload(r, "wf_test"))
         wf.use_refs(len(refs))
-        wf.set("prompt", prompt); wf.set("width", w); wf.set("height", h); wf.set("cfg", cfg)
+        o = cfg if isinstance(cfg, dict) else {"cfg": cfg}
+        wf.set("prompt", prompt); wf.set("width", w); wf.set("height", h); wf.set("cfg", o.get("cfg", 3.5))
+        if o.get("steps"):
+            wf.set("steps", o["steps"])
+        if o.get("sampler"):
+            for n in ("7", "5786"):
+                wf.graph[n]["inputs"]["sampler_name"] = o["sampler"]
+        if o.get("unet"):
+            wf.graph["1"]["inputs"]["unet_name"] = o["unet"]
+        if o.get("t2i_system"):   # the official text-to-image upsampler instructions instead of the edit ones
+            wf.graph["5807"]["inputs"]["value"] = open(os.path.join(ROOT, "workflows", "flux3_t2i_upsampler_system.txt"),
+                                                       encoding="utf-8").read()
         wf.seed(4440); wf.output(f"wf_test/{name}")
         st[name] = c.queue_prompt(wf.to_api()); print("queued", name)
     json.dump(st, open(ST, "w"), indent=1)
