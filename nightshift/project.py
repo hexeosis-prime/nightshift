@@ -53,7 +53,9 @@ DEFAULTS = {
 # Profiles: presets layered under project.json (project.json still wins on any key it sets).
 #   profile      full = the first video's settings (a ~50-shot, ~7 hour pass); short = a ~30-40 s video in about an hour
 #   aspect       16:9 or 9:16 (stills, edits, video renders, crop and delivery size all follow)
-#   image_model  flux2 = Flux 2 Klein 9B (the first video); flux3 = FLUX 3 Image Klein (stills, identity edits, sheets)
+#   image_model  flux2 = Flux 2 Klein 9B (the first video); flux3 = FLUX 3 Image Klein through hexe's all-in-one graph
+#                (img_flux3: stills and identity edits, distilled model, 15-16 steps); flux3_split = the earlier per-job graphs
+#   image_rewrite  {"still": false, "edit": false}: the FLUX 3 prompt upsampler per job kind (img_flux3 only)
 PROFILES = {
     "full": {},
     "short": {
@@ -75,8 +77,11 @@ ASPECTS = {
 }
 IMAGE_MODELS = {
     "flux2": {},
-    "flux3": {"workflows": {"still": "still_flux3", "edit2": "edit_flux3_2image", "edit3": "edit_flux3_3image",
+    "flux3": {"workflows": {"still": "img_flux3", "edit2": "img_flux3", "edit3": "img_flux3",
                             "sheet_text": "sheet7_from_text_flux3", "sheet_image": "sheet7_from_image_flux3"}},
+    # the per-job FLUX 3 graphs used before hexe's all-in-one (Nov 18): base model, 50 steps
+    "flux3_split": {"workflows": {"still": "still_flux3", "edit2": "edit_flux3_2image", "edit3": "edit_flux3_3image",
+                                  "sheet_text": "sheet7_from_text_flux3", "sheet_image": "sheet7_from_image_flux3"}},
 }
 
 

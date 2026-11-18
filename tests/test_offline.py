@@ -136,6 +136,11 @@ def test_all():
         assert len(vs) == 4 and json.load(open(p.path(vs[3])))["94"]["inputs"]["filename_prefix"].endswith("s06_vC1")
 
         # videos
+        cfg0 = p.load("project.json")       # the per-mode LTX graphs first (vid_ltx, the default since Nov 17, is checked below)
+        cfg0["workflows"] = dict(cfg0.get("workflows") or {}, ff="vid_ltx_ff", fflf="vid_ltx_fflf", lipsync="vid_ltx_lipsync")
+        p.save("project.json", cfg0)
+        from nightshift.project import Project
+        p = Project(p.root)
         r = build.build(p, "videos")
         assert not r["skipped"], r
         lj = json.load(open(p.path("jobs", "s02_video.json")))
@@ -159,7 +164,6 @@ def test_all():
         old_wf = dict(cfg.get("workflows", {}))
         cfg["workflows"] = dict(old_wf, ff="vid_ltx", fflf="vid_ltx", lipsync="vid_ltx")
         p.save("project.json", cfg)
-        from nightshift.project import Project
         p1 = Project(p.root)
         r = build.build(p1, "videos")
         assert not r["skipped"], r

@@ -155,9 +155,19 @@ class Builder:
         return " ".join(p for p in parts if p)
 
     # ---- stills -------------------------------------------------------------------------------
+    def flux3_mode(self, wf, kind, refs=0):
+        """hexe's all-in-one FLUX 3 graph: text to image or an edit with this many references, the upsampler per job kind."""
+        if not wf.has("text_to_image"):
+            return
+        wf.set("text_to_image", refs == 0)
+        if refs:
+            wf.use_refs(refs)
+        wf.try_set("prompt_enhancer", bool((self.p.cfg.get("image_rewrite") or {}).get(kind, False)))
+
     def still_job(self, s):
         wf = self.p.workflow("still")
         wf.apply_defaults()
+        self.flux3_mode(wf, "still")
         chars = [self.char(c) for c in s.get("chars", [])]
         loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
               (", " + s["location_extra"] if s.get("location_extra") else "")
@@ -270,6 +280,7 @@ class Builder:
             wf = self.p.workflow("edit2")
             text = self.sheet_text(s, wording or s.get("wording", "A"))
         wf.apply_defaults()
+        self.flux3_mode(wf, "edit", 3 if add else 2)
         self.size(wf)
         wf.set("image1", img)
         wf.set("image2", self.sheet(ch_key, world, s.get("sheet_ref")))
@@ -284,6 +295,7 @@ class Builder:
     def edit_job(self, s):
         wf = self.p.workflow("edit2")
         wf.apply_defaults()
+        self.flux3_mode(wf, "edit", 2)
         self.size(wf)
         img, _ = self.stage_still(s, s.get("edit_base") or self.default_model(s))
         wf.set("image1", img)
