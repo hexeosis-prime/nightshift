@@ -29,7 +29,7 @@ def make_env():
     for d in ("input", "output", "user"):
         os.makedirs(os.path.join(comfy, d))
     root = os.path.join(comfy, "output", "nightshift", "demo")
-    p = init(root, "demo", comfy_dir=comfy)
+    p = init(root, "demo", comfy_dir=comfy, image_model="flux2")   # the Flux 2 path (text still + identity edit)
     return tmp, comfy, p
 
 

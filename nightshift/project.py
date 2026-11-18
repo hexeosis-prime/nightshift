@@ -53,7 +53,7 @@ DEFAULTS = {
 # Profiles: presets layered under project.json (project.json still wins on any key it sets).
 #   profile      full = the first video's settings (a ~50-shot, ~7 hour pass); short = a ~30-40 s video in about an hour
 #   aspect       16:9 or 9:16 (stills, edits, video renders, crop and delivery size all follow)
-#   image_model  flux2 = Flux 2 Klein 9B (the first video); flux3 = FLUX 3 Image Klein through hexe's all-in-one graph
+#   image_model  flux3 (the default) = FLUX 3 Image Klein through hexe's all-in-one graph; flux2 = Flux 2 Klein 9B (the first video)
 #                (img_flux3: stills and identity edits, distilled model, 15-16 steps); flux3_split = the earlier per-job graphs
 #   image_rewrite  {"still": false, "edit": false, "sheet": true}: the FLUX 3 prompt upsampler per job kind (img_flux3 only)
 #   frames_from_sheet  character frames made straight from the sheet (default: true when the edit graph is img_flux3)
@@ -93,7 +93,7 @@ def presets(file_cfg, warnings=None):
     An unknown value raises, or, given a warnings list, falls back to the default and notes it there (so one bad value
     can't lock a project: every later call, even the one that would fix project.json, opens the project first)."""
     out = {}
-    for table, key, default in ((PROFILES, "profile", "full"), (ASPECTS, "aspect", None), (IMAGE_MODELS, "image_model", "flux2")):
+    for table, key, default in ((PROFILES, "profile", "full"), (ASPECTS, "aspect", None), (IMAGE_MODELS, "image_model", "flux3")):
         name = (file_cfg or {}).get(key) or default
         if name is not None and name not in table:
             msg = f"project.json {key} '{name}': choose one of {', '.join(table)}"
@@ -202,7 +202,7 @@ class Project:
         file_cfg = _load(self.path("project.json"), {})
         self.warnings = []
         self.cfg = _merge(_merge(DEFAULTS, presets(file_cfg, self.warnings)), file_cfg)
-        for k, (table, default) in {"profile": (PROFILES, "full"), "aspect": (ASPECTS, None), "image_model": (IMAGE_MODELS, "flux2")}.items():
+        for k, (table, default) in {"profile": (PROFILES, "full"), "aspect": (ASPECTS, None), "image_model": (IMAGE_MODELS, "flux3")}.items():
             if file_cfg.get(k) is not None and file_cfg[k] not in table:   # the bad value must not leak into cfg either
                 self.cfg.pop(k, None) if default is None else self.cfg.update({k: default})
         if file_cfg.get("aspect") in ASPECTS:   # the aspect owns the sizes: an old project.json's 16:9 sizes must not win over "aspect": "9:16"
@@ -362,7 +362,7 @@ class Project:
         return hits[-1]
 
 
-def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="director", skip=()):
+def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="director", skip=(), image_model="flux3"):
     """Create a project folder from the starter template."""
     root = os.path.abspath(root)
     starter = template or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "projects", "starter"))
@@ -388,5 +388,6 @@ def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="d
     if comfy_dir:
         cfg["comfy"]["dir"] = comfy_dir
     cfg["mode"] = mode
+    cfg.setdefault("image_model", image_model)      # written down, so a later change of the default can't switch it
     _dump(cfg, os.path.join(root, "project.json"))
     return Project(root)

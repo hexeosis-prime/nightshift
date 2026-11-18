@@ -152,7 +152,7 @@ nightshift run --yolo      # or: no stops after the character looks are approved
   one take, 4 song seeds, a 40 s song, no HUD)
 - `"aspect"`: `16:9` (1280×768 renders, 1920×1080 delivery) or `9:16` (768×1280 renders, 1080×1920 delivery)
 - `"image_model"`: `flux3` (FLUX 3 Image Klein through one all-in-one graph: three-panel sheets, character frames made
-  straight from the sheet, scene stills; the default in the app) or `flux2` (Flux 2 Klein 9B: text stills, then an identity
+  straight from the sheet, scene stills; the default) or `flux2` (Flux 2 Klein 9B: text stills, then an identity
   edit with the sheet)
 
 ## How a pass works
