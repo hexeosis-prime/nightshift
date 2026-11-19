@@ -41,8 +41,10 @@ def setup(src, dst, comfy_dir):
         shutil.copyfile(os.path.join(src, f), os.path.join(dst, f))
     shutil.copytree(os.path.join(src, "refs"), os.path.join(dst, "refs"), dirs_exist_ok=True)
     cfg = json.load(open(os.path.join(src, "project.json")))
-    cfg.update(name=os.path.basename(dst.rstrip("/")), comfy_dir=comfy_dir,
-               comfy_url=os.environ.get("COMFY_URL", "http://10.0.1.171:8188"))
+    cfg["name"] = os.path.basename(dst.rstrip("/"))
+    cfg["comfy"] = dict(cfg.get("comfy") or {}, dir=comfy_dir, url=os.environ.get("COMFY_URL", "http://10.0.1.171:8188"))
+    for k in ("input_subdir", "output_subdir"):
+        cfg["comfy"].pop(k, None)
     json.dump(cfg, open(os.path.join(dst, "project.json"), "w"), indent=1)
     print("test project at", dst)
 
