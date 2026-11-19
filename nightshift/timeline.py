@@ -2,7 +2,7 @@
 
 Every shot gets a slot in the edit and is rendered at exactly that length (no freeze frames, no wasted frames).
   - A shot with "anchor": "<first words of a lyric line>" starts just before that line is sung ("lead" seconds earlier
-    if the singer needs a run-up). Anchors are matched in order with a small dynamic program, so a repeated chorus
+    if the singer needs a run-up), using the line times in song/lines.json. Anchors are matched in order with a small dynamic program, so a repeated chorus
     line lands on the right repetition.
   - Shots between two anchors share the gap (lip-sync shots weigh 2, others 1); cut points snap to nearby beats.
   - Slots under min_seconds are dropped (their time goes to the neighbour). Every clip renders its whole slot, up to
@@ -39,11 +39,23 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
     song_in = song_input or project.stage_input(song)   # the name ComfyUI's audio loaders use
     nw = [norm(w["word"]) for w in words]
 
+    # Anchors match the lyric sheet's lines as timed by the analysis (song/lines.json): the sheet's words are exact, so a
+    # line whose first words the recogniser missed still anchors, and "Every light is ..." can't land on "Every road is
+    # ..." (Nov 19, video-6: two of three anchors went to the wrong lines and four shots were squeezed out). Without
+    # timed lines, the heard words are matched as before.
+    lines = [l for l in (project.load("song/lines.json", {"lines": []}) or {}).get("lines", []) if l.get("text")]
+    lw = [[norm(x) for x in l["text"].split()] for l in lines]
+
     def cands(a):
         key = [norm(x) for x in a.split()][:3]
+        if lines:
+            return [i for i, ws in enumerate(lw) if ws[:len(key)] == key[:len(ws)] and key]
         need = len(key) - (1 if len(key) >= 3 else 0)
         return [i for i in range(len(nw) - len(key) + 1)
                 if nw[i] == key[0] and sum(nw[i + j] == key[j] for j in range(len(key))) >= need]
+
+    def when(i):
+        return lines[i]["start"] if lines else words[i]["start"]
 
     todo = []
     for s in shots:
@@ -68,7 +80,7 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
     chosen = {id(s): i for s, i in best[1]}
     for s, cs in todo:
         if id(s) in chosen:
-            s["t"] = max(0.0, words[chosen[id(s)]]["start"] - s.get("lead", 0.0) - 0.15)
+            s["t"] = max(0.0, when(chosen[id(s)]) - s.get("lead", 0.0) - 0.15)
         else:
             s["anchor_note"] = "anchor not found" if not cs else "anchor out of order, unanchored"
     last = -1
