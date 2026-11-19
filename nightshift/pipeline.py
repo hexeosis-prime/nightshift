@@ -226,11 +226,12 @@ def step_song(project, st, on_event):
     for f in rendered:
         wj = project.path("review", os.path.basename(f) + ".words.json")
         if not os.path.exists(wj):
-            lyrics.transcribe(f, wj, prompt=". ".join(sheet[:6]))
-        cov = lyrics.coverage(sheet, json.load(open(wj))["words"])
-        rows.append({"file": project.rel(f), "lyric_coverage": cov})
-        on_event(f"song {os.path.basename(f)}: sings {cov:.0%} of the lyric sheet")
-    rows.sort(key=lambda r: -r["lyric_coverage"])
+            lyrics.transcribe(f, wj, lines=sheet)
+        heard = json.load(open(wj))["words"]
+        cov, clear = lyrics.coverage(sheet, heard), lyrics.clarity(sheet, heard)
+        rows.append({"file": project.rel(f), "lyric_coverage": cov, "clarity": clear})
+        on_event(f"song {os.path.basename(f)}: sings {cov:.0%} of the lyric sheet (clarity {clear:.2f})")
+    rows.sort(key=lambda r: (-r["lyric_coverage"], -r.get("clarity", 0)))
     project.save("review/songs.json", {"songs": rows})
     if project.cfg.get("mode") == "yolo":
         song.choose(project, rows[0]["file"])

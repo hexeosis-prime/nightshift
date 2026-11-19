@@ -177,13 +177,17 @@ stops` · `extreme sidechain compression ducking the entire mix to the kick drum
 ## 6. Rendering and picking a take in Nightshift
 
 - **[FIELD] Render several seeds** (`song_seeds`, four by default) and let Nightshift rank them by **lyric coverage**:
-  Whisper transcribes each take and measures how much of the lyric sheet is actually sung. Four takes of one caption
-  scored 21%, 57%, 86% and 39%; renders drop or invent whole lines. The top take is picked; listen before a long render.
+  Whisper transcribes each take and measures how much of the lyric sheet is actually sung; takes that sing every line are
+  ranked by **clarity** (how confidently the words were heard). The top take is picked; listen before a long render.
+- **[FIELD] How the words are heard (fixed Nov 19).** Whisper's voice-activity filter cut sung lines over music, and the
+  lyric sheet given as a prompt made it skip ahead and echo lines back at one instant: one Nov 18 song showed 2 of 6
+  lines timed, and the takes scored 21-86% though all four sang every line. Nightshift now transcribes without the voice
+  filter, once without and once with the lyric prompt, drops echoed bursts, repeats and zero-confidence words, and keeps
+  the pass that times more lines. The same song: 6 of 6 lines, starts within 0.2 s of the words' own timing.
 - **[FIELD] Speed on a 3090**: about a minute per take for a 40-second song; about 7-8 minutes for a 3-minute track.
 - **`max_seconds`** caps the length (`song_max_seconds` comes from the project length: 40 s for a short).
-- **[FIELD] Lyric timing** (for lip-sync anchors and the on-screen lyrics) is measured on the separated vocal stem. On the
-  Nov 18 runs only 2 of 6 lines were timed (coverage 29%), so the lyric overlay showed one line; the alignment is being
-  fixed. Check `song/lines.json` before relying on the overlay.
+- **Lyric timing** (for lip-sync anchors and the on-screen lyrics) is measured on the separated vocal stem
+  (`song/lines.json`).
 - **Upload your own track** instead (Studio: song source "upload"); a track with no words becomes an instrumental project.
 - **[FIELD] Vocalise** (vocals as an instrument, invented language) can't be ranked by lyric coverage; see ROADMAP.md.
 
