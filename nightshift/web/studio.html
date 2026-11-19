@@ -177,6 +177,18 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
 .opt.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
 .opt.on .meta{color:var(--amber)}
 .songs{display:flex;flex-direction:column;gap:10px}
+.shotrow{border-top:1px solid var(--line);padding:14px 0 6px}.shotrow:first-child{border-top:0;padding-top:4px}
+.shotrow .head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.shotrow .head b{font:600 14px/1 var(--sans)}.shotrow .head .label{margin-left:2px}
+.mini{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.mini.v{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.mini .opt img,.mini .opt video{display:block;width:100%;aspect-ratio:var(--ar,9/16);object-fit:cover;background:#000}
+.opt.on{outline:2px solid var(--amber);outline-offset:-2px}
+.opt .tag{position:absolute;left:8px;top:8px;padding:3px 7px;border-radius:6px;background:var(--amber);color:#111;font:600 11px/1 var(--mono)}
+.btn.sm{padding:6px 10px;font-size:12.5px}
+.cpacts{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.song .choose{justify-self:end}
+.song.on .choose{background:var(--amber);color:#111}
 .song{display:grid;grid-template-columns:110px minmax(0,1fr) 120px;gap:14px;align-items:center;padding:10px 12px;border:1px solid var(--line2);
   border-radius:10px;background:var(--bg);cursor:pointer}
 .song.on{border-color:var(--amber)}
@@ -501,7 +513,10 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
         <div class="panel final hide" id="finalPanel">
           <div class="phead"><h3>Finished</h3><span class="label" id="finalName"></span></div>
           <video id="finalVid" controls playsinline></video>
-          <div class="row" style="margin-top:14px"><a class="btn" id="finalDl" download>Download</a></div>
+          <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap"><a class="btn primary" id="finalDl" download>Download</a>
+            <button class="btn" onclick='goBack("takes_review")'>Revise: video takes</button><button class="btn" onclick='goBack("stills_review")'>Revise: first frames</button>
+            <button class="btn" onclick="go('')">Start new</button><button class="btn ghost" onclick="archiveIt()">Archive</button></div>
+          <div class="note">Revising starts the next pass: everything made so far is kept, only what you change renders again.</div>
         </div>
         <div class="panel">
           <div class="phead"><h3>On the wall</h3><span class="label">latest renders</span></div>
@@ -570,10 +585,10 @@ const STEP_NAMES = {sheets:"character look", song:"song", analyze:"beats + lyric
 const CP = {
   sheets_review:["Approve the look","Pick the character sheet you want. Every frame of this character is made from it, and every take is scored against it."],
   outfits_review:["Approve the outfits","The approved face, dressed for each world."],
-  song_pick:["Pick the song","Every seed MiniMax Music 3 sang, with how much of your lyric sheet it actually sings."],
-  stills_review:["First frames","The first frame of each shot, made from the character sheet; the best face match is used."],
-  takes_review:["Takes","Contact sheets of the takes; the cut already uses the best-scoring one."],
-  pass_review:["The pass","The finished pass, plus a review copy with shot numbers burned in for notes."],
+  song_pick:["Pick the song","Takes MiniMax Music 3 sang, ranked by how much of your lyric sheet each one sings."],
+  stills_review:["First frames","Each shot's first frame. Pick one per shot, or ask for new ones; the best face match is chosen unless you pick."],
+  takes_review:["Video takes","Every shot's clip before the edit. Hover to play; pick another take, or ask for a new one."],
+  pass_review:["The pass","The finished pass, and a review copy with shot numbers burned in. Finish it, or go back and change frames or takes."],
 };
 let INFO = null, CUR = null, logNext = 0, timer = null, lastView = null;
 const state = {tab:"form", who:"woman", songSrc:"generate", lyrSrc:"sample", upLyr:"own", aspect:"9:16", model:"flux3", mode:"director",
@@ -734,7 +749,7 @@ async function saveAgent(){
 }
 let WAITING = null;
 async function listVideos(){
-  const {projects} = await api("/api/projects");
+  let {projects} = await api("/api/projects");
   if (WAITING) {
     const fresh = projects.find(p => !WAITING.known.has(p.name));
     const mins = Math.round((Date.now() - WAITING.since) / 60000);
@@ -747,6 +762,7 @@ async function listVideos(){
       ? `✓ Posted to your agent's notes ${mins} min ago. No project yet: if your agent isn't reading its notes, tell it to.`
       : `✓ Sent to your agent. Waiting for it to start the video (${mins} min)...`;
   }
+  projects = projects.filter(p => !p.archived);
   $("vlist").innerHTML = projects.length ? projects.map(p => {
     const b = p.waiting ? `<span class="badge wait">${esc((CP[p.waiting] || [p.waiting])[0])}</span>` : p.step === "done" ? `<span class="badge done">done</span>` :
       p.step ? `<span class="badge">${esc(STEP_NAMES[p.step] || p.step)}</span>` : `<span class="badge">new</span>`;
@@ -864,6 +880,16 @@ async function act(what){
     if (what === "continue") $("cpNotes").value = "";
   } catch(e){ $("pErr").textContent = e.message }
 }
+async function reroll(body){
+  try { render(await api(`/api/projects/${encodeURIComponent(CUR)}/reroll`, body)); lastView = null } catch(e){ $("pErr").textContent = e.message }
+}
+async function goBack(to){
+  try { render(await api(`/api/projects/${encodeURIComponent(CUR)}/back`, {to})); lastView = null; window.scrollTo(0, 0) } catch(e){ $("pErr").textContent = e.message }
+}
+async function archiveIt(){
+  if (!confirm("Archive this video? It leaves the list; its folder stays where it is.")) return;
+  try { await api(`/api/projects/${encodeURIComponent(CUR)}/archive`, {on:true}); go("") } catch(e){ $("pErr").textContent = e.message }
+}
 async function renameIt(){
   const v = lastV || {}, n = prompt("Name this video", v.display_name || v.name || ""); if (n === null) return;
   const t = prompt("Title shown in the HUD (empty for none). A new title shows from the next pass.", v.title || ""); if (t === null) return;
@@ -959,30 +985,52 @@ function render(v){
     const [t, h] = CP[w.checkpoint] || [w.checkpoint, ""];
     $("cpTitle").textContent = t; $("cpHint").textContent = h;
     let html = "";
+    const busy = w.busy, ar = (c.aspect || "16:9") === "9:16" ? "9/16" : "16/9";
+    const rr = (body, label) => `<button class="btn sm" ${v.running ? "disabled" : ""} onclick='reroll(${JSON.stringify(body)})'>${label}</button>`;
+    const isBusy = b => busy && busy.kind === b.kind && (busy.shot || null) === (b.shot || null) && (busy.char || null) === (b.char || null);
+    const making = `<span class="label" style="color:var(--amber)">making new options…</span>`;
     for (const ch of w.choices || []) {
       if (ch.kind === "sheet") {
-        html += `<div class="label" style="margin:4px 0 10px">${esc(ch.char)} · ${esc(ch.world)}</div><div class="opts">` + ch.options.map(o => {
-          const on = ch.picked_file === o.file;
-          return `<div class="opt ${on ? "on" : ""}" data-f="${esc(o.file)}" onclick='pick(${JSON.stringify({kind:"sheet", char:ch.char, world:ch.world, file:o.file})}); this.parentNode.querySelectorAll(".opt").forEach(x=>x.classList.toggle("on", x===this))'>
-            <span class="zoom" onclick="return zoom('${fileUrl(v.name, o.file)}', event)">⤢ View large</span><img src="${fileUrl(v.name, o.file)}" loading="lazy"><div class="meta"><span>${esc(o.file.split("/").pop())}</span><span>${o.score == null ? "" : esc(o.by) + " " + o.score}</span></div></div>`}).join("") + `</div>`;
-        if (ch.picked) html += `<div class="note">Picked: ${esc(ch.picked)}. Anything you don't pick gets the best-scoring sheet.</div>`;
+        const b = {kind:"sheet", char:ch.char, world:ch.world};
+        html += `<div class="shotrow"><div class="head"><b>${esc(ch.char === "lead" ? "Lead" : ch.char)}</b><span class="label">${ch.options.length} looks</span>
+          ${isBusy(b) ? making : rr(b, "3 new looks")}</div><div class="opts">` + ch.options.map((o, i) => {
+          const on = (ch.picked_file || ch.options[0].file) === o.file;
+          return `<div class="opt ${on ? "on" : ""}" onclick='pick(${JSON.stringify({kind:"sheet", char:ch.char, world:ch.world, file:o.file})}); this.parentNode.querySelectorAll(".opt").forEach(x=>x.classList.toggle("on", x===this))'>
+            ${on && !ch.picked_file ? `<span class="tag">top pick</span>` : ""}<span class="zoom" onclick="return zoom('${fileUrl(v.name, o.file)}', event)">⤢ View large</span><img src="${fileUrl(v.name, o.file)}" loading="lazy"><div class="meta"><span>look ${i + 1}</span><span>${o.score == null ? "" : esc(o.by) + " " + o.score}</span></div></div>`}).join("") + `</div></div>`;
       } else if (ch.kind === "song") {
-        html += `<div class="songs">` + ch.options.map(o => `<div class="song ${ch.picked_file === o.file ? "on" : ""}"
-          onclick='pick(${JSON.stringify({kind:"song", file:o.file})}); this.parentNode.querySelectorAll(".song").forEach(x=>x.classList.toggle("on", x===this))'>
-          <div class="cov">${o.score == null ? "" : `<b>${Math.round(o.score * 100)}%</b>`}${esc(o.by)}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}" onclick="event.stopPropagation()"></audio>
-          <div class="cov">${esc(o.file.split("/").pop())}</div></div>`).join("") + `</div><div class="note">Click a song to choose it, then approve.</div>`;
+        const b = {kind:"song"};
+        const chosen = ch.picked_file || (ch.options[0] || {}).file;
+        html += `<div class="shotrow"><div class="head"><b>The song</b><span class="label">${ch.options.length} takes, best first</span>${isBusy(b) ? making : rr(b, "3 new takes")}</div><div class="songs">` + ch.options.map((o, i) => `<div class="song ${chosen === o.file ? "on" : ""}">
+          <div class="cov">${o.score == null ? "" : `<b>${Math.round(o.score * 100)}%</b>`}${esc(o.by)}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}"></audio>
+          <button class="btn sm choose" onclick='pick(${JSON.stringify({kind:"song", file:o.file})}); this.closest(".songs").querySelectorAll(".song").forEach(x=>x.classList.toggle("on", x===this.closest(".song")))'>${chosen === o.file ? "chosen" : "use this one"}</button></div>`).join("") +
+          `</div><div class="note">The best take is chosen unless you pick another.</div></div>`;
+      } else if (ch.kind === "still" || ch.kind === "take") {
+        const b = {kind:ch.kind, shot:ch.shot}, vid = ch.kind === "take";
+        const cur = vid ? (ch.picked_file || (ch.options[0] || {}).file) : null;
+        html += `<div class="shotrow"><div class="head"><b>Shot ${+ch.shot.slice(1)}</b><span class="label">${esc(ch.desc)}</span>
+          ${ch.can_reroll ? (isBusy(b) ? making : rr(b, vid ? "a new take" : "2 new frames")) : ""}</div><div class="mini ${vid ? "v" : ""}" style="--ar:${ar}">` +
+          ch.options.map(o => {
+            const on = vid ? cur === o.file : ch.picked_label === o.label;
+            const media = vid ? `<video src="${fileUrl(v.name, o.file)}#t=0.5" preload="metadata" muted playsinline loop onmouseenter="this.play()" onmouseleave="this.pause()"></video>`
+                              : `<img src="${fileUrl(v.name, o.file)}" loading="lazy">`;
+            return `<div class="opt ${on ? "on" : ""}" onclick='pick(${JSON.stringify({kind:ch.kind, shot:ch.shot, file:o.file})}); this.parentNode.querySelectorAll(".opt").forEach(x=>x.classList.toggle("on", x===this))'>
+              ${vid ? "" : `<span class="zoom" onclick="return zoom('${fileUrl(v.name, o.file)}', event)">⤢</span>`}${media}<div class="meta"><span>${on ? "chosen" : ""}</span><span>${o.score == null ? "" : "face " + o.score}</span></div></div>`}).join("") + `</div></div>`;
       }
     }
     if (!(w.choices || []).length) {
       html += `<div class="packet">` + w.files.filter(f => /\.(png|jpe?g|webp|mp4)$/i.test(f)).map(f => /\.mp4$/i.test(f) ?
-        `<video controls playsinline src="${fileUrl(v.name, f)}"></video><div class="note">${esc(f)}</div>` : `<img src="${fileUrl(v.name, f)}" loading="lazy" onclick="zoom(this.src)">`).join("") + `<div class="note">Click a picture to see it large.</div></div>`;
+        `<video controls playsinline src="${fileUrl(v.name, f)}#t=0.5" preload="metadata"></video><div class="note">${esc(/review/.test(f) ? "Review copy: shot numbers burned in, for notes" : "The pass")}</div>` : `<img src="${fileUrl(v.name, f)}" loading="lazy" onclick="zoom(this.src)">`).join("") + `</div>`;
     }
+    const backs = {takes_review:[["stills_review", "Back to first frames"]], pass_review:[["takes_review", "Back to video takes"], ["stills_review", "Back to first frames"]]}[w.checkpoint] || [];
+    html += backs.length ? `<div class="cpacts">` + backs.map(([to, l]) => `<button class="btn" onclick='goBack("${to}")'>← ${l}</button>`).join("") + `</div>` : "";
     $("cpBody").innerHTML = html;
-    $("cpGo").textContent = w.checkpoint === "pass_review" ? "Approve the pass" : "Approve & carry on";
+    $("cpGo").textContent = w.checkpoint === "pass_review" ? "This is the video: finish" : "Approve & carry on";
+    $("cpGo").disabled = !!busy;
   }
   // final
   const fin2 = v.finished[v.finished.length - 1];
-  $("finalPanel").classList.toggle("hide", !fin2);
+  $("finalPanel").classList.toggle("hide", !fin2 || !!v.waiting);
+  $("wall").closest(".panel").classList.toggle("hide", !!v.waiting);   // at a checkpoint the choices are the wall
   if (fin2) { const key = v.name + "/" + fin2, u = fileUrl(v.name, fin2) + "?t=" + Date.now();
     if ($("finalVid").dataset.key !== key) { $("finalVid").src = u; $("finalVid").dataset.key = key }   // the file name repeats across projects: key on project + file
     $("finalVid").className = c.aspect === "9:16" ? "v" : ""; $("finalDl").href = u; $("finalName").textContent = fin2 }

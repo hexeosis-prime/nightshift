@@ -57,8 +57,12 @@ eye: a hand with too many fingers, a face that drifts, a stray word painted on a
 itself (it re-takes shots with burned-in text and keeps the take whose face best matches the character sheet), but not
 all of it. Watching the result and deciding whether to run a second pass or keep the weirdness is the human's call.
 
-The pass then runs on your ComfyUI. The page shows each step, the jobs, a wall of the latest renders and the log, and stops
-at the checkpoints: pick the character sheet, pick the song, look over the first frames and takes, watch the pass.
+The pass then runs on your ComfyUI. The page shows each step, the jobs, a wall of the latest renders and the log, and in
+Checkpoint Mode stops at each checkpoint with the same actions: **choose** (3 character looks, 3 song takes, the first
+frame and the video take for each shot), **new options** (new seeds, the same brief, for one look, the song or one shot),
+**approve**, and **go back** (from the takes or the finished pass to the first frames or takes; after a pass that starts
+the next pass, keeping every render). Nothing you don't pick is left undecided: the best-scoring option is used. The
+finished video gets Download, Revise, Start new and Archive.
 Projects land in ComfyUI's `output/nightshift/`, so renders appear in place. Each one is an ordinary Nightshift project
 that the CLI and the MCP server can open too. The same form from the command line:
 

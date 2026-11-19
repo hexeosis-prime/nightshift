@@ -16,6 +16,9 @@ import numpy as np
 
 MODELS = os.environ.get("NIGHTSHIFT_MODELS", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models")))
 _det = _rec = None
+import threading
+_LOCK = threading.RLock()     # one OpenCV detector shared by the pass and the app's checkpoint pages: never two at once
+_SCORES = {}                  # (file, mtime, character, world) -> face match, so a checkpoint page doesn't re-score on each poll
 
 
 def _cv():
@@ -36,21 +39,23 @@ def _models():
 
 
 def faces(img):
-    det, _ = _models()
-    cv2 = _cv()
-    h, w = img.shape[:2]
-    s = 1280 / max(h, w)
-    if s < 1:
-        img = cv2.resize(img, (int(w * s), int(h * s)))
+    with _LOCK:
+        det, _ = _models()
+        cv2 = _cv()
         h, w = img.shape[:2]
-    det.setInputSize((w, h))
-    _, f = det.detect(img)
+        s = 1280 / max(h, w)
+        if s < 1:
+            img = cv2.resize(img, (int(w * s), int(h * s)))
+            h, w = img.shape[:2]
+        det.setInputSize((w, h))
+        _, f = det.detect(img)
     return img, ([] if f is None else sorted(f, key=lambda r: -r[2] * r[3]))
 
 
 def embed(img, f):
-    _, rec = _models()
-    return rec.feature(rec.alignCrop(img, f))
+    with _LOCK:
+        _, rec = _models()
+        return rec.feature(rec.alignCrop(img, f))
 
 
 def sheet_refs(path, n=6):
@@ -176,7 +181,7 @@ def refs_for(project, ch_key, world, cache={}):
     path = p if os.path.isabs(p) else project.path(p)
     if not os.path.exists(path) and project.comfy_dir:
         path = os.path.join(project.comfy_dir, "input", p)
-    key = (path,)
+    key = (path, os.path.getmtime(path) if os.path.exists(path) else 0)     # a re-picked sheet is a new reference
     if key not in cache:
         cache[key] = sheet_refs(path)
     return cache[key]
@@ -188,7 +193,10 @@ def rank(project, files, ch_key, world="real"):
     rows = []
     for f in files:
         f = f if os.path.isabs(f) else project.path(f)
-        s = score_clip(refs, f) if f.lower().endswith((".mp4", ".mov", ".webm")) else score_image(refs, f)
+        key = (f, os.path.getmtime(f) if os.path.exists(f) else 0, id(refs))
+        if key not in _SCORES:
+            _SCORES[key] = score_clip(refs, f) if f.lower().endswith((".mp4", ".mov", ".webm")) else score_image(refs, f)
+        s = _SCORES[key]
         rows.append({"file": project.rel(f), "face": None if s is None else round(s, 3)})
     return sorted(rows, key=lambda r: -(r["face"] or -1))
 

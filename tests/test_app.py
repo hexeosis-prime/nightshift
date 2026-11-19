@@ -96,7 +96,7 @@ def main(keep=False, stay=False):
         v = wait(base, name, lambda v: v["waiting"])
         assert v["waiting"]["checkpoint"] == "sheets_review", v["waiting"]
         ch = v["waiting"]["choices"][0]
-        assert ch["kind"] == "sheet" and len(ch["options"]) == 2, ch
+        assert ch["kind"] == "sheet" and len(ch["options"]) == 3, ch
         job = json.load(open(p.path("jobs", "sheet_lead_real_c0.json")))
         assert any(n["class_type"] == "ReferenceMultiLatent" for n in job.values()), "photo -> FLUX 3 sheet from image"
         call(base, f"/api/projects/{name}/pick", {"kind": "sheet", "char": "lead", "world": "real", "file": ch["options"][1]["file"]})
@@ -119,14 +119,49 @@ def main(keep=False, stay=False):
             if seen[-1] == "stills_review":           # the first frames page must show the first frames
                 imgs = [f for f in v["waiting"].get("files", []) if f.endswith((".jpg", ".png"))]
                 assert imgs and all(os.path.exists(p.path(f)) for f in imgs), v["waiting"]
-        assert seen == ["sheets_review", "stills_review", "pass_review"], seen     # one take per shot: no takes review
+                rows = [r for r in v["waiting"]["choices"] if r["kind"] == "still" and r["who"]]
+                assert rows and all(len(r["options"]) >= 2 for r in rows), v["waiting"]["choices"]
+                r0 = rows[0]
+                call(base, f"/api/projects/{name}/pick", {"kind": "still", "shot": r0["shot"], "file": r0["options"][-1]["file"]})
+                call(base, f"/api/projects/{name}/reroll", {"kind": "still", "shot": r0["shot"]})
+                v = wait(base, name, lambda v: v["waiting"] and not v["running"] and not v["waiting"].get("busy"))
+                r1 = next(r for r in v["waiting"]["choices"] if r.get("shot") == r0["shot"])
+                assert len(r1["options"]) == len(r0["options"]) + 2, (len(r0["options"]), len(r1["options"]))
+                assert r1["picked_label"] == r0["options"][-1]["label"], r1
+                print("ok   first frames: per-shot pick and 2 new frames for one shot")
+            if seen[-1] == "takes_review":
+                rows = v["waiting"]["choices"]
+                assert rows and all(r["kind"] == "take" for r in rows), rows
+                sid = rows[0]["shot"]
+                call(base, f"/api/projects/{name}/reroll", {"kind": "take", "shot": sid})
+                v = wait(base, name, lambda v: v["waiting"] and not v["running"] and not v["waiting"].get("busy"))
+                r1 = next(r for r in v["waiting"]["choices"] if r["shot"] == sid)
+                assert len(r1["options"]) == len(rows[0]["options"]) + 1, r1
+                new = next(o["file"] for o in r1["options"] if "_r" in o["file"])
+                call(base, f"/api/projects/{name}/pick", {"kind": "take", "shot": sid, "file": new})
+                assert next(c for c in p.load("cut.json")["shots"] if c["id"] == sid)["src"] == new
+                print("ok   video takes: a new take for one shot, picked into the cut")
+        assert seen == ["sheets_review", "stills_review", "takes_review", "pass_review"], seen   # the clips are always shown
         assert v["finished"] == ["out/pass01.mp4"], v["finished"]
+        # revise after the pass: back to the takes, a new pass keeps everything and stops at the takes again
+        call(base, f"/api/projects/{name}/back", {"to": "takes_review"})
+        v = wait(base, name, lambda v: v["waiting"])
+        assert v["waiting"]["checkpoint"] == "takes_review" and v["pass"] == 2, (v["waiting"], v["pass"])
+        call(base, f"/api/projects/{name}/continue", {})
+        v = wait(base, name, lambda v: v["waiting"])
+        assert v["waiting"]["checkpoint"] == "pass_review", v["waiting"]
+        call(base, f"/api/projects/{name}/continue", {})
+        v = wait(base, name, lambda v: v["step"] == "done" and not v["running"])
+        assert v["finished"] == ["out/pass01.mp4", "out/pass02.mp4"], v["finished"]
+        print("ok   revise: back to the takes after the pass makes pass 2")
+        call(base, f"/api/projects/{name}/archive", {"on": True})
+        assert next(x for x in call(base, "/api/projects")["projects"] if x["name"] == name)["archived"]
         wh = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0",
                              p.path("out", "pass01.mp4")], capture_output=True, text=True).stdout.strip()
         assert wh == "1080,1920", wh
         ej = next(f for f in sorted(os.listdir(p.path("jobs"))) if f.startswith("s02_") and f.endswith(".json") and not f.endswith(".meta.json")
                   and json.load(open(p.path("jobs", f[:-5] + ".meta.json"))).get("kind") == "edit")
-        assert len([f for f in os.listdir(p.path("jobs")) if f.startswith("s02_vC") and f.endswith(".meta.json")]) == 2, "two identity edits per shot"
+        assert len([f for f in os.listdir(p.path("jobs")) if f.startswith("s02_vC") and f.endswith(".meta.json")]) == 3, "three first-frame candidates per shot in Checkpoint Mode"
         edit = json.load(open(p.path("jobs", ej)))
         txt = edit["5696"]["inputs"]["value"]          # hexe's all-in-one FLUX 3 graph: ns_prompt
         # FLUX 3 projects make character frames straight from the sheet (no text still, no face edit)

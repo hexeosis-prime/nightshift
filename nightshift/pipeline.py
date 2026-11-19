@@ -222,18 +222,7 @@ def step_song(project, st, on_event):
         _checkpoint(project, st, "song", on_event, ["review/songs.json"] + [r["file"] for r in rows])
         _default_song(project, rows, on_event)
         return []
-    sheet = lyrics.sheet_lines(open(project.path("song", "lyrics.txt"), encoding="utf-8").read())
-    rows = []
-    for f in rendered:
-        wj = project.path("review", os.path.basename(f) + ".words.json")
-        if not os.path.exists(wj):
-            lyrics.transcribe(f, wj, lines=sheet)
-        heard = json.load(open(wj))["words"]
-        cov, clear = lyrics.coverage(sheet, heard), lyrics.clarity(sheet, heard)
-        rows.append({"file": project.rel(f), "lyric_coverage": cov, "clarity": clear})
-        on_event(f"song {os.path.basename(f)}: sings {cov:.0%} of the lyric sheet (clarity {clear:.2f})")
-    rows.sort(key=lambda r: (-r["lyric_coverage"], -r.get("clarity", 0)))
-    project.save("review/songs.json", {"songs": rows})
+    rows = rank_songs(project, on_event, rendered)
     if project.cfg.get("mode") == "yolo":
         song.choose(project, rows[0]["file"])
         on_event(f"picked {rows[0]['file']}")
@@ -241,6 +230,26 @@ def step_song(project, st, on_event):
     _checkpoint(project, st, "song", on_event, ["review/songs.json"] + [r["file"] for r in rows])
     _default_song(project, rows, on_event)
     return []
+
+
+def rank_songs(project, on_event=print, rendered=None):
+    """Every rendered take, transcribed once and ranked by lyric coverage, then clarity -> review/songs.json."""
+    from . import lyrics
+    rendered = rendered or (project.renders("songs", "*.mp3") + project.renders("songs", "*.wav") + project.renders("songs", "*.flac"))
+    sheet = lyrics.sheet_lines(open(project.path("song", "lyrics.txt"), encoding="utf-8").read())
+    rows = []
+    for f in rendered:
+        wj = project.path("review", os.path.basename(f) + ".words.json")
+        if not os.path.exists(wj):
+            lyrics.transcribe(f, wj, lines=sheet)
+            heard = json.load(open(wj))["words"]
+            on_event(f"song {os.path.basename(f)}: sings {lyrics.coverage(sheet, heard):.0%} of the lyric sheet "
+                     f"(clarity {lyrics.clarity(sheet, heard):.2f})")
+        heard = json.load(open(wj))["words"]
+        rows.append({"file": project.rel(f), "lyric_coverage": lyrics.coverage(sheet, heard), "clarity": lyrics.clarity(sheet, heard)})
+    rows.sort(key=lambda r: (-r["lyric_coverage"], -r.get("clarity", 0)))
+    project.save("review/songs.json", {"songs": rows})
+    return rows
 
 
 def _default_song(project, rows, on_event):
@@ -322,7 +331,9 @@ def step_sheetedits(project, st, on_event):
     from . import score
     b = B.Builder(project)
     todo = [s for s in b.shots if s.get("chars") and s.get("still") == "edit" and s["mode"] in B.STILL_MODES and not s.get("dropped")
-            and not _has_still(project, s, "edit")]
+            and not _has_still(project, s, "edit") and not project.renders("stills", f"{s['id']}_v*_*")]
+    # (a shot that already has candidate frames keeps them: a new pass, or a run carried on past the checkpoint, used to
+    # render every frame again)
     yolo = project.cfg.get("mode") == "yolo"
     # identity_candidates: edits per shot, the best face match is kept (the director can still pick another at the checkpoint).
     # Unset: the first video's behaviour (yolo: a 2 x 2 wording/seed grid, director: one edit).
@@ -337,13 +348,23 @@ def step_sheetedits(project, st, on_event):
     _run_jobs(project, written, on_event)
     packet = []
     if grid:
-        for s in todo:
+        picked = project.load("review/still_picks.json", {}) or {}     # the director's picks at the checkpoint
+        fresh = {s["id"] for s in todo}
+        # every shot still pointing at "edit" gets its frame's label: the ones just rendered, and the ones whose candidates
+        # were already there (a new pass, or a re-planned timeline that brought "edit" back)
+        label_these = [s for s in b.shots if s.get("chars") and s.get("still") == "edit" and s["mode"] in B.STILL_MODES
+                       and not s.get("dropped")]
+        for s in label_these:
             cands = project.renders("stills", f"{s['id']}_v*_*")
             if not cands:
                 continue
+            mine = picked.get(s["id"])
+            if mine and any(os.path.basename(c).startswith(f"{s['id']}_{mine}_") for c in cands):
+                project.patch_shot(s["id"], {"still": mine}, "shots_resolved.json")
+                continue
             ranked = score.rank(project, cands, s["chars"][0], s.get("world", "real"))
             floor = {"close": 0.5, "medium": 0.45, "wide": 0.3, **(project.cfg.get("face_min") or {})}.get(s.get("framing", "medium"), 0.45)
-            if b.from_sheet(s) and (ranked[0].get("face") or 0) < floor:   # a weak face: two more seeds, once
+            if s["id"] in fresh and b.from_sheet(s) and (ranked[0].get("face") or 0) < floor:   # a weak face: two more seeds, once
                 on_event(f"{s['id']}: best face {ranked[0].get('face')} under {floor}, two more seeds")
                 more = [project.rel(b.sheet_job(s, seed=s["seed"] + 7000 + 1000 * k, tag=f"vR{k}")) for k in range(2)]
                 _run_jobs(project, more, on_event)
@@ -471,8 +492,8 @@ def step_pick(project, st, on_event):
     missing = [c["id"] for c in cut["shots"] if not c.get("src")]
     if missing:
         on_event(f"no clip yet for: {', '.join(missing)}")
-    if packet:                                   # one take per shot (the short profile): nothing to choose between
-        _checkpoint(project, st, "pick", on_event, packet)
+    if cut["shots"]:                             # Checkpoint Mode always shows the clips before the cut (Nov 19): with one take
+        _checkpoint(project, st, "pick", on_event, packet)   # per shot it was skipped, so the first video seen was the pass
     return []
 
 

@@ -649,7 +649,9 @@ def create(root, form):
         "grade": {"look": form.get("grade") if form.get("grade") in GRADES else sc["grade"], "lifts": []},
         "overlay": overlay_cfg(lyrics, form.get("title"), form.get("overlay"), form.get("aspect") or "16:9"),
         "display_name": (form.get("display_name") or "").strip()[:80] or None, "tone": tone,
-        "sheets": {"approve": form.get("approve_looks", False) is True,   # hands-off never pauses; director mode stops for the look anyway
+        "song_seeds": [101, 202, 303],     # Checkpoint Mode offers 3 of everything (plan, Phase 2); "new options" makes 3 more
+        **({"identity_candidates": 3} if (form.get("mode") or "director") != "yolo" else {}),
+        "sheets": {"candidates": 3, "approve": form.get("approve_looks", False) is True,   # hands-off never pauses; director mode stops for the look anyway
                    "yolo_source": "image" if photo else "text"},
     })
     if upload:

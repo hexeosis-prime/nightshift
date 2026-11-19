@@ -59,7 +59,7 @@ class Studio:
                 try:
                     p = Project(os.path.join(self.root, name))
                     st = pipeline.state(p)
-                    out.append({"name": name, "display_name": p.cfg.get("display_name") or name,
+                    out.append({"name": name, "display_name": p.cfg.get("display_name") or name, "archived": bool(p.cfg.get("archived")),
                                 "scene": p.cfg.get("scene"), "aspect": p.cfg.get("aspect"),
                                 "pass": st.get("pass"), "step": st.get("step"),
                                 "waiting": (st.get("waiting") or {}).get("checkpoint"),
@@ -192,13 +192,19 @@ class Studio:
         r = self.run
         return r if r and r["thread"].is_alive() else None
 
-    def start(self, name, approve=False, notes=None):
+    def start(self, name, approve=False, notes=None, start=None):
+        p = self.project(name)
+        self._launch(name, lambda on_event: pipeline.run(Project(p.root), start=start, on_event=on_event),
+                     "run" if not approve else "approved: carrying on",
+                     before=(lambda: pipeline.approve(p, notes or None)) if approve else None)
+
+    def _launch(self, name, fn, label, before=None):
+        """One thing on the GPU at a time: a pass, or new options for a checkpoint."""
         with self.lock:
             if self.busy():
                 raise RuntimeError(f"a pass is already running for '{self.run['project']}' (one GPU, one pass at a time)")
-            p = self.project(name)
-            if approve:
-                pipeline.approve(p, notes or None)
+            if before:
+                before()
             cancel = threading.Event()
 
             def on_event(msg):
@@ -208,7 +214,7 @@ class Studio:
 
             def work():
                 try:
-                    pipeline.run(Project(p.root), on_event=on_event)
+                    fn(on_event)
                 except Cancelled:
                     self.emit(name, "stopped. Press Run to carry on: finished renders are kept.")
                 except Exception as e:
@@ -217,8 +223,62 @@ class Studio:
                         self.emit(name, "      " + line)
             t = threading.Thread(target=work, daemon=True, name=f"pass-{name}")
             self.run = {"project": name, "thread": t, "started": time.time(), "cancel": cancel}
-            self.emit(name, "run" if not approve else "approved: carrying on")
+            self.emit(name, label)
             t.start()
+
+    def reroll(self, name, body):
+        """New options for one row of the open checkpoint (new seeds, the same brief); the checkpoint stays open."""
+        from . import director as D
+        p = self.project(name)
+        w = pipeline.state(p).get("waiting")
+        if not w:
+            raise ValueError("nothing is waiting for a choice")
+        what = body.get("kind")
+        if what == "sheet" and pipeline.state(p).get("waiting", {}).get("checkpoint") not in ("sheets_review", "outfits_review"):
+            raise ValueError("new character looks only at the look checkpoint")
+
+        def work(on_event):
+            st = pipeline.state(p)
+            st["waiting"]["busy"] = {"kind": what, "shot": body.get("shot"), "char": body.get("char")}
+            pipeline.save_state(p, st)
+            try:
+                jobs, kind = D.reroll_jobs(p, body)
+                pipeline._run_jobs(p, jobs, on_event)
+                if kind == "song":
+                    pipeline.rank_songs(p, on_event)
+                on_event(f"new options ready: {kind}" + (f" {body.get('shot')}" if body.get("shot") else ""))
+            finally:
+                st = pipeline.state(p)
+                if st.get("waiting"):
+                    st["waiting"].pop("busy", None)
+                    pipeline.save_state(p, st)
+        self._launch(name, work, f"making new options ({what}{' ' + body['shot'] if body.get('shot') else ''})")
+
+    BACK = {"stills_review": "sheetedits", "takes_review": "videos"}
+
+    def back(self, name, body):
+        """Go back to a checkpoint: from an open checkpoint later in the pass, or after the pass as a revision (a new pass
+        that keeps every render and pick; only what changes renders again)."""
+        to = body.get("to")
+        if to not in self.BACK:
+            raise ValueError(f"can't go back to {to}")
+        p = self.project(name)
+        st = pipeline.state(p)
+        order = ["stills_review", "takes_review", "pass_review"]
+        if st.get("step") == "done":
+            st = pipeline.new_pass(p)
+            st["approved"] = st.get("approved", []) + order[:order.index(to)]    # what came before stays approved
+        st["approved"] = [c for c in st.get("approved", []) if c not in order[order.index(to):]]
+        st["waiting"] = None
+        pipeline.save_state(p, st)
+        p.log("back", to=to, pass_=st.get("pass"))
+        self.start(name, start=self.BACK[to])
+
+    def archive(self, name, on=True):
+        p = self.project(name)
+        cfg = p.load("project.json")
+        cfg["archived"] = bool(on)
+        p.save("project.json", cfg)
 
     def stop(self, name):
         r = self.busy()
@@ -252,6 +312,7 @@ class Studio:
         packet = None
         if w:
             packet = {"checkpoint": w["checkpoint"], "since": w.get("since"), "files": [f for f in w.get("packet", []) if f],
+                      "busy": w.get("busy"),
                       "choices": self.choices(p, w["checkpoint"])}
         outs = sorted([f for f in os.listdir(p.path("out")) if re.match(r"pass\d+\.mp4$", f)]) if os.path.isdir(p.path("out")) else []
         busy = self.busy()
@@ -294,6 +355,9 @@ class Studio:
             return [{"kind": "song", "picked": p.cfg.get("song"), "picked_file": picks.get("song"),
                      "options": [{"file": r["file"], "score": r["lyric_coverage"],
                                   "by": "instrumental" if r["lyric_coverage"] is None else "of the lyric sheet sung"} for r in rows]}]
+        if checkpoint in ("stills_review", "takes_review"):
+            from . import director as D
+            return D.choices(p, checkpoint)
         return []
 
     def rename(self, name, body):
@@ -314,6 +378,9 @@ class Studio:
         f = body.get("file") or ""
         if not _inside(p.root, p.path(f)):
             raise ValueError("bad file")
+        if kind in ("still", "take"):
+            from . import director as D
+            return D.pick(p, body)
         picks = p.load("studio_picks.json", {})
         if kind == "sheet":
             from . import sheets as SH
@@ -534,6 +601,12 @@ def handler(app):
                         return self._json({"picked": app.pick(name, body)})
                     elif action == "rename":
                         app.rename(name, body)
+                    elif action == "reroll":
+                        app.reroll(name, body)
+                    elif action == "back":
+                        app.back(name, body)
+                    elif action == "archive":
+                        app.archive(name, body.get("on", True))
                     else:
                         return self._json({"error": f"unknown action {action}"}, 404)
                     return self._json(app.view(name))

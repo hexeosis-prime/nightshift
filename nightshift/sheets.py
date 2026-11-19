@@ -81,14 +81,15 @@ def candidates(project, ch, world):
     return [p for p in project.renders("sheets", f"{ch}_{world}_*") if p.lower().endswith((".png", ".jpg", ".webp"))]
 
 
-def build(project, ch, world, n=None, primary=None):
-    """n candidate jobs for one character + world. primary: an approved sheet of the same character to dress differently."""
+def build(project, ch, world, n=None, primary=None, start=0):
+    """n candidate jobs for one character + world. primary: an approved sheet of the same character to dress differently.
+    start: number the candidates (and their seeds) after this many, for a reroll."""
     k = cfg(project)
     n = n or k["candidates"]
     keys = sorted(project.canon["characters"])
     base = int(k["seed"]) + 100 * keys.index(ch) + 10 * (0 if not primary else 1)
     jobs = []
-    for i in range(n):
+    for i in range(start, start + n):
         seed = base + 1000 * i
         if primary:
             wf = project.workflow("edit2")
