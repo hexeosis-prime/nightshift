@@ -171,6 +171,18 @@ def check_shots(doc, canon=None):
     return out
 
 
+def _same_bytes(a, b):
+    if os.path.getsize(a) != os.path.getsize(b):
+        return False
+    with open(a, "rb") as fa, open(b, "rb") as fb:
+        while True:
+            x, y = fa.read(1 << 20), fb.read(1 << 20)
+            if x != y:
+                return False
+            if not x:
+                return True
+
+
 def _merge(a, b):
     out = dict(a)
     for k, v in (b or {}).items():
@@ -321,8 +333,12 @@ class Project:
             dst_dir = os.path.join(self.comfy_dir, "input", *self.input_subdir.split("/"))
             os.makedirs(dst_dir, exist_ok=True)
             dst = os.path.join(dst_dir, name)
-            if not (os.path.exists(dst) and os.path.samefile(src, dst)):
-                shutil.copyfile(src, dst)
+            if os.path.exists(dst) and (os.path.samefile(src, dst) or _same_bytes(src, dst)):
+                pass        # already there: don't rewrite a file a queued job may be reading right now
+            else:           # write beside it and swap in, so ComfyUI never loads a half-written file
+                tmp = dst + ".part"
+                shutil.copyfile(src, tmp)
+                os.replace(tmp, dst)
         else:
             self.client.upload(src, self.input_subdir, name)
         return f"{self.input_subdir}/{name}"
