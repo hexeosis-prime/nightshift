@@ -10,6 +10,8 @@ Variants (16 steps cfg 1, upsampler on, the sheet as the only reference):
   C  scene first: the place, where its light comes from, the person placed in it and lit by it
   D  C with hexe's identity block instead of "use the sheet only for who she is"
   E  D plus one line in the upsampler's instructions: carry the person over, never the reference's light
+  F  D with the upsampler off: the prompt reaches the model as written (the upsampler rewrites every prompt into its own
+     order and adds "near-frontally, face fully visible")
 """
 import json, os, shutil, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +34,7 @@ LIGHTS = {
 }
 VARIANTS = {"A": dict(style="v1", light=False, rw=False), "B": dict(style="v1", light=True, rw=False),
             "C": dict(style="scene", light=True, rw=False), "D": dict(style="scene_id", light=True, rw=False),
-            "E": dict(style="scene_id", light=True, rw=True)}
+            "E": dict(style="scene_id", light=True, rw=True), "F": dict(style="scene_id", light=True, rw=False, enh=False)}
 
 
 def setup(src, dst, comfy_dir):
@@ -69,6 +71,7 @@ def queue(dst, only=None, seed_add=0):
             s.pop("light", None)
             if o["light"]:
                 s["light"] = LIGHTS[s["id"]]
+            p.cfg["image_rewrite"] = dict(p.cfg.get("image_rewrite") or {}, sheet=o.get("enh", True))
             name = f"{v}{seed_add or ''}_{s['id']}"     # A_s02, or A100_s02 for the seed + 100 set
             jp = b.sheet_frame_job(s, seed=s["seed"] + seed_add, tag=f"L{v}{seed_add or ''}", style=o["style"],
                                    rewriter_light=o["rw"])
@@ -82,7 +85,7 @@ def queue(dst, only=None, seed_add=0):
     print("queued", len(prompts))
 
 
-def report(dst, order="A,B,C,D,E"):
+def report(dst, order="A,B,C,D,E,F"):
     order = order.split(",") if "," in order else list(order)
     import numpy as np
     from nightshift import score
@@ -167,4 +170,4 @@ if __name__ == "__main__":
         queue(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != "all" else None,
               int(sys.argv[4]) if len(sys.argv) > 4 else 0)
     else:
-        report(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "A,B,C,D,E")
+        report(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "A,B,C,D,E,F")
