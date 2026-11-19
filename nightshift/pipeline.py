@@ -220,6 +220,7 @@ def step_song(project, st, on_event):
             on_event(f"picked {rows[0]['file']} (instrumental)")
             return []
         _checkpoint(project, st, "song", on_event, ["review/songs.json"] + [r["file"] for r in rows])
+        _default_song(project, rows, on_event)
         return []
     sheet = lyrics.sheet_lines(open(project.path("song", "lyrics.txt"), encoding="utf-8").read())
     rows = []
@@ -238,7 +239,18 @@ def step_song(project, st, on_event):
         on_event(f"picked {rows[0]['file']}")
         return []
     _checkpoint(project, st, "song", on_event, ["review/songs.json"] + [r["file"] for r in rows])
+    _default_song(project, rows, on_event)
     return []
+
+
+def _default_song(project, rows, on_event):
+    """Approved without picking a song (Nov 19 walkthrough: the run stopped with "no song chosen yet"): take the top one."""
+    from . import song
+    try:
+        song.song_path(project)
+    except FileNotFoundError:
+        song.choose(project, rows[0]["file"])
+        on_event(f"no song picked: using the top-ranked take, {rows[0]['file']}")
 
 
 def _vocal_stem(project, on_event):
