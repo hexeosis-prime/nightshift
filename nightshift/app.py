@@ -59,7 +59,8 @@ class Studio:
                 try:
                     p = Project(os.path.join(self.root, name))
                     st = pipeline.state(p)
-                    out.append({"name": name, "scene": p.cfg.get("scene"), "aspect": p.cfg.get("aspect"),
+                    out.append({"name": name, "display_name": p.cfg.get("display_name") or name,
+                                "scene": p.cfg.get("scene"), "aspect": p.cfg.get("aspect"),
                                 "pass": st.get("pass"), "step": st.get("step"),
                                 "waiting": (st.get("waiting") or {}).get("checkpoint"),
                                 "mtime": os.path.getmtime(p.path("project.json"))})
@@ -104,6 +105,7 @@ class Studio:
             elif song.get("source") == "upload":
                 raise ValueError("choose a track to upload, or let MiniMax Music 3 write the song")
             form = dict(form, character=ch, character2=ch2, song=song, name=name,
+                        display_name=(form.get("name") or "").strip() or None,
                         comfy_url=form.get("comfy_url") or self.comfy_url, comfy_dir=form.get("comfy_dir") or self.comfy_dir)
             p = studio.create(os.path.join(self.root, name), form)
         finally:
@@ -260,9 +262,11 @@ class Studio:
         # has no thread now has ended; otherwise (a terminal `nightshift run`) health checks the heartbeat's process
         health = pipeline.health(p, alive=True if (mine or ext) else (False if hb_pid == os.getpid() else None))
         return {
-            "name": name, "running": bool(busy and busy["project"] == name) or ext, "by_agent": ext,
+            "name": name, "display_name": p.cfg.get("display_name") or name,
+            "title": ((p.cfg.get("overlay") or {}).get("style") or {}).get("title", ""),
+            "running": bool(busy and busy["project"] == name) or ext, "by_agent": ext,
             "busy_other": bool(busy and busy["project"] != name),
-            "cfg": dict({k: p.cfg.get(k) for k in ("mode", "profile", "length", "aspect", "image_model", "scene", "song", "work_size", "final_size")},
+            "cfg": dict({k: p.cfg.get(k) for k in ("mode", "profile", "length", "aspect", "image_model", "scene", "song", "work_size", "final_size", "tone")},
                         hud=bool((p.cfg.get("overlay") or {}).get("enabled"))),
             "comfy": p.cfg["comfy"]["url"],
             "pass": st.get("pass"), "step": st.get("step"), "done": [h["step"] for h in st.get("history", [])],
@@ -291,6 +295,18 @@ class Studio:
                      "options": [{"file": r["file"], "score": r["lyric_coverage"],
                                   "by": "instrumental" if r["lyric_coverage"] is None else "of the lyric sheet sung"} for r in rows]}]
         return []
+
+    def rename(self, name, body):
+        """The name shown in the app and the HUD title. The folder keeps its name (renders and jobs point into it); a new
+        title shows from the next pass."""
+        p = self.project(name)
+        cfg = p.load("project.json")
+        if "display_name" in body:
+            cfg["display_name"] = (body.get("display_name") or "").strip()[:80] or None
+        if "title" in body and isinstance(cfg.get("overlay"), dict) and cfg["overlay"].get("style") is not None:
+            cfg["overlay"]["style"]["title"] = (body.get("title") or "").strip().upper()[:32]
+        p.save("project.json", cfg)
+        p.log("renamed", display_name=cfg.get("display_name"), title=((cfg.get("overlay") or {}).get("style") or {}).get("title"))
 
     def pick(self, name, body):
         p = self.project(name)
@@ -454,6 +470,8 @@ def handler(app):
                     return self._json({"version": __version__, "root": app.root, "comfy_url": app.comfy_url,
                                        "scenes": {k: {"label": v["label"], "blurb": v["blurb"]} for k, v in studio.SCENES.items()},
                                        "lengths": {k: v["label"] for k, v in studio.LENGTHS.items()},
+                                       "tones": {k: {"label": v["label"], "blurb": v["blurb"]} for k, v in studio.TONES.items()},
+                                       "default_tone": studio.DEFAULT_TONE,
                                        "default_lyrics": studio.DEFAULT_LYRICS, "busy": (app.busy() or {}).get("project"),
                                        "grades": studio.GRADES,
                                        "agent_lengths": {k: v["label"] for k, v in agent.LENGTHS.items()}})
@@ -514,6 +532,8 @@ def handler(app):
                         app.stop(name)
                     elif action == "pick":
                         return self._json({"picked": app.pick(name, body)})
+                    elif action == "rename":
+                        app.rename(name, body)
                     else:
                         return self._json({"error": f"unknown action {action}"}, 404)
                     return self._json(app.view(name))

@@ -206,53 +206,100 @@ PATTERN = [
     ("ff", "wide", 2, True, False),
     ("fflf", "wide", 0, False, False),
 ]
-# The shot bank: proven music-video setups per (mode, framing), each a still action + expression + LTX motion prompt.
-# Every video draws its own mix from it with a seed (repeatable: the seed is saved in shots.json), never the same setup twice
-# in a row. {lead} = the performer, {pr} = her / him / them, {po} = her / his / their.
+# The tone of the video (hexe, Nov 19: "if the tone is upbeat it picks from a bank of singing and dancing; a moody emotional
+# song gets slower shots and a slower edit"). It sets which setups are drawn (by energy), how many shots a length gets (the
+# edit pace), how the camera moves, and words in the song brief. "builds" follows the song: quiet start, big middle,
+# quiet end.
+TONES = {
+    "upbeat": {"label": "Upbeat", "blurb": "singing and dancing, quick cuts, lively camera",
+               "pace": 1.25, "energy": ("medium", "high"),
+               "song": "Upbeat and danceable, around 120 BPM, bright and driving, a hook you can move to."},
+    "builds": {"label": "Builds", "blurb": "starts quiet, opens up in the chorus, settles at the end",
+               "pace": 1.0, "energy": None,
+               "song": "An emotional build: a quiet, close start that opens into a big chorus, around 95 BPM."},
+    "mellow": {"label": "Mellow", "blurb": "slow and emotional: close shots, long takes, gentle camera",
+               "pace": 0.75, "energy": ("calm",),
+               "song": "Slow and intimate, around 75 BPM, sparse and warm, every word clear."},
+}
+DEFAULT_TONE = "builds"
+
+
+def tone_energy(tone, i, n):
+    """The energies a shot may draw, by tone and by where it sits in the video (a "builds" video follows the song)."""
+    t = TONES.get(tone) or TONES[DEFAULT_TONE]
+    if t["energy"]:
+        return t["energy"]
+    f = i / max(1, n - 1)
+    return ("calm", "medium") if f < 0.3 else ("medium", "high") if f < 0.8 else ("calm",)
+
+
+# The shot bank: proven music-video setups per (mode, framing), each a name, the still's action, the first frame's
+# expression, the LTX motion prompt and its energy (calm / medium / high). Every video draws its own mix with a seed
+# (repeatable: the seed is saved in shots.json), only setups whose energy fits the tone, never the same one twice in a row.
+# {lead} = the performer, {pr} = her / him / them, {po} = her / his / their. Moves stay on the performer: LTX invents
+# whatever a move reveals, so no setup pans or tilts onto something the first frame doesn't show.
 BANK = {
     ("lipsync", "close"): [
         ("handheld drift", "singing softly to the camera, eyes half closed, 85mm lens", "calm, lips gently closed, about to sing",
-         "Close-up of {lead} singing softly, head swaying gently with the rhythm, eyes opening and closing with the phrase, the background a soft blur of light. Handheld camera drifting slowly around {pr}."),
+         "Close-up of {lead} singing softly, head swaying gently with the rhythm, eyes opening and closing with the phrase, the background a soft blur of light. Handheld camera drifting slowly around {pr}.", "calm"),
         ("slow push in", "looking straight into the lens, very still, 85mm lens", "intent, lips gently closed, about to sing",
-         "Close-up of {lead} singing straight into the lens, chin lifting on the long notes, shoulders moving with the beat. The camera pushes in slowly and steadily toward {po} face."),
+         "Close-up of {lead} singing straight into the lens, chin lifting on the long notes, shoulders moving with the beat. The camera pushes in slowly and steadily toward {po} face.", "medium"),
         ("profile turn", "in profile, about to turn toward the camera, 85mm lens", "calm, lips gently closed, about to sing",
-         "Close-up of {lead} in profile, turning toward the camera and singing, a hand brushing the hair back from {po} face. Static camera, shallow focus."),
+         "Close-up of {lead} in profile, turning toward the camera and singing, a hand brushing the hair back from {po} face. Static camera, shallow focus.", "calm"),
         ("light sweep", "singing with eyes closed, soft light on one side of the face, 85mm lens", "lost in the song, lips gently closed",
-         "Close-up of {lead} singing with eyes closed, head tilting and swaying with the melody, as a soft band of light slowly sweeps across {po} face. Slow handheld drift."),
+         "Close-up of {lead} singing with eyes closed, head tilting and swaying with the melody, as a soft band of light slowly sweeps across {po} face. Slow handheld drift.", "calm"),
+        ("bright to camera", "smiling into the lens between lines, 85mm lens", "bright, smiling, about to sing",
+         "Close-up of {lead} singing to the camera with a bright smile, head bobbing on the beat, eyebrows lifting with the melody. Handheld camera, a little bounce on the beat.", "high"),
+        ("big note", "chin up, eyes closed, about to hit a long note, 85mm lens", "intense, lips gently closed, about to sing",
+         "Close-up of {lead} singing a long, powerful note, eyes squeezed shut, chin lifting, the emotion building in {po} face. The camera pushes in slowly.", "high"),
     ],
     ("lipsync", "medium"): [
         ("slow arc", "singing with feeling, one hand moving with the music, 50mm lens", "open, singing",
-         "Medium shot of {lead} singing with feeling, body swaying to the beat, one hand rising and opening with the melody. The camera arcs slowly around {pr}, steady."),
+         "Medium shot of {lead} singing with feeling, body swaying to the beat, one hand rising and opening with the melody. The camera arcs slowly around {pr}, steady.", "medium"),
         ("walk and sing", "singing while walking toward the camera, 50mm lens", "open, singing",
-         "Medium shot of {lead} singing while walking toward the camera with an easy rhythm in {po} step, arms moving loosely. The camera dollies backward ahead of {pr}, steady."),
-        ("low angle rise", "singing, seen from a low angle, chin up, 35mm lens", "strong, singing",
-         "Low-angle medium shot of {lead} singing with feeling, head thrown back on the high note, a fist pressed to {po} chest. The camera rises slowly, looking up at {pr}."),
+         "Medium shot of {lead} singing while walking toward the camera with an easy rhythm in {po} step, arms moving loosely. The camera dollies backward ahead of {pr}, steady.", "medium"),
+        ("hand to chest", "singing, one hand pressed to the chest, 50mm lens", "heartfelt, singing",
+         "Medium shot of {lead} singing with a hand pressed to {po} chest, eyes closing on the held notes. Static camera, a very slow push in.", "calm"),
         ("half orbit", "singing, turning slightly with the music, 50mm lens", "open, singing",
-         "Medium shot of {lead} singing and turning slowly with the music, hands moving expressively with the words. The camera orbits slowly halfway around {pr}, smooth and steady."),
+         "Medium shot of {lead} singing and turning slowly with the music, hands moving expressively with the words. The camera orbits slowly halfway around {pr}, smooth and steady.", "medium"),
         ("backlit rim", "singing with the brightest light behind, a bright rim around the hair and shoulders, 50mm lens", "open, singing",
-         "Medium shot of {lead} singing, backlit with a bright rim of light, rocking gently on {po} feet, hair moving. The camera drifts slowly sideways."),
+         "Medium shot of {lead} singing, backlit with a bright rim of light, rocking gently on {po} feet, hair moving. The camera drifts slowly sideways.", "calm"),
+        ("lean back", "leaning back against a wall, singing softly, 50mm lens", "wistful, singing",
+         "Medium shot of {lead} leaning back against the wall, singing softly, eyes down and then up to the lens. Static camera.", "calm"),
+        ("dance and sing", "singing and dancing, shoulders moving on the beat, 35mm lens", "joyful, singing",
+         "Medium shot of {lead} singing and dancing, shoulders bouncing on the beat, a quick turn between lines, hands clapping once. Handheld camera moving with {pr}.", "high"),
+        ("point to camera", "singing straight to the camera, one hand reaching toward the lens, 35mm lens", "playful, singing",
+         "Medium shot of {lead} singing straight to the camera, reaching a hand toward the lens on the hook, then pulling back with a grin. The camera pushes in quickly, then settles.", "high"),
     ],
     ("ff", "medium"): [
         ("walk toward", "walking slowly toward the camera, arms loose, looking past the lens, 35mm lens", "restless, searching",
-         "Medium shot of {lead} walking toward the camera with a confident stride, arms swinging, glancing around and then into the lens. The camera tracks backward in front of {pr}, steady."),
+         "Medium shot of {lead} walking toward the camera, arms loose, glancing around and then into the lens. The camera tracks backward in front of {pr}, steady.", "medium"),
         ("side track", "walking through the scene from left to right, looking ahead, 35mm lens", "focused, moving on",
-         "Medium shot of {lead} walking through the scene with a light bounce in {po} step, running a hand through {po} hair. The camera tracks alongside {pr} at walking pace."),
+         "Medium shot of {lead} walking through the scene, running a hand through {po} hair. The camera tracks alongside {pr} at walking pace.", "medium"),
         ("follow from behind", "walking away from the camera, seen from behind, head turned a little to one side, 35mm lens", "determined",
-         "The camera follows close behind {lead} at shoulder height through the scene; halfway, a turn to look back over {po} shoulder. Smooth and steady."),
+         "The camera follows close behind {lead} at shoulder height through the scene; halfway, a turn to look back over {po} shoulder. Smooth and steady.", "medium"),
         ("groove", "dancing loosely to the beat, shoulders moving, 35mm lens", "joyful, lost in the music",
-         "Medium shot of {lead} dancing to the beat, hips and shoulders moving, arms loose, a spin halfway through. Handheld camera moving with {pr}, bouncing slightly."),
+         "Medium shot of {lead} dancing to the beat, hips and shoulders moving, arms loose, a spin halfway through. Handheld camera moving with {pr}, bouncing slightly.", "high"),
+        ("jump", "mid-jump on the beat, arms up, hair flying, 35mm lens", "laughing, free",
+         "Medium shot of {lead} jumping on the beat with both arms up, hair flying, landing and laughing. Handheld camera, quick and close.", "high"),
+        ("still moment", "standing still, looking off to the side, 50mm lens", "quiet, thoughtful",
+         "Medium shot of {lead} standing still and looking off to the side, breathing slowly, the air moving {po} hair. Static camera.", "calm"),
+        ("slow turn", "looking down, about to turn toward the camera, 50mm lens", "tender",
+         "Medium shot of {lead} looking down, then slowly turning to look into the camera with a small smile. The camera pushes in very slowly.", "calm"),
     ],
     ("ff", "wide"): [
         ("look back", "standing alone in the middle of the frame, turning to look over the shoulder, 24mm lens", "thoughtful",
-         "Wide shot of {lead} walking a few steps, then stopping and turning to look over {po} shoulder as the air moves {po} hair. The camera pushes in slowly."),
-        ("crane reveal", "standing small in the frame, looking up, 24mm lens", "awed",
-         "Wide shot of {lead} turning slowly on the spot with arms opening wide, looking up. The camera cranes up slowly to reveal the whole place around {pr}."),
+         "Wide shot of {lead} walking a few steps, then stopping and turning to look over {po} shoulder as the air moves {po} hair. The camera pushes in slowly.", "calm"),
+        ("arms open", "standing small in the frame, looking up, 24mm lens", "awed",
+         "Wide shot of {lead} turning slowly on the spot with arms opening wide, looking up. Static camera.", "calm"),
         ("walk away", "walking away from the camera into the distance, 24mm lens", "resolute",
-         "Wide shot of {lead} walking away from the camera into the distance with an easy swing in {po} stride. Static camera, the figure growing smaller."),
+         "Wide shot of {lead} walking away from the camera into the distance with an easy swing in {po} stride. Static camera, the figure growing smaller.", "calm"),
         ("spin", "spinning slowly with arms out, 24mm lens", "free, smiling",
-         "Wide shot of {lead} spinning with arms out, hair and clothes swinging, laughing. The camera circles slowly around {pr}."),
-        ("silhouette", "standing in silhouette against the brightest light in the place, 24mm lens", "still, thoughtful",
-         "Wide shot of {lead} in silhouette against the light, swaying to the music with arms rising slowly, hair moving in the air. The camera pushes in slowly."),
+         "Wide shot of {lead} spinning with arms out, hair and clothes swinging, laughing. The camera circles slowly around {pr}.", "high"),
+        ("silhouette", "standing against the brightest light in the place, a rim of light around the hair, 24mm lens", "still, thoughtful",
+         "Wide shot of {lead} against the light, swaying to the music with arms rising slowly, hair moving in the air. The camera pushes in slowly.", "calm"),
+        ("dance wide", "dancing full out, mid-move, 24mm lens", "joyful, lost in the music",
+         "Wide shot of {lead} dancing full out to the beat, kicks and spins, arms swinging. Handheld camera moving with {pr}.", "high"),
     ],
 }
 ACTIONS = {k: v[0][1:3] for k, v in BANK.items()}      # the first setup of each kind (kept for anything that reads these)
@@ -260,20 +307,26 @@ VIDEO = {k: v[0][3] for k, v in BANK.items()}
 
 
 class _Deck:
-    """Draws setups for each (mode, framing) in a shuffled order, reshuffling when used up, never repeating back to back."""
+    """Draws setups for each (mode, framing) in a shuffled order, reshuffling when used up, never repeating back to back,
+    and only setups whose energy is allowed (all of them when none fit)."""
     def __init__(self, seed):
         self.rng, self.decks, self.last = random.Random(seed), {}, {}
 
-    def draw(self, key):
-        if not self.decks.get(key):
-            order = list(range(len(BANK[key])))
-            self.rng.shuffle(order)
-            if len(order) > 1 and order[0] == self.last.get(key):
-                order.append(order.pop(0))
-            self.decks[key] = order
-        i = self.decks[key].pop(0)
-        self.last[key] = i
-        return BANK[key][i]
+    def draw(self, key, energies=None):
+        fits = lambda i: not energies or BANK[key][i][4] in energies
+        if not any(fits(i) for i in range(len(BANK[key]))):
+            energies = None                                       # nothing of that energy here: any setup
+        deck = self.decks.get(key) or []
+        pick = next((i for i in deck if fits(i) and i != self.last.get(key)), None)
+        if pick is None:                                          # used up: a fresh shuffle
+            deck = list(range(len(BANK[key])))
+            self.rng.shuffle(deck)
+            pick = next((i for i in deck if fits(i) and i != self.last.get(key)), None)
+            if pick is None:
+                pick = next(i for i in deck if fits(i))
+        deck.remove(pick)
+        self.decks[key], self.last[key] = deck, pick
+        return BANK[key][pick][:4]
 
 
 def slug(text):
@@ -383,9 +436,10 @@ def tag_duet(lyrics, ch, ch2):
     return "\n".join(out), owner
 
 
-def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None, shot_seed=None):
+def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None, shot_seed=None, tone=None, vertical=False):
     """scene: one scene key, or a list of up to three; with several, the video moves through them in order and each shot
-    carries its place's look."""
+    carries its place's look. tone: a TONES key (which setups, by energy). vertical: character shots stop at medium (a
+    full-body figure in a 9:16 frame leaves the face a few dozen pixels high: mangled faces, Nov 19)."""
     keys = [scene] if isinstance(scene, str) else list(scene)[:3]
     scs = [SCENES[k] for k in keys]
     sc = scs[0]
@@ -424,8 +478,14 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None, sho
                 mode = s["mode"] = "ff" if mode == "lipsync" else mode
                 if framing == "close":
                     s["framing"] = framing = "medium"
+            if vertical and framing == "wide":
+                s["framing"] = framing = "medium"
             key = (mode, framing) if (mode, framing) in BANK else ("ff", "wide")
-            setup, act, expr, video = deck.draw(key)
+            setup, act, expr, video = deck.draw(key, tone_energy(tone, i, len(pattern)))
+            if mode in ("lipsync", "ff") and framing != "wide":
+                video += " Nothing in {po} hands."            # a hand rising into frame comes up holding a microphone
+            if tone == "mellow":
+                video += " Everything moves slowly and gently."
             s["setup"] = setup
             c = ch2 if who == "partner" else ch
             obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((c or {}).get("pronoun"), ("them", "their"))
@@ -439,7 +499,7 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None, sho
                 s["video"] = (f"Wide shot of {{{who}}} and {{{other}}} together, a few steps apart, the wind moving their hair. "
                               f"The camera pushes in slowly.")
         out.append(s)
-    return {"_readme": "Written by Nightshift Studio from a scene preset and the shot bank (studio.BANK; \"setup\" names the one "
+    return {"_tone": tone or DEFAULT_TONE, "_readme": "Written by Nightshift Studio from a scene preset and the shot bank (studio.BANK; \"setup\" names the one "
                        "each shot drew). Song-agnostic: lip-sync shots start on the lyric line in \"anchor\". Edit freely; fields: "
                        "docs/shots.md.", "_shot_seed": shot_seed, "shots": out}
 
@@ -448,8 +508,9 @@ def _ts(sec):
     return f"{int(sec) // 60}:{int(sec) % 60:02d}"
 
 
-def caption(scene, vibe, noun, seconds, instrumental=False, duet=None):
+def caption(scene, vibe, noun, seconds, instrumental=False, duet=None, tone=None):
     sc = SCENES[scene]
+    mood = (TONES.get(tone) or {}).get("song", "")
     voice = {"woman": "One female lead vocal", "man": "One male lead vocal", "person": "One lead vocal"}[noun]
     vocal = "Instrumental, no vocals." if instrumental else (
         f"{voice}: close and sincere, every word clear, doubled softly in the chorus. No other voices.")
@@ -472,7 +533,7 @@ def caption(scene, vibe, noun, seconds, instrumental=False, duet=None):
                f"{_ts(c)}-{_ts(seconds)} Outro: the last line, a natural decay. No hard ending.\n")
     return (f"# Song brief (the MiniMax Music 3 caption)\n<!-- Written by Nightshift Studio. Headings and comments are stripped "
             f"before the text goes to the model. See docs/prompting.md. -->\n\n{cast}## Global metadata\nGenre: {sc['genre']}."
-            + (f" {vibe.strip().rstrip('.')}." if vibe and vibe.strip() else "") +
+            + (f" {mood}" if mood else "") + (f" {vibe.strip().rstrip('.')}." if vibe and vibe.strip() else "") +
             f"\nA short song of about {seconds} seconds with a real ending.\n\n## Vocal details\n{vocal}\n\n## Arrangement\n" + arr)
 
 
@@ -569,10 +630,13 @@ def create(root, form):
         "negatives": {},
     }
     p.save("canon.json", canon)
-    p.save("shots.json", shots(keys, lyrics, length["shots"], ch, ch2=ch2, owner=owner, shot_seed=form.get("shot_seed")))
+    tone = form.get("tone") if form.get("tone") in TONES else DEFAULT_TONE
+    n_shots = max(5, round(length["shots"] * TONES[tone]["pace"]))
+    p.save("shots.json", shots(keys, lyrics, n_shots, ch, ch2=ch2, owner=owner, shot_seed=form.get("shot_seed"), tone=tone,
+                               vertical=(form.get("aspect") or "16:9") == "9:16"))
     os.makedirs(p.path("song"), exist_ok=True)
     with open(p.path("song", "caption.md"), "w", encoding="utf-8") as f:
-        f.write(caption(scene, song.get("vibe"), ch["noun"], length["seconds"], instrumental, duet))
+        f.write(caption(scene, song.get("vibe"), ch["noun"], length["seconds"], instrumental, duet, tone=tone))
     with open(p.path("song", "lyrics.txt"), "w", encoding="utf-8") as f:
         f.write((lyrics or "[Instrumental]") + "\n")
     cfg = p.load("project.json")
@@ -583,7 +647,8 @@ def create(root, form):
         "aspect": form.get("aspect") or "16:9", "image_model": form.get("image_model") or "flux3",
         "scene": "+".join(keys), "song_max_seconds": length["seconds"],
         "grade": {"look": form.get("grade") if form.get("grade") in GRADES else sc["grade"], "lifts": []},
-        "overlay": overlay_cfg(lyrics, form.get("name"), form.get("overlay"), form.get("aspect") or "16:9"),
+        "overlay": overlay_cfg(lyrics, form.get("title"), form.get("overlay"), form.get("aspect") or "16:9"),
+        "display_name": (form.get("display_name") or "").strip()[:80] or None, "tone": tone,
         "sheets": {"approve": form.get("approve_looks", False) is True,   # hands-off never pauses; director mode stops for the look anyway
                    "yolo_source": "image" if photo else "text"},
     })
@@ -627,7 +692,7 @@ def overlay_cfg(lyrics, title=None, enabled=False, aspect="16:9"):
             sections.append(sec)
             pending = None
     hero = max(seen, key=lambda k: (seen[k], -lines.index(k))) if seen else None
-    style = {"title": (title or "NIGHTSHIFT").upper()[:32], "label": "PASS 01", "face_label": "SUBJECT 01",
+    style = {"title": (title or "").strip().upper()[:32], "label": "PASS 01", "face_label": "SUBJECT 01",
              "ticker": ["NIGHT SHIFT", "ALL CHANNELS OPEN", "TAKE {count}"], "widgets": {},
              "show_lyrics": bool(o.get("lyrics")), "show_hud": bool(o.get("hud")),
              "lyric_color": o.get("color") if o.get("color") in ("rainbow", "solid", "contrast") else "rainbow"}

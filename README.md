@@ -44,8 +44,11 @@ opens `http://127.0.0.1:8189` with two tabs. **Director Mode** asks five things:
    shots, crane reveals, silhouettes, spins, so every video gets its own mix, and the seed in `shots.json` repeats it): a scene preset (Night Avenue, Desert Highway, Neon Stage, Seaside Dawn, Rain Tavern, Golden Warehouse,
    Cathedral Light, Snow Motel) or your own place: a look plus three places that the shot
    list moves the performer through.
-4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full, 9:16 or
-   16:9, a color grade, and the animated lyric HUD (in both shapes; vertical keeps clear of the app buttons).
+4. **Format and look**: short (30-40 s, 8 shots, under an hour on a 3090), medium (60-75 s, 14 shots) or full; a
+   **tone** (*Upbeat*: singing and dancing, more and quicker shots; *Builds*: quiet start, big chorus, quiet end; *Mellow*:
+   slow, close shots, fewer and longer, a gentle camera), which also goes into the song brief; 9:16 or 16:9 (vertical
+   keeps character shots at medium or closer, where faces hold up); a color grade; and the overlay: the animated lyrics,
+   the HUD and its title (empty by default). Name the video at the bottom; rename it, or change the title, from its page.
 5. **How much you're involved**: *Checkpoint Mode* stops at each checkpoint and waits for your picks and notes. *Run to End
    Mode* never pauses, not even for the character's look: it runs to the end.
 
