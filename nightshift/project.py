@@ -232,6 +232,8 @@ class Project:
     @property
     def comfy_dir(self):
         d = self.cfg["comfy"].get("dir")
+        if d and os.name != "nt" and len(d) > 2 and d[1] == ":" and d[0].isalpha():
+            return None     # a Windows path read on Linux/macOS (a copied project): upload instead of making a "C:\..." folder
         return os.path.abspath(os.path.expanduser(d)) if d else None
 
     @property
