@@ -108,6 +108,13 @@ straight from the character sheet (first reference; a second character's sheet n
 16 steps cfg 1 with the prompt upsampler. Yolo renders a few seeds and keeps the best face; if the best is under
 `face_min` (close 0.5, medium 0.45, wide 0.3) it tries two more seeds once.
 
+How the prompt is laid out (`project.json` `"sheet_prompt"`, being tested Nov 18 with `scripts/light_test.py`): `"v1"`
+(default) says who first and the place and light after; `"scene"` and `"scene_id"` say the place and where its light comes
+from first, then put the person into it, lit by that light (`scene_id` uses hexe's identity block). The light is the
+shot's `light`, else the world's `light`, else one made from night/day and indoors/outdoors. At cfg 1 the negative prompt
+does nothing, so the light has to be asked for in the prompt itself. `"sheet_rewriter_light": true` adds one line to the
+upsampler's edit instructions: carry the person over, never the reference's lighting, backdrop or pose.
+
 **Flux 2 projects:** for shots with `"still": "edit"`, a two-image Flux edit takes the shot's still (image 1: pose, framing, light) and the
 character sheet (image 2: face, hair, body, wardrobe) and returns the same frame with the right person in it. `"add"`
 brings a second character in with a third image. Two wordings exist (`"wording": "A"` or `"C"`, see docs/prompting.md);

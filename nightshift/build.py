@@ -33,6 +33,11 @@ NEG = {
 }
 BIRDS = ", birds, flock of birds, birds chirping"   # LTX adds birds (and their sound) to about a third of wide outdoor shots
 NEG = {k: v + BIRDS for k, v in NEG.items()}
+# added to the FLUX 3 upsampler's edit instructions for frames made from a character sheet (sheet_rewriter_light)
+REWRITER_LIGHT = ("When a person is taken from a reference image into a new scene, carry over who they are (face, hair, body and "
+                  "clothing) but never that image's lighting, backdrop or pose: light the person only with the light sources "
+                  "of the new scene, in their color, direction and contrast, so the person sits in the scene like everything "
+                  "else in it.")
 VOICES = {"woman": ("sings", "singing", "warm, expressive singing style"), "man": ("sings", "singing", "warm, expressive singing style")}
 STILL_MODES = ("ff", "lipsync", "fflf")
 
@@ -261,10 +266,12 @@ class Builder:
             on = self.p.workflow("edit2").has("text_to_image")
         return bool(on)
 
-    def sheet_frame_job(self, s, seed=None, tag="edit"):
+    def sheet_frame_job(self, s, seed=None, tag="edit", style=None, rewriter_light=None):
         """One frame from the character sheet(s) plus any location plates: the sheet is <ref_image_0> (a second
         character's sheet next), location plates after them. The prompt says who, how they look, what they do, the
-        framing, the place and the light; the face comes from the sheet. 16 steps cfg 1 (image_rewrite "sheet": true)."""
+        framing, the place and the light; the face comes from the sheet. 16 steps cfg 1 (image_rewrite "sheet": true).
+        project.json "sheet_prompt": "v1" (who first, the light last) or "scene" / "scene_id" (the place and its light first,
+        the person lit by it); "sheet_rewriter_light": true adds REWRITER_LIGHT to the upsampler's edit instructions."""
         world = self.world(s)
         keys = list(s["chars"][:2]) + ([s["add"]["char"]] if s.get("add") and len(s["chars"]) < 2 else [])
         refs = [self.sheet(k, (s["add"].get("world", world) if s.get("add") and k == s["add"]["char"] else world),
@@ -282,24 +289,118 @@ class Builder:
             if outfit:
                 sent += f" {c['pronoun'].capitalize()} wears {outfit}."
             people.append(sent)
+        style_name = style or self.p.cfg.get("sheet_prompt") or "v1"
+        if style_name != "v1":
+            text = self._scene_first_text(s, keys, refs, plates, framing, ordinal, style_name)
+        else:
+            text = self._sheet_v1_text(s, keys, plates, framing, ordinal, people)
+        wf = self.p.workflow("edit2")
+        wf.apply_defaults()
+        self.flux3_mode(wf, "sheet", len(refs))
+        if (self.p.cfg.get("sheet_rewriter_light") if rewriter_light is None else rewriter_light) and wf.has("edit_system"):
+            wf.set("edit_system", wf.get("edit_system").rstrip() + "\n\n" + REWRITER_LIGHT)
+        self.size(wf)
+        for i, r in enumerate(refs):
+            wf.set(f"image{i + 1}", r)
+        wf.set("prompt", text)
+        never = ", ".join(self.char(k).get("never", "") for k in keys if self.char(k).get("never"))
+        if never:
+            wf.append("negative", ", " + never)
+        seed = s["seed"] if seed is None else seed
+        wf.seed(seed)
+        wf.output(self.p.prefix("stills", f"{s['id']}_{tag}"))
+        return self.save(wf, f"{s['id']}_{tag}.json", {"kind": "edit", "shot": s["id"], "seed": seed, "label": tag,
+                                                     "from_sheet": True, "refs": len(refs), "sheet_prompt": style_name})
+
+    # how the light lands, when the shot has no "light" of its own: from the world (night/day, indoors/outdoors)
+    WORLD_LIGHT = {(False, False): "the street lamps, signs and lit windows of the place, coming from the side, with deep shadows",
+                   (False, True): "the lamps and practical lights in the room, warm pools of light with dark corners",
+                   (True, False): "natural daylight from the sky, the sun low and to one side",
+                   (True, True): "daylight through the windows from one side, falling off softly into the room"}
+
+    def light_for(self, s):
+        """Where the light in this shot comes from: the shot's "light", the world's "light", or one made from the world."""
+        if s.get("light"):
+            return s["light"]
+        w = self.world_cfg(s)
+        if w.get("light"):
+            return w["light"]
+        sw = w.get("switches") or {}
+        return self.WORLD_LIGHT[(bool(sw.get("daytime", w.get("daytime"))), bool(sw.get("indoor", w.get("indoor"))))]
+
+    def _action_sentence(self, s, lead):
+        act, expr = s.get("action", ""), s.get("expr")
+        if not (act or expr):
+            return ""
+        pron = lead["pronoun"].capitalize()
+        first = act.split(" ", 1)[0] if act else ""
+        if act and (first[:1].isupper() or first.lower() in ("she", "he", "they", "her", "his", "the")):
+            said = act.rstrip(".")                        # already a sentence ("She laughs ...")
+        elif first.endswith("ing"):
+            said = f"{pron} {'are' if lead['pronoun'] == 'they' else 'is'} {act}"   # "walking slowly ..." -> "She is walking slowly ..."
+        else:
+            said = f"{pron} {act}" if act else ""
+        if expr:
+            said = (said + f", looking {expr}") if said else f"{pron} looks {expr}"
+        return f"{said}."
+
+    def _scene_first_text(self, s, keys, refs, plates, framing, ordinal, style_name):
+        """Scene first, then the person placed into its light (Nov 18 lighting test).
+        "scene": the sheet is used only for who they are.  "scene_id": hexe's identity block instead."""
+        world_style = self.world_cfg(s).get("style", "")
+        loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
+              (", " + s["location_extra"] if s.get("location_extra") else "")
+        light = self.light_for(s).rstrip(".")
+        n0 = len(keys)
+        if plates:
+            which = " and ".join(f"the {ordinal[n0 + j]} reference image" for j in range(len(plates)))
+            place = f"the place shown in {which}" + (f", {loc}" if loc else "")
+        else:
+            place = loc or "the scene"
+        text = f"Create a cinematic film still, a {framing}, in {place}. The light here comes from {light}."
+        who = []
+        for i, k in enumerate(keys):
+            c = self.char(k)
+            outfit = (c.get(f"outfit_{self.world(s)}") or c.get("outfit") or {}).get(s.get("framing", "medium"), "")
+            sent = f"the {c['noun']} from the character sheet in the {ordinal[i]} reference image ({c.get('person', '')})"
+            if outfit:
+                sent += f", wearing {outfit}"
+            who.append(sent)
+        text += " In this scene is " + ", and ".join(who) + "."
+        if s.get("add") and len(keys) > 1:
+            text += f" The {self.char(keys[1])['noun']} is {s['add'].get('where', 'in the shot with them')}."
+        lead = self.char(keys[0])
+        act = self._action_sentence(s, lead)
+        if act:
+            text += " " + act
+        pron, poss = lead["pronoun"], lead["possessive"]
+        obj = {"she": "her", "he": "him", "they": "them"}.get(pron, "them")
+        are = "are" if pron == "they" else "is"
+        text += (f" {pron.capitalize()} {are} lit only by the light of this place, in its color, direction and contrast: "
+                 f"part of {poss} face falls into shadow, and {poss} skin, hair and clothes pick up the color of the light "
+                 f"around {obj}, exposed the same as the rest of the scene, with no extra light on {poss} face.")
+        if style_name == "scene_id":
+            marks = "freckles, " if "freckle" in " ".join(self.char(k).get("person", "") for k in keys) else ""
+            text += (" The exact same person must remain recognizable regardless of pose, expression, camera angle, "
+                     "perspective, lighting, environment or composition. Preserve facial identity above all other elements: "
+                     f"same eyes, eye spacing, face shape, nose, mouth, {marks}hair color, hairline and overall facial "
+                     "proportions. Photorealistic, realistic skin texture, natural asymmetry, realistic hair, realistic "
+                     "anatomy. Do not redesign or reinterpret the character. Generate the image as if it were another "
+                     "photograph of the exact same person in a different situation.")
+        else:
+            text += (f" Use the character sheet only for who {pron} {are}: {poss} face, hair and build, and {poss} clothes. "
+                     "Its plain backdrop, even lighting and straight-on pose are not part of this picture.")
+        if world_style:
+            text += f" {world_style[0].upper() + world_style[1:]}."
+        return text
+
+    def _sheet_v1_text(self, s, keys, plates, framing, ordinal, people):
         text = f"Create a photograph, a {framing}, of " + " And ".join(people)
         if s.get("add") and len(keys) > 1:
             text += f" The {self.char(keys[1])['noun']} is {s['add'].get('where', 'in the shot with them')}."
-        act = s.get("action", "")
-        expr = s.get("expr")
-        lead = self.char(keys[0])
-        if act or expr:
-            pron = lead["pronoun"].capitalize()
-            first = act.split(" ", 1)[0] if act else ""
-            if act and (first[:1].isupper() or first.lower() in ("she", "he", "they", "her", "his", "the")):
-                said = act.rstrip(".")                        # already a sentence ("She laughs ...")
-            elif first.endswith("ing"):
-                said = f"{pron} {'are' if lead['pronoun'] == 'they' else 'is'} {act}"   # "walking slowly ..." -> "She is walking slowly ..."
-            else:
-                said = f"{pron} {act}" if act else ""
-            if expr:
-                said = (said + f", looking {expr}") if said else f"{pron} looks {expr}"
-            text += f" {said}."
+        act = self._action_sentence(s, self.char(keys[0]))
+        if act:
+            text += " " + act
         loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
               (", " + s["location_extra"] if s.get("location_extra") else "")
         if plates:
@@ -313,21 +414,7 @@ class Builder:
         style = self.world_cfg(s).get("style")
         if style:
             text += f" {style[0].upper() + style[1:]}."
-        wf = self.p.workflow("edit2")
-        wf.apply_defaults()
-        self.flux3_mode(wf, "sheet", len(refs))
-        self.size(wf)
-        for i, r in enumerate(refs):
-            wf.set(f"image{i + 1}", r)
-        wf.set("prompt", text)
-        never = ", ".join(self.char(k).get("never", "") for k in keys if self.char(k).get("never"))
-        if never:
-            wf.append("negative", ", " + never)
-        seed = s["seed"] if seed is None else seed
-        wf.seed(seed)
-        wf.output(self.p.prefix("stills", f"{s['id']}_{tag}"))
-        return self.save(wf, f"{s['id']}_{tag}.json", {"kind": "edit", "shot": s["id"], "seed": seed, "label": tag,
-                                                     "from_sheet": True, "refs": len(refs)})
+        return text
 
     def sheet_job(self, s, wording=None, seed=None, tag="edit"):
         if self.from_sheet(s):
