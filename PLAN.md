@@ -20,7 +20,7 @@ Decisions so far (Nov 7):
 - **Names:** Format / Preset / Style / Show. "Genre" now means musical genre only.
 - **Order:** Phase 1 fixes, Phase 2 Director Mode UX, Phase 3 the preset system. The other sections are pulled in when a
   phase needs them.
-- **Scope:** the Artificial State TV station and the x402 store are separate projects. Nightshift only writes a manifest
+- **Scope:** the TV station and the x402 store are separate projects. Nightshift only writes a manifest
   entry per render.
 - **Prompt refinement** is its own track, in its own session.
 - **The Claude Doc is the master;** this file mirrors it.
@@ -97,7 +97,7 @@ plain statement of what is approved · **Go back**, always. The backend already 
 | **Format** | shot-list structure, pacing, edit rules, audio plan | music video, app demo, breaking news, telenovela, YouTube explainer, UGC product ad, 30 s TV spot, cinemagraph loop, motion graphics, blipverts, channel-flip anthology |
 | **Preset** | a variation inside a format (about six each) | energetic dance, dramatic ballad, dubstep anthem, hand-made indie band; captions from calm to hyper-kinetic |
 | **Style** | prompt wording plus default grade and post | cinematic, indie homemade, broadcast quality, cyber future, live TV news, "Apple commercial" |
-| **Show** | recurring cast, locations, Blender sets, blocking, brand rules | The Artificial State, Global Vision News, a client's brand kit |
+| **Show** | recurring cast, locations, Blender sets, blocking, brand rules | a recurring band, a fictional news channel, a client's brand kit |
 
 Plus length (short / medium / long) and aspect. Style pairs with a format by default but mixes freely; a Show plugs into
 any Format; the channel-flip anthology is a format of formats. Internal kits stay private, with generic public presets
@@ -188,9 +188,9 @@ Check LTX 2.5 first; it may change what's worth building.
 
 **Phase 1 progress:** hexe rebuilt the four LTX graphs as one, `vid_ltx` (`workflows/vid_ltx.json`, found by `ns_`
 titles): one INT8 ConvRot model, one LoRA set, 3 stages everywhere, toggles for first+last frame, song audio in and
-isolated vocals. All 7 mode tests passed Nov 11 (`scripts/ltx_test.py`). Next: switch the builder to it.
+isolated vocals. All 7 mode tests passed Nov 11. Next: switch the builder to it.
 
-**Findings** (`docs/video-prompt-slots.md`, `docs/findings/`): video prompts in screenplay order (location before
+**Findings** (`docs/video-prompt-slots.md`): video prompts in screenplay order (location before
 subject), hexe's 8 slots with include/exclude rules; 3 stages beat 2; same still as first and last frame = locked-off
 camera; lip-sync with first + last frame works with two different stills of the same character; a "must show the
 words" shot needs first + last frame, a medium close-up and a neutral start; the locked-seed reporter benchmark.

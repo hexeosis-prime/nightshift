@@ -231,15 +231,13 @@ usage. In principle a self-hosted agent (Hermes, for example) can run the same l
 - [docs/pipeline.md](docs/pipeline.md): the pass step by step, files, commands
 - [docs/shots.md](docs/shots.md): every shot field and what it does
 - [docs/techniques.md](docs/techniques.md): the craft that made the difference (rescue first/last-frame, self-consistent last frames, relighting, whip-pan arrivals, fly-overs, best-of-N)
-- [docs/prompting.md](docs/prompting.md): writing for Flux 2 Klein, LTX 2.3 and MiniMax Music 3, with the full guides in
-  [docs/guides/](docs/guides/)
+- [docs/prompting.md](docs/prompting.md): writing for FLUX, LTX 2.3 and MiniMax Music 3 (the full guides are being rewritten)
 - [docs/workflows.md](docs/workflows.md): the ComfyUI graphs, custom nodes, model files, maps
 - [docs/agents.md](docs/agents.md): MCP tools, director and yolo loops, remote agents
 - [docs/overlay.md](docs/overlay.md): the lyric HUD and its widgets
 - [docs/troubleshooting.md](docs/troubleshooting.md): stalls, OOM, lost jobs, sync gotchas
 - [docs/lessons.md](docs/lessons.md): what nine passes on the first video taught us
 - [docs/licenses.md](docs/licenses.md): model licenses, read before commercial use
-- [diary/what-do-you-want.md](diary/what-do-you-want.md): the making of the first video
 - [ROADMAP.md](ROADMAP.md): what's next (format and style templates, video-to-video, Blender blocking)
 
 ## Credits

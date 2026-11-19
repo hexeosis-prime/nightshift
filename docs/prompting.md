@@ -1,9 +1,7 @@
 # Prompting the three models
 
-The short version, from what worked on the first video. The full guides:
-[MiniMax Music 3](guides/minimax-music-3-prompting-guide.md) (Zero and Gemini Argon) ·
-[Flux 2 Klein](guides/flux2-klein-prompting-guide.md) (Zero) ·
-[LTX 2.3](guides/ltx-2.3-prompting-guide.md) (Erik and Zero), each reviewed and edited by Claude Opus 5.5.
+The short version, from what worked on the first video. The full guides (FLUX 3 images, LTX 2.3 video, MiniMax Music 3
+songs) are being rewritten from hexe's Nov 18 guides and this month's tests and will live in `docs/guides/`.
 
 ## MiniMax Music 3 (the song)
 
@@ -36,7 +34,6 @@ What we learned writing the first song:
 
 `max_seconds` caps the length (the graph's default is 280). Expect up to ~30 minutes per seed on a 3090.
 
-More in the [MiniMax Music 3 guide](guides/minimax-music-3-prompting-guide.md).
 
 ## Flux 2 Klein 9B (first frames and edits)
 
@@ -66,7 +63,6 @@ Neither wins everywhere: render both (`variants`) and let the face scorer pick. 
 that must not change. Season changes, relights from a reference frame, removing people, a second character from a third
 image.
 
-More in the [Flux 2 Klein guide](guides/flux2-klein-prompting-guide.md).
 
 ## LTX 2.3 (video)
 
@@ -85,4 +81,3 @@ night. She stops and looks back over her shoulder. The camera tracks backward in
 - **First/last frame** shots: describe the motion between the two frames, not the frames. If the two frames differ in more
   than what should change, LTX will morph whatever differs (see techniques: self-consistent last frames).
 
-More in the [LTX 2.3 guide](guides/ltx-2.3-prompting-guide.md).

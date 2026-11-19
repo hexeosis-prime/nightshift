@@ -46,7 +46,7 @@ Worked for lip-sync too. Nightshift: prefer first + last = same still whenever a
 ## The benchmark shot (hexe's A/B reference, Nov 11)
 
 hexe's locked-seed test for every model / LoRA / stage change: a news reporter at a sunny waterfront, medium close-up,
-neutral start (image kept on the PC as `_promo_poc/ltx_test/bench_reporter.png`). Same image and seed every time; it
+neutral start (image kept on hexe's PC). Same image and seed every time; it
 showed 3 stages clearly beating 2 and settled the LoRA set and the single ConvRot model. Prompt:
 
 > Style: realistic - cinematic - The woman smiles confidently and is speaking clearly in a professional, articulate voice
