@@ -270,8 +270,8 @@ class Builder:
         """One frame from the character sheet(s) plus any location plates: the sheet is <ref_image_0> (a second
         character's sheet next), location plates after them. The prompt says who, how they look, what they do, the
         framing, the place and the light; the face comes from the sheet. 16 steps cfg 1 (image_rewrite "sheet": true).
-        project.json "sheet_prompt": "v1" (who first, the light last) or "scene" / "scene_id" (the place and its light first,
-        the person lit by it); "sheet_rewriter_light": true adds REWRITER_LIGHT to the upsampler's edit instructions."""
+        project.json "sheet_prompt": "scene_id" (default since Nov 19: the place and its light first, the person lit by it,
+        hexe's identity block), "scene" (the same with "use the sheet only for who she is") or "v1" (who first, light last); "sheet_rewriter_light": true adds REWRITER_LIGHT to the upsampler's edit instructions."""
         world = self.world(s)
         keys = list(s["chars"][:2]) + ([s["add"]["char"]] if s.get("add") and len(s["chars"]) < 2 else [])
         refs = [self.sheet(k, (s["add"].get("world", world) if s.get("add") and k == s["add"]["char"] else world),
@@ -289,7 +289,7 @@ class Builder:
             if outfit:
                 sent += f" {c['pronoun'].capitalize()} wears {outfit}."
             people.append(sent)
-        style_name = style or self.p.cfg.get("sheet_prompt") or "v1"
+        style_name = style or self.p.cfg.get("sheet_prompt") or "scene_id"
         if style_name != "v1":
             text = self._scene_first_text(s, keys, refs, plates, framing, ordinal, style_name)
         else:

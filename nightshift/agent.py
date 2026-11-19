@@ -73,6 +73,7 @@ JSON shape:
      "location": "the place in concrete physical words: surfaces, light sources, weather. No readable text or signs.",
      "action": "what the person does in the still, ending with a lens: '..., 85mm lens'",
      "expr": "facial expression for the first frame ('lips gently closed, about to sing' for lip-sync shots)",
+     "light": "where the light on the person comes from in this place: the sources, which side, their color, how much shadow ('a warm sodium lamp high on her left, green spill from a shop window on the right, half her face in shadow')",
      "video": "the LTX motion prompt: one continuous moment in order: shot size and subject as {<key>}, where, what happens, then the camera move (dolly, push in, arc, crane up, handheld drift, static). 2-3 sentences."
    }
  ]
@@ -87,6 +88,9 @@ Rules that matter:
 - With two characters, each one lip-syncs only the lines their voice sings; give each character shots of their own and a
   few shots with both (put both keys in chars; the first is the one singing).
 - In "video" prompts refer to people only as {<key>} (e.g. {maya}); never retype their description.
+- LTX invents whatever enters the frame after the first frame (a hand coming into view holds a microphone; a pan finds
+  a wall that was never there). In "video", say what enters or is revealed ("her hands stay empty", "the camera turns to
+  the brick wall of the same building"), keep moves small, and frame the still wide enough to hold what the shot needs.
 - Locations: use every place the user named, in a sensible order; repeat a place across several shots so it reads as a
   scene. No readable text, signs, logos, microphones or instruments in hands.
 - Everything lawful and safe for work. Invent original people; never describe a real or famous person.
@@ -333,6 +337,8 @@ def normalize(raw, length="medium", abstract=None):
             out.update(chars=cs[:1], still="edit", wording="C", expr=s.get("expr") or "natural",
                        action=s.get("action") or "standing still, looking into the distance, 50mm lens",
                        location=s.get("location") or "an empty street at night", video=video)
+            if s.get("light"):
+                out["light"] = s["light"]
             if len(cs) > 1:
                 out["add"] = {"char": cs[1], "where": "standing beside the other person, a little behind", "expr": "natural"}
         shots.append(out)
