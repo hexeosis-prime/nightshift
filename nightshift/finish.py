@@ -61,7 +61,7 @@ def finish_chunk(cut_mp4, out, i, look="A2_portra_dusk_plus", lifts=(), overlay=
     if halftone:
         cmd += ["-loop", "1", "-framerate", str(fps), "-i", halftone]
     cmd += ["-filter_complex", _graph(look, list(lifts), a, chunk_s, overlay, halftone, grain), "-map", "[v]", "-an",
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "17", "-frames:v", str(frames), os.path.join(parts, f"p{i:02d}.mp4")]
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "17", "-frames:v", str(frames), "-map_metadata", "-1", os.path.join(parts, f"p{i:02d}.mp4")]
     subprocess.run(cmd, check=True)
     return os.path.join(parts, f"p{i:02d}.mp4")
 
@@ -73,7 +73,7 @@ def join(cut_mp4, out, chunk_s=9.0):
     with open(lst, "w") as f:
         f.write("".join(f"file 'p{i:02d}.mp4'\n" for i in range(n)))
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-i", cut_mp4,
-                    "-map", "0:v", "-map", "1:a", "-c", "copy", "-movflags", "+faststart", "-shortest", out], check=True)
+                    "-map", "0:v", "-map", "1:a", "-c", "copy", "-movflags", "+faststart", "-shortest", "-map_metadata", "-1", out], check=True)
     return out
 
 
@@ -94,5 +94,5 @@ def web_copy(src, out, mbps=14):
     """Posting copy: H.264 at a fixed bitrate, AAC 320k, faststart (14 Mb/s keeps a 3-minute 1080p video under X's 512 MB)."""
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src, "-c:v", "libx264", "-preset", "slow", "-b:v", f"{mbps}M",
                     "-maxrate", f"{int(mbps * 1.5)}M", "-bufsize", f"{mbps * 2}M", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "320k",
-                    "-movflags", "+faststart", out], check=True)
+                    "-movflags", "+faststart", "-map_metadata", "-1", out], check=True)
     return out

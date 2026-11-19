@@ -29,7 +29,7 @@ def make_env():
     for d in ("input", "output", "user"):
         os.makedirs(os.path.join(comfy, d))
     root = os.path.join(comfy, "output", "nightshift", "demo")
-    p = init(root, "demo", comfy_dir=comfy)
+    p = init(root, "demo", comfy_dir=comfy, image_model="flux2")   # the Flux 2 path (text still + identity edit)
     return tmp, comfy, p
 
 
@@ -97,8 +97,12 @@ def test_all():
         assert sj["1363"]["inputs"]["filename_prefix"] == "nightshift/demo/stills/s02_flux"
         assert sj["ns_negative_concat"]["inputs"]["string_b"].startswith("blonde hair")
         assert sj["1362:1327"]["inputs"]["source"] == ["ns_negative_concat", 0]
-        assert sj["1362:1314"]["inputs"]["value"] is False and sj["1362:1317"]["inputs"]["value"] == 1280   # landscape 1280x768
-        assert sj["1362:1312"]["inputs"]["value"] == rs["s02"]["seed"] and sj["1362:1313"]["inputs"]["value"] is True
+        # the job is queued with its switches resolved: landscape picks the long edge for the width, a fixed seed the seed input
+        lat = sj["1362:1361"]["inputs"]
+        assert lat["width"] == ["1362:1317", 0] and sj["1362:1317"]["inputs"]["value"] == 1280, lat   # landscape 1280x768
+        assert sj["1362:1351"]["inputs"]["noise_seed"] == ["1362:1312", 0] and sj["1362:1312"]["inputs"]["value"] == rs["s02"]["seed"]
+        left = [k for k, n in sj.items() if n["class_type"] == "ComfySwitchNode" and not isinstance(n["inputs"]["switch"], list)]
+        assert not left, left        # switches computed at run time (math nodes) stay; fixed ones are resolved
 
         # fake renders of stills + sheets
         # character sheets: jobs for the first world from the description, the second world as an outfit edit of the first
@@ -132,6 +136,11 @@ def test_all():
         assert len(vs) == 4 and json.load(open(p.path(vs[3])))["94"]["inputs"]["filename_prefix"].endswith("s06_vC1")
 
         # videos
+        cfg0 = p.load("project.json")       # the per-mode LTX graphs first (vid_ltx, the default since Nov 17, is checked below)
+        cfg0["workflows"] = dict(cfg0.get("workflows") or {}, ff="vid_ltx_ff", fflf="vid_ltx_fflf", lipsync="vid_ltx_lipsync")
+        p.save("project.json", cfg0)
+        from nightshift.project import Project
+        p = Project(p.root)
         r = build.build(p, "videos")
         assert not r["skipped"], r
         lj = json.load(open(p.path("jobs", "s02_video.json")))
@@ -143,12 +152,43 @@ def test_all():
         # s01 is too short in this 40 s song and gets dropped, so the loop shot ends on the first live shot's still
         assert rs["s01"].get("dropped") and fj["5052"]["inputs"]["image"] == fj["5075"]["inputs"]["image"] == "nightshift/demo/s02_edit.png"
         assert rs["s02"]["start"] == 0.0
-        assert isinstance(fj["5110"]["inputs"]["Xi"], int) and fj["5258"]["inputs"]["switch"] is True
+        assert isinstance(fj["5110"]["inputs"]["Xi"], int) and "5258" not in fj   # the prompt-builder override switch is resolved away
         tj = json.load(open(p.path("jobs", "s04_video.json")))
         assert tj["7"]["inputs"]["width"] == 1280 and tj["10"]["inputs"]["value"] == rs["s04"]["frames"]
         fj = json.load(open(p.path("jobs", "s03_video.json")))
         assert fj["257:255"]["inputs"]["length"] == fj["257:254"]["inputs"]["frames_number"] == rs["s03"]["frames"]
         assert fj["257:228"]["inputs"]["noise_seed"] == fj["257:218"]["inputs"]["noise_seed"] + 1
+
+        # the same shots through hexe's single LTX graph (vid_ltx): toggles per mode, switches resolved before queueing
+        cfg = p.load("project.json")
+        old_wf = dict(cfg.get("workflows", {}))
+        cfg["workflows"] = dict(old_wf, ff="vid_ltx", fflf="vid_ltx", lipsync="vid_ltx")
+        p.save("project.json", cfg)
+        p1 = Project(p.root)
+        r = build.build(p1, "videos")
+        assert not r["skipped"], r
+        kinds = {}
+        for sid, sh in rs.items():
+            if sh.get("dropped") or sh["mode"] not in ("ff", "fflf", "lipsync"):
+                continue
+            g = json.load(open(p1.path("jobs", f"{sid}_video.json")))
+            loads = sorted(n["_meta"]["title"] for n in g.values() if n["class_type"] in ("LoadImage", "LoadAudio"))
+            assert not any(n["class_type"] == "ComfySwitchNode" and not isinstance(n["inputs"]["switch"], list) for n in g.values())
+            assert g["5427"]["inputs"]["value"] == sh["frames"] and g["5420"]["inputs"]["value"] == 1280
+            kinds[sh["mode"]] = loads
+            if sh["mode"] == "lipsync":      # the song cut to the shot, vocals isolated
+                clip = g["5693"]["inputs"]["audio"]
+                assert clip.startswith("nightshift/demo/") and clip.endswith(".wav") and "MelBandRoFormerSampler" in {n["class_type"] for n in g.values()}
+                local = os.path.join(comfy, "input", *clip.split("/"))
+                dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", local]))
+                assert abs(dur - ((sh["frames"] - 1) / 24 + 0.05)) < 0.03, dur
+        assert kinds["ff"] == ["ns_load_first_frame"], kinds          # no dummy last frame, no audio file
+        assert kinds["lipsync"] == ["ns_load_audio", "ns_load_first_frame"], kinds
+        assert "ns_load_last_frame" in kinds["fflf"], kinds
+        cfg["workflows"] = old_wf
+        p.save("project.json", cfg)
+        build.build(Project(p.root), "videos")      # back to the per-mode graphs for the checks below
+        print("ok   vid_ltx jobs:", kinds)
 
         # takes
         from nightshift import takes

@@ -1,0 +1,139 @@
+{
+ "workflow": "img_flux3.json",
+ "kind": "image",
+ "ref_syntax": "flux3",
+ "description": "hexe's all-in-one FLUX 3 Image Klein workflow (Nov 18: references resized and padded with black, not cropped). Text to image (text_to_image true) or edit / reference generation from up to four reference images (<ref_image_0>..<ref_image_3>), with the FLUX 3 prompt upsampler (Qwen3.5 9B) on a toggle (on by default). The model file is the distilled one (flux3-image-klein-int8-convrot, tested Nov 18), so the map's defaults use the template settings: text to image 15 steps cfg 1 er_sde, edits 16 steps cfg 1 euler; set steps 50 and cfg 3.5 for the slow pass. The text-to-image upsampler gets the official text-to-image instructions (workflows/flux3_t2i_upsampler_system.txt). Nightshift resolves the switches and unhooks unused reference slots (Workflow.use_refs) before queueing. The rewritten prompt comes back from the 'Preview as Text' node.",
+ "roles": {
+  "prompt": {
+   "node": "5696",
+   "input": "value"
+  },
+  "negative": {
+   "node": "5697",
+   "input": "value"
+  },
+  "width": {
+   "node": "5701",
+   "input": "value"
+  },
+  "height": {
+   "node": "5703",
+   "input": "value"
+  },
+  "seed": {
+   "node": "5721",
+   "input": "value"
+  },
+  "image1": {
+   "node": "5698",
+   "input": "image"
+  },
+  "image2": {
+   "node": "5715",
+   "input": "image"
+  },
+  "image3": {
+   "node": "5743",
+   "input": "image"
+  },
+  "image4": {
+   "node": "5754",
+   "input": "image"
+  },
+  "text_to_image": {
+   "node": "5809",
+   "input": "value"
+  },
+  "prompt_enhancer": {
+   "node": "5738",
+   "input": "switch"
+  },
+  "steps": [
+   {
+    "node": "7",
+    "input": "steps"
+   },
+   {
+    "node": "5786",
+    "input": "steps"
+   }
+  ],
+  "cfg": [
+   {
+    "node": "7",
+    "input": "cfg"
+   },
+   {
+    "node": "5786",
+    "input": "cfg"
+   }
+  ],
+  "sampler": [
+   {
+    "node": "7",
+    "input": "sampler_name"
+   },
+   {
+    "node": "5786",
+    "input": "sampler_name"
+   }
+  ],
+  "t2i_system": {
+   "node": "5807",
+   "input": "value"
+  },
+  "edit_system": {
+   "node": "5739",
+   "input": "value"
+  }
+ },
+ "outputs": {
+  "flux": {
+   "node": "9",
+   "input": "filename_prefix"
+  }
+ },
+ "defaults": [
+  {
+   "node": "5700",
+   "input": "value",
+   "value": true
+  },
+  {
+   "node": "7",
+   "input": "steps",
+   "value": 16
+  },
+  {
+   "node": "7",
+   "input": "cfg",
+   "value": 1.0
+  },
+  {
+   "node": "7",
+   "input": "sampler_name",
+   "value": "euler"
+  },
+  {
+   "node": "5786",
+   "input": "steps",
+   "value": 15
+  },
+  {
+   "node": "5786",
+   "input": "cfg",
+   "value": 1.0
+  },
+  {
+   "node": "5786",
+   "input": "sampler_name",
+   "value": "er_sde"
+  },
+  {
+   "node": "5807",
+   "input": "value",
+   "value": "You are the prompt upsampler of a text-to-image model. Expand the user's short request into ONE detailed, self-contained caption: the exact text the image model receives. Output only the caption, with no greetings, explanations, refusals, questions, Markdown, headings, JSON, coordinates, ids or angle-bracket tokens, and no quotes around it. If the input is not clearly an image request, caption a visualization of its concept. The request may begin with a \"TARGET CANVAS: W:H\" line: compose for that canvas (wide spreads content sideways, tall stacks it) and never mention the ratio or the canvas.\n\nFidelity and planning: keep every explicit subject, attribute, count, spatial constraint, style cue and piece of wording; never contradict, substitute, drop or narrow the request, and keep an abstract concept abstract. Decide everything left open as ONE concrete, consistent plan; never offer alternatives or hedge. Never re-express a stated constraint through another mechanism; add camera optics (depth of field, bokeh, blur) only when asked for or implied. Without a stated style, plan an actual photograph and open with the medium convention (\"Full-color outdoor photograph, ...\", \"Full-color indoor photograph, ...\", \"Studio photograph, ...\", \"Close-up photograph, ...\"); keep \"Photorealistic\" for renders, and turn \"photorealistic\" or \"realistic\" requests for photos into the photograph convention. Give a photograph a few ordinary, non-ideal specifics drawn from the scene's own objects instead of the stock-photo ideal. Do not invent names, brands, logos or celebrities; keep user-named ones. A long request keeps its content but not its wording: drop appraisal and sales vocabulary, turn moods into observable physical facts, and add only new concrete content with positions. Time of day is lighting, not rendered text.\n\nCaption format: one continuous prose block in the generative voice, never \"this image shows\", \"we can see\" or \"is visible\". Lead with medium and style, then scene, lighting and camera, then the subjects with concrete colors, materials and state. Every person in focus gets an observable profile: ethnicity, gender, age range, skin tone (\"fair skin\", \"brown skin\"), hair and clothing. Make the layout reconstructable from words: frame-relative positions (frame-left, frame-right, upper, lower, foreground, midground, background), sentence-initial anchors (\"On the left, ...\", \"In the background, ...\"), relations (holds, faces, behind) and a consistent order; describe up to about ten instances one by one, beyond that give the exact count and arrangement. Out-of-focus or distant planes are shapes, colors and silhouettes, never identities or readable text, and the background takes about a sixth of the caption. Be definite: no hedging adverbs, no quality or emotion judgments, no closing sentence about mood; state negations as what is present. Rendered text: transcribe every wording verbatim inside double quotes in its original language and script, keep the line breaks of multi-line text, and give its typography, color and placement; author concrete, domain-correct wording when the request needs text it does not supply, and name canonical structures (calendar, keyboard, periodic table) exactly with their full layout. All prose is English; only quoted text keeps its language. Typical length is 100 to 350 words, more for complex scenes.\n\nOutput only the caption.\n"
+  }
+ ],
+ "prompt_style": "caption"
+}

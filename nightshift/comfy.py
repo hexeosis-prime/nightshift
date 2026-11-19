@@ -1,12 +1,17 @@
 """ComfyUI over its HTTP API (no extra dependencies), plus the queue runner with a stall/OOM watchdog.
 
-Works against a ComfyUI on this machine or across the network (--listen on the GPU box). When the ComfyUI folder is
-known (project comfy.dir), the watchdog also watches its log file: on a long LTX job the log keeps moving (sampler
-progress bars, model loads), so a log that stops moving while a job is "running" is a stall.
+Works against a ComfyUI on this machine or across the network (--listen on the GPU box). The watchdog judges a running
+job by ComfyUI's own progress messages (its websocket: a tick per sampler step, a message per node, decode progress), so
+a long render that is working is never taken for a stall. When the websocket can't be reached it falls back to the log
+file (project comfy.dir): a log that stops moving for long enough while a job is "running" is a stall.
 """
+import base64
+import hashlib
 import json
 import mimetypes
 import os
+import socket
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -18,12 +23,143 @@ class ComfyError(Exception):
     pass
 
 
+class Progress:
+    """Listens to ComfyUI's websocket (/ws?clientId=...) in a background thread and remembers, per prompt, when it last
+    showed a sign of life: a sampler step, a node starting or finishing, a preview image. Only prompts queued with the
+    same client id are reported to us, which is why a project keeps one client id across runs (Project.client).
+    Standard library only: a minimal RFC 6455 client (text, binary, ping/pong, close)."""
+    LIFE = ("progress", "progress_state", "executing", "executed", "execution_start", "execution_cached")
+
+    def __init__(self, url, client_id):
+        u = urllib.parse.urlparse(url)
+        self.host, self.port = u.hostname or "127.0.0.1", u.port or (443 if u.scheme == "https" else 80)
+        self.path = (u.path.rstrip("/") or "") + "/ws?clientId=" + urllib.parse.quote(client_id)
+        self.connected, self.since, self.error = False, None, None
+        self.last, self.info, self.preview = {}, {}, None
+        self._stop, self._buf = False, b""
+        self.thread = threading.Thread(target=self._loop, daemon=True, name="comfy-progress")
+        self.thread.start()
+
+    def stop(self):
+        self._stop = True
+
+    def quiet(self, prompt_id, started=None):
+        """Seconds since this prompt last showed life (counted from when we started listening or the job started, if
+        later), or None when the websocket isn't connected."""
+        if not self.connected:
+            return None
+        marks = [self.since or 0, started or 0, self.last.get(prompt_id) or 0, self.preview or 0]
+        return time.time() - max(marks)
+
+    # ---- the socket -------------------------------------------------------------------------------
+    def _loop(self):
+        wait = 2
+        while not self._stop:
+            try:
+                self._session()
+                wait = 2
+            except Exception as e:
+                self.error = str(e)[:200]
+            self.connected = False
+            if self._stop:
+                break
+            time.sleep(wait)
+            wait = min(wait * 2, 30)
+
+    def _recv(self, sock, n):
+        while len(self._buf) < n:
+            chunk = sock.recv(65536)
+            if not chunk:
+                raise ConnectionError("websocket closed")
+            self._buf += chunk
+        out, self._buf = self._buf[:n], self._buf[n:]
+        return out
+
+    def _send(self, sock, op, payload=b""):
+        mask = os.urandom(4)
+        head = bytes([0x80 | op])
+        n = len(payload)
+        head += bytes([0x80 | n]) if n < 126 else bytes([0x80 | 126]) + n.to_bytes(2, "big")
+        sock.sendall(head + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
+
+    def _session(self):
+        sock = socket.create_connection((self.host, self.port), timeout=15)
+        try:
+            key = base64.b64encode(os.urandom(16)).decode()
+            sock.sendall((f"GET {self.path} HTTP/1.1\r\nHost: {self.host}:{self.port}\r\nUpgrade: websocket\r\n"
+                          f"Connection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
+            self._buf = b""
+            while b"\r\n\r\n" not in self._buf:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    raise ConnectionError("no websocket handshake")
+                self._buf += chunk
+            head, self._buf = self._buf.split(b"\r\n\r\n", 1)
+            if b" 101" not in head.split(b"\r\n", 1)[0]:
+                raise ConnectionError("websocket refused: " + head.split(b"\r\n", 1)[0].decode(errors="replace"))
+            self.connected, self.since, self.error = True, time.time(), None
+            sock.settimeout(30)
+            while not self._stop:
+                try:
+                    b0, b1 = self._recv(sock, 2)
+                except socket.timeout:
+                    continue                      # a quiet socket is fine; ComfyUI only talks when something happens
+                op, n = b0 & 0x0F, b1 & 0x7F
+                if n == 126:
+                    n = int.from_bytes(self._recv(sock, 2), "big")
+                elif n == 127:
+                    n = int.from_bytes(self._recv(sock, 8), "big")
+                mask = self._recv(sock, 4) if b1 & 0x80 else None
+                data = self._recv(sock, n) if n else b""
+                if mask:
+                    data = bytes(b ^ mask[i % 4] for i, b in enumerate(data))
+                if op == 0x8:
+                    raise ConnectionError("websocket closed by ComfyUI")
+                if op == 0x9:
+                    self._send(sock, 0xA, data)
+                elif op == 0x2:
+                    self.preview = time.time()    # a preview image: the sampler is moving
+                elif op == 0x1:
+                    self._message(data)
+        finally:
+            sock.close()
+
+    def _message(self, data):
+        try:
+            m = json.loads(data)
+        except ValueError:
+            return
+        kind, d = m.get("type"), m.get("data") or {}
+        pid = d.get("prompt_id")
+        if kind in self.LIFE and pid:
+            self.last[pid] = time.time()
+            if kind == "progress":
+                self.info[pid] = {"value": d.get("value"), "max": d.get("max"), "node": d.get("node")}
+            elif kind == "executing" and d.get("node"):
+                self.info.setdefault(pid, {})["node"] = d.get("node")
+
+
+_LISTENERS, _LISTENERS_LOCK = {}, threading.Lock()
+
+
 class Comfy:
-    def __init__(self, url="http://127.0.0.1:8188", comfy_dir=None, timeout=60):
+    def __init__(self, url="http://127.0.0.1:8188", comfy_dir=None, timeout=60, client_id=None):
         self.url = url.rstrip("/")
         self.dir = comfy_dir
         self.timeout = timeout
-        self.client_id = "nightshift-" + uuid.uuid4().hex[:8]
+        self.client_id = client_id or "nightshift-" + uuid.uuid4().hex[:8]
+        self._progress = None
+
+    def progress(self):
+        """The websocket listener for this client id, one per process (started on first use). ComfyUI keeps one socket
+        per client id, so two listeners with the same id would keep knocking each other off."""
+        if self._progress is None:
+            with _LISTENERS_LOCK:
+                key = (self.url, self.client_id)
+                if key not in _LISTENERS:
+                    _LISTENERS[key] = Progress(self.url, self.client_id)
+                self._progress = _LISTENERS[key]
+        return self._progress
 
     # ---- raw -------------------------------------------------------------------------------
     def _req(self, method, path, body=None, headers=None, raw=False):
@@ -66,9 +202,20 @@ class Comfy:
         as mirrors of the same file often are). Swap in the name ComfyUI actually has when it is the same name otherwise."""
         cache = self.__dict__.setdefault("_choices", {})
         norm = lambda s: s.lower().replace("-", "_").replace(" ", "_")
-        # known mirrors that name the same checkpoint differently (DeepBeepMeep/Flux3: no suffix = the full model, _sd_ = distilled)
-        alias = {"flux3_image_klein_base_int8_convrot.safetensors": "flux3_image_klein_int8_convrot.safetensors",
-                 "flux3_image_klein_int8_convrot.safetensors": "flux3_image_klein_sd_int8_convrot.safetensors"}
+        # FLUX 3 Klein files: the names cross over between releases. ComfyUI's templates: "flux3-image-klein-int8-convrot"
+        # (hyphens) = distilled, "...-base-..." = base. The underscore mirror: "flux3_image_klein_int8_convrot" = base,
+        # "..._sd_..." = distilled. So the two "klein_int8_convrot" names are different models: never swap one for the other.
+        family = {"flux3_image_klein_base_int8_convrot.safetensors": "base", "flux3_image_klein_int8_convrot.safetensors|_": "base",
+                  "flux3_image_klein_int8_convrot.safetensors|-": "distilled", "flux3_image_klein_sd_int8_convrot.safetensors": "distilled"}
+
+        def fam(name):
+            b = os.path.basename(name)
+            n = norm(b)
+            if n == "flux3_image_klein_int8_convrot.safetensors":
+                return family[n + ("|-" if "-" in b else "|_")]
+            if n.startswith("qwen3.5_9b_flux3_prompt_upsampler"):   # the upsampler in any quantization (int8, w4a8)
+                return "upsampler"
+            return family.get(n)
         for node in prompt.values():
             if not isinstance(node, dict):
                 continue
@@ -85,9 +232,11 @@ class Comfy:
                         cache[cls] = {}
                 have = cache[cls].get(k) or []
                 if have and v not in have:
-                    want = norm(os.path.basename(v))
-                    alt = next((h for h in have if isinstance(h, str) and norm(os.path.basename(h)) == want), None) or \
-                        next((h for h in have if isinstance(h, str) and norm(os.path.basename(h)) == alias.get(want)), None)
+                    if fam(v):          # a FLUX 3 Klein file: only the same model, under any of its names
+                        alt = next((h for h in have if isinstance(h, str) and fam(h) == fam(v)), None)
+                    else:
+                        want = norm(os.path.basename(v))
+                        alt = next((h for h in have if isinstance(h, str) and norm(os.path.basename(h)) == want), None)
                     if alt:
                         node["inputs"][k] = alt
         return prompt
@@ -115,11 +264,13 @@ class Comfy:
         h = self.history(prompt_id).get(prompt_id)
         if h:
             st = h.get("status", {})
-            files = []
+            files, texts = [], []
             for node_out in h.get("outputs", {}).values():
-                for v in node_out.values():
+                for k, v in node_out.items():
                     if isinstance(v, list):
                         files += [x for x in v if isinstance(x, dict) and "filename" in x]
+                        if k == "text":          # Preview as Text: e.g. the prompt the FLUX 3 upsampler wrote
+                            texts += [x for x in v if isinstance(x, str)]
             err, t0, t1 = None, None, None
             for name, msg in st.get("messages", []):
                 if name == "execution_start":
@@ -132,7 +283,7 @@ class Comfy:
                     err = {"exception_type": "interrupted"}
             ok = st.get("status_str") == "success" and not err
             secs = round((t1 - t0) / 1000, 1) if t0 and t1 else None
-            return {"status": "success" if ok else "error", "files": files, "error": err, "seconds": secs}
+            return {"status": "success" if ok else "error", "files": files, "texts": texts, "error": err, "seconds": secs}
         q = self.queue()
         if prompt_id in q["running"]:
             return {"status": "running"}
@@ -192,6 +343,28 @@ def _limit_minutes(project, job_meta):
     return max(wd["min_minutes"], frames * wd["max_minutes_per_frame"] * mult) + (30 if job_meta.get("kind") == "song" else 0)
 
 
+LONG_KINDS = ("ff", "fflf", "t2v", "lipsync", "song")
+
+
+def _progress_stall_seconds(project):
+    """With ComfyUI's progress messages coming in, a running job counts as stalled after this long with no sign of life
+    from it (no sampler step, no node, no preview) and no line in the log."""
+    wd = project.cfg["watchdog"]
+    return max(wd["stall_minutes"], wd.get("progress_stall_minutes", 10)) * 60
+
+
+def _stall_seconds(project, job_meta):
+    """How long ComfyUI's log may stay silent before a running job counts as stalled. Video and song jobs sample for many
+    minutes without writing a line (a 288-frame first/last-frame shot is silent 6+ min, and the old 6-minute rule killed 8
+    of 11 healthy renders on Zero's night), so for them silence only counts after half the job's own time limit; the
+    time limit still catches a real hang."""
+    wd = project.cfg["watchdog"]
+    base = wd["stall_minutes"] * 60
+    if job_meta.get("kind") in LONG_KINDS:
+        return max(base, _limit_minutes(project, job_meta) * 60 / 2)
+    return base
+
+
 def _state_path(project):
     return project.path("queue.json")
 
@@ -229,7 +402,8 @@ def status(project):
     counts = {}
     for j in st["jobs"]:
         counts[j["status"]] = counts.get(j["status"], 0) + 1
-    return {"counts": counts, "open": [{"job": j["job"], "status": j["status"], "prompt_id": j["prompt_id"]} for j in open_jobs],
+    return {"counts": counts, "open": [{"job": j["job"], "status": j["status"], "prompt_id": j["prompt_id"],
+                                        **({"progress": j["progress"]} if j.get("progress") else {})} for j in open_jobs],
             "failed": [{"job": j["job"], "error": j.get("error")} for j in st["jobs"] if j["status"] == "failed"]}
 
 
@@ -240,6 +414,12 @@ def watch(project, timeout_s=None, on_event=print):
     wd = project.cfg["watchdog"]
     t_end = time.time() + timeout_s if timeout_s else None
     down_since = None
+    mon = None
+    if wd.get("progress", True):
+        try:
+            mon = c.progress()
+        except Exception:
+            mon = None
     while True:
         open_jobs = [j for j in st["jobs"] if j["status"] in ("queued", "running")]
         if not open_jobs:
@@ -265,10 +445,19 @@ def watch(project, timeout_s=None, on_event=print):
                     on_event(f"running  {j['job']}")
                 limit = _limit_minutes(project, j.get("meta", {})) * 60
                 age = c.log_age()
-                stalled = age is not None and age > wd["stall_minutes"] * 60
+                quiet = mon.quiet(pid, j["started"]) if mon else None
+                if quiet is not None:                      # ComfyUI's own progress messages: the reliable signal
+                    if mon.info.get(pid):
+                        j["progress"] = mon.info[pid]
+                    calm = _progress_stall_seconds(project)
+                    stalled = quiet > calm and (age is None or age > calm)
+                    why_stall = "stalled (no progress from ComfyUI for %d min)" % (quiet // 60)
+                else:                                       # no websocket: fall back to the log file
+                    stalled = age is not None and age > _stall_seconds(project, j.get("meta", {}))
+                    why_stall = "stalled (log silent %d min)" % ((age or 0) // 60)
                 overtime = time.time() - j["started"] > limit
                 if stalled or overtime:
-                    why = "stalled (log silent %d min)" % (age // 60) if stalled else "over its time limit (%d min)" % (limit // 60)
+                    why = why_stall if stalled else "over its time limit (%d min)" % (limit // 60)
                     on_event(f"WATCHDOG {j['job']} {why}: interrupting")
                     project.log("watchdog", job=j["job"], prompt_id=pid, reason=why)
                     try:
@@ -290,7 +479,7 @@ def watch(project, timeout_s=None, on_event=print):
                 err = r.get("error") or {}
                 j["status"], j["error"] = "failed", err
                 project.log("failed", job=j["job"], prompt_id=pid, error=err)
-                oom = "OutOfMemory" in str(err.get("exception_type", "")) or "out of memory" in str(err.get("exception_message", "")).lower()
+                oom = retryable(err)
                 on_event(f"FAILED   {j['job']}  {err.get('exception_type')}: {str(err.get('exception_message'))[:200]}")
                 if oom:
                     try:
@@ -306,6 +495,21 @@ def watch(project, timeout_s=None, on_event=print):
         time.sleep(wd["poll_seconds"])
     save_state(project, st)
     return status(project)
+
+
+# GPU faults that are about the moment, not the job: out of memory, and the dynamic-VRAM allocator's "Fault failed"
+# (cuMemSetAccess "device not ready", Nov 18: one LTX job died in its text encoder, the next jobs rendered fine)
+TRANSIENT = ("out of memory", "fault failed", "device not ready", "vram allocation failed", "cuda error: unspecified launch failure",
+             "cublas_status_alloc_failed", "cudnn_status_internal_error")
+
+
+def retryable(err):
+    """A failed job worth queueing again as it is (after freeing memory)."""
+    err = err or {}
+    if "OutOfMemory" in str(err.get("exception_type", "")):
+        return True
+    msg = str(err.get("exception_message", "")).lower()
+    return any(k in msg for k in TRANSIENT)
 
 
 def _retry(project, c, st, j, wd, on_event):

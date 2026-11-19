@@ -41,6 +41,9 @@ FILES = [
     ("core", "vae", "minimax_music3_dav.safetensors", "Comfy-Org/MiniMax-Music-3", "vae/minimax_music3_dav.safetensors"),
     ("flux3", "diffusion_models", "flux3-image-klein-base-int8-convrot.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "diffusion_models/flux3-image-klein-base-int8-convrot.safetensors"),
     ("flux3", "text_encoders", "qwen3vl_4b_int8_convrot.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "text_encoders/qwen3vl_4b_int8_convrot.safetensors"),
+    # hexe's all-in-one graph (img_flux3): the distilled model (16 steps) and the prompt upsampler (ComfyUI template files)
+    ("flux3", "diffusion_models", "flux3-image-klein-int8-convrot.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "diffusion_models/flux3-image-klein-int8-convrot.safetensors"),
+    ("flux3", "text_encoders", "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors"),
     ("flux3", "vae", "flux2-vae.safetensors", "black-forest-labs/flux-3-image-klein-comfy", "vae/flux2-vae.safetensors"),
 ]
 

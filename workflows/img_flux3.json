@@ -1,0 +1,869 @@
+{
+  "1": {
+    "inputs": {
+      "unet_name": "flux3-image-klein-int8-convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "load: flux3-image-klein"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "qwen3vl_4b_int8_convrot.safetensors",
+      "type": "flux3",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "load: qwen3vl_4b text encoder"
+    }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "load: flux2-vae"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": [
+        "5738",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "prompt"
+    }
+  },
+  "5": {
+    "inputs": {
+      "text": [
+        "5697",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "negative"
+    }
+  },
+  "6": {
+    "inputs": {
+      "width": [
+        "5693",
+        0
+      ],
+      "height": [
+        "5694",
+        0
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "empty_latent"
+    }
+  },
+  "7": {
+    "inputs": {
+      "seed": [
+        "5710",
+        0
+      ],
+      "steps": 50,
+      "cfg": 3.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "17",
+        0
+      ],
+      "negative": [
+        "17",
+        1
+      ],
+      "latent_image": [
+        "17",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "sampler"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "7",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "test",
+      "images": [
+        "5808",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "17": {
+    "inputs": {
+      "resolution": "keep resolution",
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "images.image0": [
+        "5826",
+        0
+      ],
+      "images.image1": [
+        "5824",
+        0
+      ],
+      "images.image2": [
+        "5827",
+        0
+      ],
+      "images.image3": [
+        "5825",
+        0
+      ]
+    },
+    "class_type": "ReferenceMultiLatent",
+    "_meta": {
+      "title": "references (<ref_image_0>, <ref_image_1>, ...)"
+    }
+  },
+  "5693": {
+    "inputs": {
+      "switch": [
+        "5700",
+        0
+      ],
+      "on_false": [
+        "5690:1591",
+        0
+      ],
+      "on_true": [
+        "5701",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "input-toggle-width"
+    }
+  },
+  "5694": {
+    "inputs": {
+      "switch": [
+        "5700",
+        0
+      ],
+      "on_false": [
+        "5690:1590",
+        0
+      ],
+      "on_true": [
+        "5703",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "input-toggle-height"
+    }
+  },
+  "5696": {
+    "inputs": {
+      "value": "an amazing beautiful tropical landscape image at sunrise with palmtrees "
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "ns_prompt"
+    }
+  },
+  "5697": {
+    "inputs": {
+      "value": ""
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "ns_negative"
+    }
+  },
+  "5698": {
+    "inputs": {
+      "image": "landscape_A20260719_125520_00001_.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "ns_load_<ref_image_0>",
+      "cnr_id": "comfy-core",
+      "ver": "0.8.2"
+    }
+  },
+  "5700": {
+    "inputs": {
+      "value": true
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "ns_toggle_api_inputs"
+    }
+  },
+  "5701": {
+    "inputs": {
+      "value": 1280
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "ns_width"
+    }
+  },
+  "5703": {
+    "inputs": {
+      "value": 768
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "ns_height"
+    }
+  },
+  "5710": {
+    "inputs": {
+      "switch": [
+        "5700",
+        0
+      ],
+      "on_false": [
+        "5691:1741",
+        0
+      ],
+      "on_true": [
+        "5721",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "input-toggle-seed"
+    }
+  },
+  "5715": {
+    "inputs": {
+      "image": "uprdtpsrc-1027.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "ns_load_<ref_image_1>",
+      "cnr_id": "comfy-core",
+      "ver": "0.8.2"
+    }
+  },
+  "5721": {
+    "inputs": {
+      "value": 987654321000003
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "ns_seed"
+    }
+  },
+  "5736": {
+    "inputs": {
+      "clip_name": "qwen3.5_9b_flux3_prompt_upsampler_int8_convrot.safetensors",
+      "type": "flux3",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "5737": {
+    "inputs": {
+      "prompt": [
+        "5696",
+        0
+      ],
+      "max_length": 3584,
+      "sampling_mode": "on",
+      "sampling_mode.temperature": 1,
+      "sampling_mode.top_k": 1,
+      "sampling_mode.top_p": 0.95,
+      "sampling_mode.min_p": 0,
+      "sampling_mode.repetition_penalty": 1,
+      "sampling_mode.seed": 0,
+      "sampling_mode.presence_penalty": 0,
+      "thinking": false,
+      "use_default_template": true,
+      "mtp": "off",
+      "clip": [
+        "5736",
+        0
+      ],
+      "image": [
+        "5741",
+        0
+      ],
+      "system_prompt": [
+        "5739",
+        0
+      ]
+    },
+    "class_type": "TextGenerate",
+    "_meta": {
+      "title": "Generate Text"
+    }
+  },
+  "5738": {
+    "inputs": {
+      "switch": true,
+      "on_false": [
+        "5696",
+        0
+      ],
+      "on_true": [
+        "5796",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "ns_toggle_flux_prompt_enhancer"
+    }
+  },
+  "5739": {
+    "inputs": {
+      "value": "You are the prompt upsampler of an image-editing model. You see the reference image(s), attached in order (the first image, the second image, ...), and the user's short request. Expand it into ONE detailed, self-contained instruction: the caption the editing model receives together with the same images. Output only the instruction as one continuous English prose block, with no greetings, explanations, Markdown, JSON, coordinates, ids or angle-bracket tokens. Read a vague or conversational request as the most plausible edit of the supplied images.\\n\\nPick the voice by task shape. When one reference stays and gets bounded changes, write an imperative editing instruction on it (\\\"Remove the ...\\\", \\\"Change the ... to ...\\\", \\\"Zoom in on ...\\\"); a whole-image transformation opens with its scope (\\\"Convert the entire image into ...\\\", \\\"Apply a ... filter over the entire scene\\\", \\\"Horizontally flip the entire image so that ...\\\", \\\"Shift the camera viewpoint to ...\\\", then where the major elements should now be). When the references are drawn into a newly composed frame (combining subjects, a new scene, a garment, object or style donor), write a generation request (\\\"Create a photograph of ...\\\", \\\"Create an anime-style illustration of ...\\\", \\\"Generate a new image featuring ...\\\") that says what to take from each image, by ordinal, and what is newly generated.\\n\\nKeep every explicit edit, constraint, count, position, style cue and piece of wording, and decide what is left open as one concrete plan. Ground everything in what is actually visible: identify each referent unambiguously by its real appearance, never mention content that is not there, and use every image the user attached. State every end state concretely (which color, how large, which pose, which material) and give new content enough appearance to be generated. Cover the knock-on effects of the change (shadows, reflections, occlusion, perspective, scale, lighting) and say what fills a removed region. A zoom-in names what stays in frame and which neighbors are cropped out; an outpainting continues the scene in the same medium. Describe the change, not the whole scene, and close an editing instruction with one compact clause naming what stays unchanged; transferred people keep their identity, face and accessories unless asked otherwise. Transcribe on-image text verbatim in its original language inside double quotes, with line breaks as \\\\n, and match the original font, size and color when replacing it. Name recognizable public figures, brands and landmarks you can see. Directions are frame-relative; use no evaluative or quality words. Typical length is 50 to 150 words.\\n\\nOutput only the instruction."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Text (System prompt)"
+    }
+  },
+  "5741": {
+    "inputs": {
+      "images.image0": [
+        "5826",
+        0
+      ],
+      "images.image1": [
+        "5824",
+        0
+      ],
+      "images.image2": [
+        "5827",
+        0
+      ],
+      "images.image3": [
+        "5825",
+        0
+      ]
+    },
+    "class_type": "BatchImagesNode",
+    "_meta": {
+      "title": "Batch Images"
+    }
+  },
+  "5743": {
+    "inputs": {
+      "image": "uprdtpsrc-1030.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "ns_load_<ref_image_2>",
+      "cnr_id": "comfy-core",
+      "ver": "0.8.2"
+    }
+  },
+  "5754": {
+    "inputs": {
+      "image": "uprdtpsrc-1037.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "ns_load_<ref_image_3>",
+      "cnr_id": "comfy-core",
+      "ver": "0.8.2"
+    }
+  },
+  "5786": {
+    "inputs": {
+      "seed": [
+        "5710",
+        0
+      ],
+      "steps": 50,
+      "cfg": 3.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "5792",
+        0
+      ],
+      "negative": [
+        "5794",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "sampler"
+    }
+  },
+  "5787": {
+    "inputs": {
+      "samples": [
+        "5786",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "5792": {
+    "inputs": {
+      "text": [
+        "5738",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "prompt"
+    }
+  },
+  "5794": {
+    "inputs": {
+      "text": [
+        "5697",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "negative"
+    }
+  },
+  "5796": {
+    "inputs": {
+      "switch": [
+        "5809",
+        0
+      ],
+      "on_false": [
+        "5737",
+        0
+      ],
+      "on_true": [
+        "5799",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "ns_text_to_image"
+    }
+  },
+  "5798": {
+    "inputs": {
+      "clip_name": "qwen3.5_9b_flux3_prompt_upsampler_int8_convrot.safetensors",
+      "type": "flux3",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "5799": {
+    "inputs": {
+      "prompt": [
+        "5696",
+        0
+      ],
+      "max_length": 3584,
+      "sampling_mode": "on",
+      "sampling_mode.temperature": 1,
+      "sampling_mode.top_k": 1,
+      "sampling_mode.top_p": 0.95,
+      "sampling_mode.min_p": 0,
+      "sampling_mode.repetition_penalty": 1,
+      "sampling_mode.seed": 0,
+      "sampling_mode.presence_penalty": 0,
+      "thinking": false,
+      "use_default_template": true,
+      "mtp": "off",
+      "clip": [
+        "5798",
+        0
+      ],
+      "system_prompt": [
+        "5807",
+        0
+      ]
+    },
+    "class_type": "TextGenerate",
+    "_meta": {
+      "title": "Generate Text"
+    }
+  },
+  "5807": {
+    "inputs": {
+      "value": "You are the prompt upsampler of an image-editing model. You see the reference image(s), attached in order (the first image, the second image, ...), and the user's short request. Expand it into ONE detailed, self-contained instruction: the caption the editing model receives together with the same images. Output only the instruction as one continuous English prose block, with no greetings, explanations, Markdown, JSON, coordinates, ids or angle-bracket tokens. Read a vague or conversational request as the most plausible edit of the supplied images.\\n\\nPick the voice by task shape. When one reference stays and gets bounded changes, write an imperative editing instruction on it (\\\"Remove the ...\\\", \\\"Change the ... to ...\\\", \\\"Zoom in on ...\\\"); a whole-image transformation opens with its scope (\\\"Convert the entire image into ...\\\", \\\"Apply a ... filter over the entire scene\\\", \\\"Horizontally flip the entire image so that ...\\\", \\\"Shift the camera viewpoint to ...\\\", then where the major elements should now be). When the references are drawn into a newly composed frame (combining subjects, a new scene, a garment, object or style donor), write a generation request (\\\"Create a photograph of ...\\\", \\\"Create an anime-style illustration of ...\\\", \\\"Generate a new image featuring ...\\\") that says what to take from each image, by ordinal, and what is newly generated.\\n\\nKeep every explicit edit, constraint, count, position, style cue and piece of wording, and decide what is left open as one concrete plan. Ground everything in what is actually visible: identify each referent unambiguously by its real appearance, never mention content that is not there, and use every image the user attached. State every end state concretely (which color, how large, which pose, which material) and give new content enough appearance to be generated. Cover the knock-on effects of the change (shadows, reflections, occlusion, perspective, scale, lighting) and say what fills a removed region. A zoom-in names what stays in frame and which neighbors are cropped out; an outpainting continues the scene in the same medium. Describe the change, not the whole scene, and close an editing instruction with one compact clause naming what stays unchanged; transferred people keep their identity, face and accessories unless asked otherwise. Transcribe on-image text verbatim in its original language inside double quotes, with line breaks as \\\\n, and match the original font, size and color when replacing it. Name recognizable public figures, brands and landmarks you can see. Directions are frame-relative; use no evaluative or quality words. Typical length is 50 to 150 words.\\n\\nOutput only the instruction."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Text (System prompt)"
+    }
+  },
+  "5808": {
+    "inputs": {
+      "switch": [
+        "5809",
+        0
+      ],
+      "on_false": [
+        "8",
+        0
+      ],
+      "on_true": [
+        "5787",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "If/Else Switch"
+    }
+  },
+  "5809": {
+    "inputs": {
+      "value": false
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "ns_text_to_image"
+    }
+  },
+  "5818": {
+    "inputs": {
+      "source": [
+        "5738",
+        0
+      ]
+    },
+    "class_type": "PreviewAny",
+    "_meta": {
+      "title": "Preview as Text"
+    }
+  },
+  "5824": {
+    "inputs": {
+      "target_width": [
+        "5693",
+        0
+      ],
+      "target_height": [
+        "5694",
+        0
+      ],
+      "padding_color": "black",
+      "interpolation": "lanczos",
+      "image": [
+        "5715",
+        0
+      ]
+    },
+    "class_type": "ResizeAndPadImage",
+    "_meta": {
+      "title": "Resize And Pad Image"
+    }
+  },
+  "5825": {
+    "inputs": {
+      "target_width": [
+        "5693",
+        0
+      ],
+      "target_height": [
+        "5694",
+        0
+      ],
+      "padding_color": "black",
+      "interpolation": "lanczos",
+      "image": [
+        "5754",
+        0
+      ]
+    },
+    "class_type": "ResizeAndPadImage",
+    "_meta": {
+      "title": "Resize And Pad Image"
+    }
+  },
+  "5826": {
+    "inputs": {
+      "target_width": [
+        "5693",
+        0
+      ],
+      "target_height": [
+        "5694",
+        0
+      ],
+      "padding_color": "black",
+      "interpolation": "lanczos",
+      "image": [
+        "5698",
+        0
+      ]
+    },
+    "class_type": "ResizeAndPadImage",
+    "_meta": {
+      "title": "Resize And Pad Image"
+    }
+  },
+  "5827": {
+    "inputs": {
+      "target_width": [
+        "5693",
+        0
+      ],
+      "target_height": [
+        "5694",
+        0
+      ],
+      "padding_color": "black",
+      "interpolation": "lanczos",
+      "image": [
+        "5743",
+        0
+      ]
+    },
+    "class_type": "ResizeAndPadImage",
+    "_meta": {
+      "title": "Resize And Pad Image"
+    }
+  },
+  "5690:1577": {
+    "inputs": {
+      "value": false
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "if vertical-image"
+    }
+  },
+  "5690:1583": {
+    "inputs": {
+      "value": 1280
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "long edge input"
+    }
+  },
+  "5690:1585": {
+    "inputs": {
+      "value": 768
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "short edge input"
+    }
+  },
+  "5690:1590": {
+    "inputs": {
+      "switch": [
+        "5690:1577",
+        0
+      ],
+      "on_false": [
+        "5690:1585",
+        0
+      ],
+      "on_true": [
+        "5690:1583",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "aspect ratio height"
+    }
+  },
+  "5690:1591": {
+    "inputs": {
+      "switch": [
+        "5690:1577",
+        0
+      ],
+      "on_false": [
+        "5690:1583",
+        0
+      ],
+      "on_true": [
+        "5690:1585",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "aspect ratio width"
+    }
+  },
+  "5691:1699": {
+    "inputs": {
+      "value": 987654321004
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "seed-input"
+    }
+  },
+  "5691:1700": {
+    "inputs": {
+      "value": false
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "if fixed seed"
+    }
+  },
+  "5691:1706": {
+    "inputs": {
+      "value": false
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "if increment seed"
+    }
+  },
+  "5691:1720": {
+    "inputs": {
+      "seed": 172108744763132
+    },
+    "class_type": "SeedNode",
+    "_meta": {
+      "title": "seed random"
+    }
+  },
+  "5691:1741": {
+    "inputs": {
+      "switch": [
+        "5691:1700",
+        0
+      ],
+      "on_false": [
+        "5691:1742",
+        0
+      ],
+      "on_true": [
+        "5691:1699",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "seed fixed"
+    }
+  },
+  "5691:1742": {
+    "inputs": {
+      "switch": [
+        "5691:1706",
+        0
+      ],
+      "on_false": [
+        "5691:1720",
+        0
+      ],
+      "on_true": [
+        "5691:1743",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "true increment false random"
+    }
+  },
+  "5691:1743": {
+    "inputs": {
+      "seed": 1234568163
+    },
+    "class_type": "SeedNode",
+    "_meta": {
+      "title": "seed increment"
+    }
+  }
+}

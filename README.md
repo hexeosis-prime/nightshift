@@ -7,9 +7,9 @@ Nightshift turns a song idea into a finished music video with open-weight models
 [ComfyUI](https://github.com/comfyanonymous/ComfyUI):
 
 - **MiniMax Music 3** writes and sings the song from a production brief and a lyric sheet
-- **FLUX 3 Image Klein** draws a seven-panel character sheet for each performer (front, 3/4, profile and back, plus three
-  face angles), paints the first frames and keeps the faces and wardrobe consistent from shot to shot (Flux 2 Klein 9B, the
-  first video's model, is still there: `"image_model": "flux2"`, for its LoRAs)
+- **FLUX 3 Image Klein** draws a three-panel character sheet for each performer (full-body front and back, a face
+  close-up) and paints every character frame straight from it, so faces and wardrobe stay consistent from shot to shot
+  (Flux 2 Klein 9B, the first video's model, is still there: `"image_model": "flux2"`, for its LoRAs)
 - **LTX 2.3** animates them: lip-sync to the song, first-to-last-frame camera moves, text-to-video establishing shots
 - **Python tools** fit the shot list to the song, score every take against the character sheets, cut on the beat, grade,
   and draw a lyric HUD that steers around faces
@@ -22,8 +22,8 @@ finished video.
 The first video made with it, while the tools were being developed at the same time: **"What Do You Want?"** (2:49, 52 shots,
 nine passes), [posted October 28, 2026](https://x.com/hexeosis/status/2115545427290489287).
 
-Entered in Comfy's open-source creator app challenge (October 2026): see [CONTEST.md](CONTEST.md)
-for what was added for it and how it meets the rules. Everything renders locally on open-weight models; no partner nodes, no
+Entered in Comfy's open-source creator app challenge (October 2026): [CONTEST.md](CONTEST.md) and the git tag
+`contest-2026-10` record the entry as submitted; Nightshift has moved on since. Everything renders locally on open-weight models; no partner nodes, no
 closed APIs, no agent required.
 
 ---
@@ -151,7 +151,9 @@ nightshift run --yolo      # or: no stops after the character looks are approved
 - `"profile"`: `full` (the first video: 121-frame clips, best-of-4 on complex shots, 4 song seeds) or `short` (97-frame clips,
   one take, 4 song seeds, a 40 s song, no HUD)
 - `"aspect"`: `16:9` (1280×768 renders, 1920×1080 delivery) or `9:16` (768×1280 renders, 1080×1920 delivery)
-- `"image_model"`: `flux3` (FLUX 3 Image Klein for sheets, stills and identity edits; the default) or `flux2` (Flux 2 Klein 9B)
+- `"image_model"`: `flux3` (FLUX 3 Image Klein through one all-in-one graph: three-panel sheets, character frames made
+  straight from the sheet, scene stills; the default) or `flux2` (Flux 2 Klein 9B: text stills, then an identity
+  edit with the sheet)
 
 ## How a pass works
 
@@ -176,7 +178,8 @@ you change that shot and run again. See [docs/pipeline.md](docs/pipeline.md).
   first pass is only "first" if you want changes: if you love it, it's the final pass.
 - **Yolo mode** stops at most once: to approve the character looks (`sheets.approve` in `project.json`; set it to false and
   it never stops). The agent builds the sheets from the written descriptions, then picks the song that sings the most of the
-  lyric sheet, the identity edit and the take with the best face match, and delivers a finished pass.
+  lyric sheet, the character frame and the take with the best face match (a frame under the face threshold gets two more
+  seeds), and delivers a finished pass.
 
 ## Plugging in an agent
 
@@ -211,6 +214,7 @@ Swap in your own graph by exporting it and writing its map, or by titling its no
 
 | | measured |
 |---|---|
+| FLUX 3 character frame from the sheet (16 steps) | ~16-27 s |
 | Flux 2 Klein still or identity edit | ~50-60 s each once the model is loaded |
 | LTX 2.3 clip (2-8 s) | ~3-4 min typical, up to ~8.5 min for the longest first/last-frame shots |
 | MiniMax Music 3 song | up to ~30 min per seed |
@@ -227,15 +231,14 @@ usage. In principle a self-hosted agent (Hermes, for example) can run the same l
 - [docs/pipeline.md](docs/pipeline.md): the pass step by step, files, commands
 - [docs/shots.md](docs/shots.md): every shot field and what it does
 - [docs/techniques.md](docs/techniques.md): the craft that made the difference (rescue first/last-frame, self-consistent last frames, relighting, whip-pan arrivals, fly-overs, best-of-N)
-- [docs/prompting.md](docs/prompting.md): writing for Flux 2 Klein, LTX 2.3 and MiniMax Music 3, with the full guides in
-  [docs/guides/](docs/guides/)
+- [docs/prompting.md](docs/prompting.md): writing for FLUX 3, LTX 2.3 and MiniMax Music 3, with the full guides and component
+  banks in [docs/guides/](docs/guides/)
 - [docs/workflows.md](docs/workflows.md): the ComfyUI graphs, custom nodes, model files, maps
 - [docs/agents.md](docs/agents.md): MCP tools, director and yolo loops, remote agents
 - [docs/overlay.md](docs/overlay.md): the lyric HUD and its widgets
 - [docs/troubleshooting.md](docs/troubleshooting.md): stalls, OOM, lost jobs, sync gotchas
 - [docs/lessons.md](docs/lessons.md): what nine passes on the first video taught us
 - [docs/licenses.md](docs/licenses.md): model licenses, read before commercial use
-- [diary/what-do-you-want.md](diary/what-do-you-want.md): the making of the first video
 - [ROADMAP.md](ROADMAP.md): what's next (format and style templates, video-to-video, Blender blocking)
 
 ## Credits

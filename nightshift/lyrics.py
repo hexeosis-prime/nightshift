@@ -25,6 +25,18 @@ def sheet_lines(lyrics_text):
     return out
 
 
+INSTRUMENTAL = "[Intro]\n[Instrumental]\n\n[Verse]\n[Instrumental]\n\n[Chorus]\n[Instrumental]\n\n[Outro]\n[Instrumental]\n"
+
+
+def instrumental(project):
+    """True for a song with no words: project.json "instrumental": true, or a lyrics.txt with only section tags."""
+    import os
+    if project.cfg.get("instrumental") is not None:
+        return bool(project.cfg["instrumental"])
+    path = project.path("song", "lyrics.txt")
+    return not os.path.exists(path) or not sheet_lines(open(path, encoding="utf-8").read())
+
+
 def whisper_model(model="small.en"):
     """A local copy in models/faster-whisper-<name> (next to the face models) wins over a Hugging Face download."""
     import os
@@ -97,6 +109,12 @@ def analyze(project, model="small.en", stem=None):
     from .song import song_path
     song = song_path(project)
     bm = beatmap(song, project.path("song", "beatmap.json"), project.cfg.get("bpm"))
+    if instrumental(project):        # no words to time: the beats alone place the cuts
+        project.save("song/words.json", {"words": []})
+        project.save("song/lines.json", {"lines": []})
+        return {"duration_s": bm["duration_s"], "bpm": bm["tempo_bpm_detected"], "beats": len(bm["beats"]), "words_heard": 0,
+                "lines_timed": 0, "lines_on_sheet": 0, "coverage": 1.0, "instrumental": True,
+                "loop_seam": bm["loop_seam_chroma_similarity"]}
     sheet = sheet_lines(open(project.path("song", "lyrics.txt"), encoding="utf-8").read())
     words = transcribe(stem or song, project.path("song", "words.json"), prompt=". ".join(sheet[:6]), model=model)
     lines = align(sheet, words)

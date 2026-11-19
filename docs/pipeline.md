@@ -38,12 +38,13 @@ my-video/
 | `workflows` | see `workflows/` | which graph does which job; point any role at your own export |
 | `grade.look`, `grade.lifts` | `A2_portra_dusk_plus`, `[]` | see `nightshift/grade.py`; lifts are per-shot shadow lifts `[t0, t1, k]` |
 | `overlay` | disabled | docs/overlay.md |
-| `watchdog` | stall 6 min | when a running job counts as stuck |
+| `watchdog` | progress 10 min, log 6 min, idle 20 min | when a running job counts as stuck (no progress from ComfyUI's websocket and no log line), and when a step with nothing queued counts as stalled |
+| `instrumental` | from the lyrics | true: no words to check or time; songs are offered in render order and cuts follow the beats |
 
 ## 1. sheets (`sheets status|build|pick` · `sheets_status`, `sheets_review`, `pick_sheet`)
 
-Character reference sheets come first, before any other frame, because every identity edit and every face score depends
-on them. A sheet is one image: a full-body front view with the face covered by a white circle, a full-body back view and a
+Character reference sheets come first, before any other frame, because every character frame (FLUX 3 makes them straight
+from the sheet; Flux 2 edits a still toward it) and every face score depends on them. A sheet is one image: a full-body front view with the face covered by a white circle, a full-body back view and a
 macro close-up of the face, on seamless grey. For each character in the shot list:
 
 - **First world** (the default world): three candidates (`sheets.candidates`). With a picture of the character
@@ -92,7 +93,8 @@ Edit `shots.json` and run it again any time; `cut.json` keeps the takes you alre
 
 ## 5. stills (`build stills` · `build_jobs stage=stills`)
 
-One text-to-image job per shot that needs a first frame (modes `ff`, `lipsync`, `fflf`). The prompt is assembled from the
+One text-to-image job per shot that needs a first frame (modes `ff`, `lipsync`, `fflf`), except FLUX 3 character shots,
+whose frames are made from the sheet in the next step. The prompt is assembled from the
 canon: the character's identity words, the outfit for this framing (shoes only in a wide) and this world, the shot's action
 and location, the world's style switches. Never-lists go to the negative. Renders land as `stills/<id>_flux_00001_.png`.
 
@@ -101,7 +103,20 @@ the label.
 
 ## 6. sheetedits (`build sheetedits`, `variants` · `build_jobs stage=sheetedits`, `identity_variants`)
 
-For shots with `"still": "edit"`: a two-image Flux edit takes the shot's still (image 1: pose, framing, light) and the
+**FLUX 3 projects** (`frames_from_sheet`, on by default with `img_flux3`): for shots with `"still": "edit"` the frame is made
+straight from the character sheet (first reference; a second character's sheet next; `location_refs` plates after them),
+16 steps cfg 1 with the prompt upsampler. Yolo renders a few seeds and keeps the best face; if the best is under
+`face_min` (close 0.5, medium 0.45, wide 0.3) it tries two more seeds once.
+
+How the prompt is laid out (`project.json` `"sheet_prompt"`): `"scene_id"` (the default since Nov 19) says the place and
+where its light comes from first, then puts the person into it, lit by that light, with hexe's identity block ("another
+photograph of the exact same person in a different situation"). `"scene"` uses a shorter "use the sheet only for who she
+is" line; `"v1"` is the Nov 18 layout (who first, light last). The light is the shot's `light` (the planner writes one per
+shot), else the world's `light`, else one made from night/day and indoors/outdoors. At cfg 1 the image negative prompt does
+nothing, so the light has to be asked for in the prompt itself. `"sheet_rewriter_light": true` adds one line to the
+upsampler's edit instructions (no gain in the Nov 18 test). Test results: `docs/guides/flux3-images.md`.
+
+**Flux 2 projects:** for shots with `"still": "edit"`, a two-image Flux edit takes the shot's still (image 1: pose, framing, light) and the
 character sheet (image 2: face, hair, body, wardrobe) and returns the same frame with the right person in it. `"add"`
 brings a second character in with a third image. Two wordings exist (`"wording": "A"` or `"C"`, see docs/prompting.md);
 `variants` renders a seed x wording grid so the face scorer can pick.

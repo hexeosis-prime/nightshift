@@ -11,9 +11,7 @@ you can point any job at your own graph.
 | `sheet_image` | `sheet_from_image` | the same layout made from a picture of the character |
 | `edit2` | `edit_flux_2image` | Flux 2 Klein 9B edit with two images (identity edits, relights, environment changes) |
 | `edit3` | `edit_flux_3image` | the same with a third image (a second character) |
-| `ff` | `vid_ltx_ff` | LTX 2.3 image to video from a first frame, two-stage with x2 spatial upscale |
-| `fflf` | `vid_ltx_fflf` | LTX 2.3 first + last frame with song audio, guide strengths and an arrive frame |
-| `lipsync` | `vid_ltx_lipsync` | LTX 2.3 image to video driven by a song section (vocal separated with MelBand RoFormer inside the graph) |
+| `ff` / `fflf` / `lipsync` | `vid_ltx` | hexe's single LTX 2.3 graph (3 stages, INT8 ConvRot): first frame, first + last frame (also a locked-off camera: the same still twice), generated sound or the song section in, vocals isolated for lip-sync. The builder sets the toggles per shot and cuts the song to the shot. The older per-mode graphs (`vid_ltx_ff`, `vid_ltx_fflf`, `vid_ltx_lipsync`) still work: point a job at them in `project.json` |
 | `t2v` | `vid_ltx_t2v` | LTX 2.3 text to video |
 | `song` | `song_minimax_m3` | MiniMax Music 3 text to song |
 
@@ -22,15 +20,33 @@ graphs, all core ComfyUI nodes (0.41+), no custom node packs:
 
 | job | file | what it does |
 |---|---|---|
-| `still` | `still_flux3` | text to image from one caption the builder writes (shot, person, outfit, action, setting, the world's `style`) |
-| `sheet_text` / `sheet_image` | `sheet7_from_text_flux3` / `sheet7_from_image_flux3` | a seven-panel character sheet (front, 3/4, profile and back full-body; front, 3/4 and profile close-ups), from the description (cfg 3.5) or from a picture (cfg 3, which keeps the layout even from a face-only photo); about 55 s and 90 s. The three-view `sheet_from_*_flux3` graphs are kept for older projects |
-| `edit2` / `edit3` | `edit_flux3_2image` / `edit_flux3_3image` | multi-reference edits through `Set Reference Multi Latent`; prompts written for Flux 2's "[reference_image2]" / "image 2" are rewritten to `<ref_image_1>` automatically |
+| `still` / `edit2` / `edit3` | `img_flux3` | hexe's all-in-one graph: scene stills (text to image), and character frames made straight from the sheet (the sheet as the first reference, location plates after it; 16 steps cfg 1, upsampler on). Won the Nov 18 tests: face match 0.71 against 0.58 for text still + identity edit |
+| `sheet_text` / `sheet_image` | `sheet_from_text_flux3` / `sheet_from_image_flux3` | the three-panel character sheet (full-body front with the face covered, full-body back, face close-up), from the description or from a picture. It beat a seven-panel sheet and split body/face references in the Nov 18 tests. `flux3_split` keeps the earlier per-job graphs (`still_flux3`, `edit_flux3_*`, `sheet7_*`) |
 
 They load the full (base) int8 checkpoint with Comfy's template settings: 50 steps at cfg 3.5 for text to image (still,
 sheet from text), 50 steps at cfg 1 for the reference edits (identity edits, sheet from a photo). About 30 s per still and
 45 s per edit on an RTX 3090. The step-distilled checkpoint is faster (16 steps, cfg 1) but noticeably softer, with
 undersampled faces; to use it, set the roles `model`, `steps` and `cfg`. Mirrors with other file names work as is (e.g.
 DeepBeepMeep/Flux3's `flux3_image_klein_int8_convrot.safetensors` is the full model): Nightshift matches the file ComfyUI has.
+
+**All-in-one graphs.** hexe's graphs keep every path in one file behind toggles (`ns_toggle_*`, If/Else switches), so the
+settings are tuned in one place. Before queueing, Nightshift resolves every switch whose value is fixed and drops the nodes
+no output needs. ComfyUI checks every loader it can reach, even on a branch a switch won't take, so without this a
+first-frame-only job would need a dummy last frame and a text-to-image job dummy reference images. Switches computed at
+run time (math nodes) are left alone.
+
+**Which FLUX 3 file is which (tested Nov 18).** The names changed between releases. ComfyUI's own templates load the
+distilled model as `flux3-image-klein-int8-convrot` (hyphens) and the base as `flux3-image-klein-base-int8-convrot`; the
+older underscore mirror `flux3_image_klein_int8_convrot` is the base. Same prompt and seed: the hyphen file at 15 steps,
+cfg 1 (er_sde) matches its 50-step cfg 3.5 render in about 5 s instead of 35 s; the underscore file at 15 steps breaks
+poses (undertrained steps = base). For edits the distilled file gave the same result at 16 steps cfg 1 (12 s) as at 50
+steps cfg 3.5 (58 s). Cfg 1 means "no guidance"; cfg 0 is not a valid off switch. The edit template's note ("50 steps, cfg
+3.5") disagrees with its own sampler (cfg 1).
+
+`img_flux3` (Nov 17) is the FLUX 3 all-in-one: text to image (`text_to_image` true) or an edit / reference generation from
+up to four references (`image1`..`image4` = `<ref_image_0>`..`<ref_image_3>`; `Workflow.use_refs(n)` unhooks the unused
+slots), and the FLUX 3 prompt upsampler (Qwen3.5 9B) behind `prompt_enhancer`. Roles `steps` and `cfg` set both samplers.
+Core nodes only.
 
 Video-to-video and an image glitch utility were tried during the first video and left out for now (see ROADMAP.md).
 
@@ -40,10 +56,10 @@ A recent ComfyUI has the LTX 2.3, MiniMax Music 3, seed and switch nodes in core
 
 | pack | used by |
 |---|---|
-| [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) | all LTX graphs (VAE loader, resize, NAG, preview override, calculator, constants) |
+| [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) | all LTX graphs (VAE loader, resize, NAG, preview override, calculator, constants); `vid_ltx` needs only this, INT8-Fast and MelBandRoFormer |
 | [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) | `vid_ltx_ff`, `vid_ltx_t2v` (GGUF model and text encoder) |
-| [ComfyUI-INT8-Fast](https://github.com/BobJohnson24/ComfyUI-INT8-Fast) | `vid_ltx_fflf`, `vid_ltx_lipsync` (int8 ConvRot model loader) |
-| [ComfyUI-MelBandRoFormer](https://github.com/kijai/ComfyUI-MelBandRoFormer) | `vid_ltx_lipsync` |
+| [ComfyUI-INT8-Fast](https://github.com/BobJohnson24/ComfyUI-INT8-Fast) | `vid_ltx`, `vid_ltx_fflf`, `vid_ltx_lipsync` (int8 ConvRot model loader) |
+| [ComfyUI-MelBandRoFormer](https://github.com/kijai/ComfyUI-MelBandRoFormer) | `vid_ltx`, `vid_ltx_lipsync` |
 | [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) | `vid_ltx_fflf`, `vid_ltx_lipsync` |
 | [rgthree-comfy](https://github.com/rgthree/rgthree-comfy) | `vid_ltx_fflf`, `still_flux`, `sheet_from_text` (Power Lora Loader, Any Switch) |
 | [ComfyUI_essentials](https://github.com/cubiq/ComfyUI_essentials) | edits, `sheet_from_image` (image resize) |

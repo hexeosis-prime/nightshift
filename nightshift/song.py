@@ -62,6 +62,10 @@ def build_jobs(project: Project, seeds, tag="take", caption=None, lyrics=None, m
         wf.set("lyrics", lyrics)
         if max_seconds:
             wf.try_set("max_seconds", int(max_seconds))
+        # Long songs: decode the audio in tiles. A one-piece decode of a 2-3 minute song can spill out of VRAM into shared
+        # memory and crawl (seen: 27+ minutes for the decode alone on a 3090). project.json "song_tiled_decode" overrides.
+        tiled = project.cfg.get("song_tiled_decode")
+        wf.try_set("tiled_decode", bool(tiled) if tiled is not None else not max_seconds or int(max_seconds) > 60)
         wf.seed(int(seed))
         name = f"{tag}_{seed}"
         wf.output(project.prefix("songs", name))

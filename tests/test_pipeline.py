@@ -38,9 +38,9 @@ def run_layout(remote, port):
     srv, fake = serve(comfy, port, render_seconds=0.05, fail_first="s03_ff")
     try:
         if remote:
-            p = init(os.path.join(tmp, "projects", "demo"), "demo", comfy_url=f"http://127.0.0.1:{port}")
+            p = init(os.path.join(tmp, "projects", "demo"), "demo", comfy_url=f"http://127.0.0.1:{port}", image_model="flux2")
         else:
-            p = init(os.path.join(comfy, "output", "nightshift", "demo"), "demo", comfy_url=f"http://127.0.0.1:{port}", comfy_dir=comfy)
+            p = init(os.path.join(comfy, "output", "nightshift", "demo"), "demo", comfy_url=f"http://127.0.0.1:{port}", comfy_dir=comfy, image_model="flux2")
         prepare(p)
         from nightshift.project import Project
         p = Project(p.root)

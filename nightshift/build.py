@@ -31,8 +31,26 @@ NEG = {
     "t2v": ", text, letters, subtitles, captions, scene cut",
     "fflf_people": ", microphone, captions, text on clothing, extra people, crowd, bystanders, duplicate person, spinning, turning around, morphing face",
 }
+BIRDS = ", birds, flock of birds, birds chirping"   # LTX adds birds (and their sound) to about a third of wide outdoor shots
+NEG = {k: v + BIRDS for k, v in NEG.items()}
+# added to the FLUX 3 upsampler's edit instructions for frames made from a character sheet (sheet_rewriter_light)
+REWRITER_LIGHT = ("When a person is taken from a reference image into a new scene, carry over who they are (face, hair, body and "
+                  "clothing) but never that image's lighting, backdrop or pose: light the person only with the light sources "
+                  "of the new scene, in their color, direction and contrast, so the person sits in the scene like everything "
+                  "else in it.")
 VOICES = {"woman": ("sings", "singing", "warm, expressive singing style"), "man": ("sings", "singing", "warm, expressive singing style")}
 STILL_MODES = ("ff", "lipsync", "fflf")
+
+
+class ShotError(ValueError):
+    """A shot that can't be built, named: shot, stage and the field at fault."""
+
+
+def _why(e):
+    if isinstance(e, KeyError):
+        k = e.args[0] if e.args else "?"
+        return f"field '{k}' is missing" if isinstance(k, str) and " " not in k else str(k).strip("'\"")
+    return str(e)
 
 
 class Builder:
@@ -56,6 +74,13 @@ class Builder:
         c.setdefault("possessive", "his" if c["noun"] == "man" else "her")
         c.setdefault("signature", "")
         return c
+
+    def ref(self, s, field):
+        """The shot another shot points at (start_shot, end_shot, still_from), or a ShotError naming the field."""
+        target = self.by_id.get(s.get(field))
+        if target is None:
+            raise ShotError(f"shot {s['id']}, field '{field}': '{s.get(field)}' is not a shot id")
+        return target
 
     def world(self, s):
         return s.get("world") or self.canon.get("default_world", "real")
@@ -97,7 +122,7 @@ class Builder:
         c = self.char(ch_key)
         p = override or (c.get("sheet") or {}).get(world) or (c.get("sheet") or {}).get("real")
         if not p:
-            raise ValueError(f"character {ch_key} has no sheet for world {world} in canon.json")
+            raise ValueError(f"character '{ch_key}' has no sheet for world '{world}' in canon.json (run the sheets step, or set sheet_ref)")
         return self.input_file(p)
 
     def save(self, wf, name, meta):
@@ -135,9 +160,19 @@ class Builder:
         return " ".join(p for p in parts if p)
 
     # ---- stills -------------------------------------------------------------------------------
+    def flux3_mode(self, wf, kind, refs=0):
+        """hexe's all-in-one FLUX 3 graph: text to image or an edit with this many references, the upsampler per job kind."""
+        if not wf.has("text_to_image"):
+            return
+        wf.set("text_to_image", refs == 0)
+        if refs:
+            wf.use_refs(refs)
+        wf.try_set("prompt_enhancer", bool((self.p.cfg.get("image_rewrite") or {}).get(kind, kind == "sheet")))
+
     def still_job(self, s):
         wf = self.p.workflow("still")
         wf.apply_defaults()
+        self.flux3_mode(wf, "still")
         chars = [self.char(c) for c in s.get("chars", [])]
         loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
               (", " + s["location_extra"] if s.get("location_extra") else "")
@@ -217,7 +252,173 @@ class Builder:
         except Exception:
             return 1
 
+    # ---- frames made straight from the character sheet (hexe, Nov 18) ------------------------------------------
+    FRAMING_WORDS = {"close": "close-up", "medium": "medium shot", "wide": "wide full-body shot"}
+
+    def from_sheet(self, s):
+        """Character frames made straight from the sheet (no text still, no face edit): FLUX 3 all-in-one graph only.
+        project.json "frames_from_sheet" (default true when the edit graph can do it); a shot can opt out with
+        "from_sheet": false."""
+        if not (s.get("chars") and s.get("still") == "edit" and s.get("from_sheet", True)):
+            return False
+        on = self.p.cfg.get("frames_from_sheet")
+        if on is None:
+            on = self.p.workflow("edit2").has("text_to_image")
+        return bool(on)
+
+    def sheet_frame_job(self, s, seed=None, tag="edit", style=None, rewriter_light=None):
+        """One frame from the character sheet(s) plus any location plates: the sheet is <ref_image_0> (a second
+        character's sheet next), location plates after them. The prompt says who, how they look, what they do, the
+        framing, the place and the light; the face comes from the sheet. 16 steps cfg 1 (image_rewrite "sheet": true).
+        project.json "sheet_prompt": "scene_id" (default since Nov 19: the place and its light first, the person lit by it,
+        hexe's identity block), "scene" (the same with "use the sheet only for who she is") or "v1" (who first, light last); "sheet_rewriter_light": true adds REWRITER_LIGHT to the upsampler's edit instructions."""
+        world = self.world(s)
+        keys = list(s["chars"][:2]) + ([s["add"]["char"]] if s.get("add") and len(s["chars"]) < 2 else [])
+        refs = [self.sheet(k, (s["add"].get("world", world) if s.get("add") and k == s["add"]["char"] else world),
+                           s.get("sheet_ref") if i == 0 else None) for i, k in enumerate(keys)]
+        plates = list(s.get("location_refs") or self.world_cfg(s).get("location_refs") or [])[:4 - len(refs)]
+        refs += [self.input_file(x) for x in plates]
+        ordinal = ["first", "second", "third", "fourth"]
+        framing = self.FRAMING_WORDS.get(s.get("framing", "medium"), s.get("framing", "medium shot"))
+        people = []
+        for i, k in enumerate(keys):
+            c = self.char(k)
+            outfit = (c.get(f"outfit_{world}") or c.get("outfit") or {}).get(s.get("framing", "medium"), "")
+            sent = (f"the {c['noun']} from the character sheet in the {ordinal[i]} reference image. Preserve {c['possessive']} "
+                    f"exact identity: {c.get('person', '')}.")
+            if outfit:
+                sent += f" {c['pronoun'].capitalize()} wears {outfit}."
+            people.append(sent)
+        style_name = style or self.p.cfg.get("sheet_prompt") or "scene_id"
+        if style_name != "v1":
+            text = self._scene_first_text(s, keys, refs, plates, framing, ordinal, style_name)
+        else:
+            text = self._sheet_v1_text(s, keys, plates, framing, ordinal, people)
+        wf = self.p.workflow("edit2")
+        wf.apply_defaults()
+        self.flux3_mode(wf, "sheet", len(refs))
+        if (self.p.cfg.get("sheet_rewriter_light") if rewriter_light is None else rewriter_light) and wf.has("edit_system"):
+            wf.set("edit_system", wf.get("edit_system").rstrip() + "\n\n" + REWRITER_LIGHT)
+        self.size(wf)
+        for i, r in enumerate(refs):
+            wf.set(f"image{i + 1}", r)
+        wf.set("prompt", text)
+        never = ", ".join(self.char(k).get("never", "") for k in keys if self.char(k).get("never"))
+        if never:
+            wf.append("negative", ", " + never)
+        seed = s["seed"] if seed is None else seed
+        wf.seed(seed)
+        wf.output(self.p.prefix("stills", f"{s['id']}_{tag}"))
+        return self.save(wf, f"{s['id']}_{tag}.json", {"kind": "edit", "shot": s["id"], "seed": seed, "label": tag,
+                                                     "from_sheet": True, "refs": len(refs), "sheet_prompt": style_name})
+
+    # how the light lands, when the shot has no "light" of its own: from the world (night/day, indoors/outdoors)
+    WORLD_LIGHT = {(False, False): "the street lamps, signs and lit windows of the place, coming from the side, with deep shadows",
+                   (False, True): "the lamps and practical lights in the room, warm pools of light with dark corners",
+                   (True, False): "natural daylight from the sky, the sun low and to one side",
+                   (True, True): "daylight through the windows from one side, falling off softly into the room"}
+
+    def light_for(self, s):
+        """Where the light in this shot comes from: the shot's "light", the world's "light", or one made from the world."""
+        if s.get("light"):
+            return s["light"]
+        w = self.world_cfg(s)
+        if w.get("light"):
+            return w["light"]
+        sw = w.get("switches") or {}
+        return self.WORLD_LIGHT[(bool(sw.get("daytime", w.get("daytime"))), bool(sw.get("indoor", w.get("indoor"))))]
+
+    def _action_sentence(self, s, lead):
+        act, expr = s.get("action", ""), s.get("expr")
+        if not (act or expr):
+            return ""
+        pron = lead["pronoun"].capitalize()
+        first = act.split(" ", 1)[0] if act else ""
+        if act and (first[:1].isupper() or first.lower() in ("she", "he", "they", "her", "his", "the")):
+            said = act.rstrip(".")                        # already a sentence ("She laughs ...")
+        elif first.endswith("ing"):
+            said = f"{pron} {'are' if lead['pronoun'] == 'they' else 'is'} {act}"   # "walking slowly ..." -> "She is walking slowly ..."
+        else:
+            said = f"{pron} {act}" if act else ""
+        if expr:
+            said = (said + f", looking {expr}") if said else f"{pron} looks {expr}"
+        return f"{said}."
+
+    def _scene_first_text(self, s, keys, refs, plates, framing, ordinal, style_name):
+        """Scene first, then the person placed into its light (Nov 18 lighting test).
+        "scene": the sheet is used only for who they are.  "scene_id": hexe's identity block instead."""
+        world_style = self.world_cfg(s).get("style", "")
+        loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
+              (", " + s["location_extra"] if s.get("location_extra") else "")
+        light = self.light_for(s).rstrip(".")
+        n0 = len(keys)
+        if plates:
+            which = " and ".join(f"the {ordinal[n0 + j]} reference image" for j in range(len(plates)))
+            place = f"the place shown in {which}" + (f", {loc}" if loc else "")
+        else:
+            place = loc or "the scene"
+        text = f"Create a cinematic film still, a {framing}, in {place}. The light here comes from {light}."
+        who = []
+        for i, k in enumerate(keys):
+            c = self.char(k)
+            outfit = (c.get(f"outfit_{self.world(s)}") or c.get("outfit") or {}).get(s.get("framing", "medium"), "")
+            sent = f"the {c['noun']} from the character sheet in the {ordinal[i]} reference image ({c.get('person', '')})"
+            if outfit:
+                sent += f", wearing {outfit}"
+            who.append(sent)
+        text += " In this scene is " + ", and ".join(who) + "."
+        if s.get("add") and len(keys) > 1:
+            text += f" The {self.char(keys[1])['noun']} is {s['add'].get('where', 'in the shot with them')}."
+        lead = self.char(keys[0])
+        act = self._action_sentence(s, lead)
+        if act:
+            text += " " + act
+        pron, poss = lead["pronoun"], lead["possessive"]
+        obj = {"she": "her", "he": "him", "they": "them"}.get(pron, "them")
+        are = "are" if pron == "they" else "is"
+        text += (f" {pron.capitalize()} {are} lit only by the light of this place, in its color, direction and contrast: "
+                 f"part of {poss} face falls into shadow, and {poss} skin, hair and clothes pick up the color of the light "
+                 f"around {obj}, exposed the same as the rest of the scene, with no extra light on {poss} face.")
+        if style_name == "scene_id":
+            marks = "freckles, " if "freckle" in " ".join(self.char(k).get("person", "") for k in keys) else ""
+            text += (" The exact same person must remain recognizable regardless of pose, expression, camera angle, "
+                     "perspective, lighting, environment or composition. Preserve facial identity above all other elements: "
+                     f"same eyes, eye spacing, face shape, nose, mouth, {marks}hair color, hairline and overall facial "
+                     "proportions. Photorealistic, realistic skin texture, natural asymmetry, realistic hair, realistic "
+                     "anatomy. Do not redesign or reinterpret the character. Generate the image as if it were another "
+                     "photograph of the exact same person in a different situation.")
+        else:
+            text += (f" Use the character sheet only for who {pron} {are}: {poss} face, hair and build, and {poss} clothes. "
+                     "Its plain backdrop, even lighting and straight-on pose are not part of this picture.")
+        if world_style:
+            text += f" {world_style[0].upper() + world_style[1:]}."
+        return text
+
+    def _sheet_v1_text(self, s, keys, plates, framing, ordinal, people):
+        text = f"Create a photograph, a {framing}, of " + " And ".join(people)
+        if s.get("add") and len(keys) > 1:
+            text += f" The {self.char(keys[1])['noun']} is {s['add'].get('where', 'in the shot with them')}."
+        act = self._action_sentence(s, self.char(keys[0]))
+        if act:
+            text += " " + act
+        loc = (s.get("location") or self.world_cfg(s).get("location") or self.canon.get("location", "")) + \
+              (", " + s["location_extra"] if s.get("location_extra") else "")
+        if plates:
+            n0 = len(keys)
+            which = " and ".join(f"the {ordinal[n0 + j]} reference image" for j in range(len(plates)))
+            text += f" The location is the place shown in {which}" + (f": {loc}." if loc else ".")
+        elif loc:
+            text += f" The location is {loc}."
+        if s.get("light"):
+            text += f" Lighting: {s['light']}."
+        style = self.world_cfg(s).get("style")
+        if style:
+            text += f" {style[0].upper() + style[1:]}."
+        return text
+
     def sheet_job(self, s, wording=None, seed=None, tag="edit"):
+        if self.from_sheet(s):
+            return self.sheet_frame_job(s, seed=seed, tag=tag)
         ch_key = s["chars"][0]
         world = self.world(s)
         base_label = s.get("edit_base") or self.default_model(s)
@@ -250,6 +451,7 @@ class Builder:
             wf = self.p.workflow("edit2")
             text = self.sheet_text(s, wording or s.get("wording", "A"))
         wf.apply_defaults()
+        self.flux3_mode(wf, "edit", 3 if add else 2)
         self.size(wf)
         wf.set("image1", img)
         wf.set("image2", self.sheet(ch_key, world, s.get("sheet_ref")))
@@ -264,6 +466,7 @@ class Builder:
     def edit_job(self, s):
         wf = self.p.workflow("edit2")
         wf.apply_defaults()
+        self.flux3_mode(wf, "edit", 2)
         self.size(wf)
         img, _ = self.stage_still(s, s.get("edit_base") or self.default_model(s))
         wf.set("image1", img)
@@ -284,11 +487,71 @@ class Builder:
         who = c["noun"]
         return f'{self.names(s["video"], s)} The {who} {verb} the lyric words "{s["lyric"]}"\n\n([{who}], [{gerund}]): "{s["lyric"]}", {style}\n'
 
+    def audio_clip(self, s, seconds):
+        """The song cut to this shot (start .. start + seconds), staged for ComfyUI's core Load Audio (no start time)."""
+        from .song import song_path
+        src = song_path(self.p)
+        start = float(s.get("audio_start", s.get("start", 0.0)))
+        dst = self.p.path("song", "clips", f"{s['id']}_{start:.3f}_{seconds:.3f}.wav")
+        if not os.path.exists(dst):
+            import subprocess
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{start:.3f}", "-t", f"{seconds:.3f}", "-i", src,
+                            "-map_metadata", "-1", "-ac", "2", "-ar", "48000", dst], check=True)
+        return self.p.stage_input(dst, os.path.basename(dst))
+
+    def ltx_job(self, s, wf, n):
+        """ff, fflf and lip-sync through hexe's single LTX graph (vid_ltx): toggles pick the path, Nightshift resolves the
+        switches, so a first-frame-only job needs no last frame and a silent one no audio file."""
+        mode = s["mode"]
+        wf.apply_defaults()
+        self.size(wf)
+        wf.try_set("toggle_api_inputs", True)
+        wf.try_set("fps", float(self.fps))
+        if mode == "fflf":
+            src_id = s.get("start_shot") or s.get("still_from")
+            src = self.ref(s, "start_shot" if s.get("start_shot") else "still_from") if src_id else s
+            if s.get("still_from") and src.get("dropped"):   # loop seam: end on the first live shot's still
+                src = next(x for x in self.shots if not x.get("dropped") and x["mode"] in STILL_MODES and not x.get("still_from"))
+            img, label = (self.input_file(s["first_frame"]), "file") if s.get("first_frame") else self.stage_still(src)
+            end = img
+            if s.get("last_frame"):
+                end = self.input_file(s["last_frame"])
+            elif s.get("end_shot"):
+                end, _ = self.stage_still(self.ref(s, "end_shot"), s.get("end_still"))
+        else:
+            img, label = (self.input_file(s["first_frame"]), "file") if s.get("first_frame") else self.stage_still(s)
+            end = img if s.get("locked") else None          # locked: the same still first and last = a locked-off camera
+        wf.set("image", img)
+        wf.set("toggle_use_lf", end is not None)
+        if end is not None:
+            wf.set("last_image", end)
+        audio_in = mode == "lipsync" or (mode == "fflf" and bool(s.get("audio")) and s.get("audio_in", True))
+        wf.set("toggle_use_audio_in", audio_in)
+        wf.set("toggle_isolate_vocals", mode == "lipsync")
+        if audio_in:
+            wf.set("audio", self.audio_clip(s, (n - 1) / self.fps + 0.05))
+        wf.set("frames", n)
+        wf.set("prompt", self.sung(s) if mode == "lipsync" else self.names(s["video"], s))
+        neg = {"ff": self.neg["ff"], "lipsync": self.neg["lipsync"]}.get(mode) or (self.neg["fflf_people"] if s.get("chars") else BIRDS)
+        wf.append("negative", neg)
+        if s.get("arrive_frame") is not None:   # the end guide lands mid-shot (multiple of 8); free performance after
+            wf.try_set("end_frame_idx", int(s["arrive_frame"]))
+        if s.get("arrive_strength"):
+            wf.try_set("lf_strength", float(s["arrive_strength"]))
+        if s.get("first_strength"):
+            wf.try_set("ff_strength", float(s["first_strength"]))
+        return wf, f"{s['id']}_{mode}_{label}"
+
     def video_job(self, s):
         mode, sid = s["mode"], s["id"]
         n = self.frames(s)
         meta = {"kind": mode, "shot": sid, "seed": s["seed"], "frames": n}
-        if mode == "ff":
+        one = self.p.workflow(mode) if mode in ("ff", "fflf", "lipsync") else None
+        if one is not None and one.kind == "ltx":
+            wf, name = self.ltx_job(s, one, n)
+            label = name.rsplit("_", 1)[1]
+        elif mode == "ff":
             wf = self.p.workflow("ff")
             wf.apply_defaults()
             self.size(wf)
@@ -313,7 +576,7 @@ class Builder:
             wf.apply_defaults()
             self.size(wf)
             src_id = s.get("start_shot") or s.get("still_from")
-            src = self.by_id[src_id] if src_id else s
+            src = self.ref(s, "start_shot" if s.get("start_shot") else "still_from") if src_id else s
             if s.get("still_from") and src.get("dropped"):   # loop seam: end on the first live shot's still
                 src = next(x for x in self.shots if not x.get("dropped") and x["mode"] in STILL_MODES and not x.get("still_from"))
             if s.get("first_frame"):
@@ -324,7 +587,7 @@ class Builder:
             if s.get("last_frame"):
                 end = self.input_file(s["last_frame"])
             elif s.get("end_shot"):
-                end, _ = self.stage_still(self.by_id[s["end_shot"]], s.get("end_still"))
+                end, _ = self.stage_still(self.ref(s, "end_shot"), s.get("end_still"))
             wf.set("image", img)
             wf.set("last_image", end)
             wf.set("prompt", self.names(s["video"], s))
@@ -339,8 +602,7 @@ class Builder:
                 wf.set("arrive_frame", int(s["arrive_frame"]))
             if s.get("arrive_strength"):
                 wf.set("last_strength", float(s["arrive_strength"]))
-            if s.get("chars"):
-                wf.append("negative", self.neg["fflf_people"])
+            wf.append("negative", self.neg["fflf_people"] if s.get("chars") else BIRDS)
             meta["frames"] = secs * self.fps + 1
             name = f"{sid}_fflf_{label}"
         elif mode == "lipsync":
@@ -374,7 +636,8 @@ class Builder:
             if s.get("dropped") or s["mode"] == "reuse":
                 continue
             try:
-                if stage == "stills" and s["mode"] in STILL_MODES and not s.get("still_from") and not s.get("first_frame"):
+                if stage == "stills" and s["mode"] in STILL_MODES and not s.get("still_from") and not s.get("first_frame") \
+                        and not self.from_sheet(s):      # frames from the sheet are made in the sheetedits stage
                     written.append(self.still_job(s))
                 elif stage == "sheetedits" and s.get("chars") and s.get("still") == "edit" and s["mode"] in STILL_MODES:
                     written.append(self.sheet_job(s))
@@ -386,6 +649,14 @@ class Builder:
                         written.append(p)
             except FileNotFoundError as e:
                 skipped.append(f"{s['id']}: {e}")
+            except ShotError:
+                raise
+            except (KeyError, ValueError, TypeError, StopIteration) as e:
+                raise ShotError(f"shot {s.get('id')}, {stage} step: {_why(e) or type(e).__name__} (in {self.shots_name})") from e
+            except Exception as e:
+                if type(e).__name__ != "WorkflowError":
+                    raise
+                raise ShotError(f"shot {s.get('id')}, {stage} step: {e}") from e
         return {"written": [self.p.rel(w) for w in written], "skipped": skipped}
 
 

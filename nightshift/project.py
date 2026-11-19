@@ -18,6 +18,7 @@ folder at <output_subdir>/<stills|clips|songs>/. Put the project inside ComfyUI'
 or downloads them.
 """
 import glob
+import hashlib
 import json
 import os
 import shutil
@@ -37,21 +38,26 @@ DEFAULTS = {
     "takes": {"default": 1, "complex": 4},
     "workflows": {
         "still": "still_flux", "edit2": "edit_flux_2image", "edit3": "edit_flux_3image",
-        "ff": "vid_ltx_ff", "fflf": "vid_ltx_fflf", "lipsync": "vid_ltx_lipsync", "t2v": "vid_ltx_t2v",
+        "ff": "vid_ltx", "fflf": "vid_ltx", "lipsync": "vid_ltx", "t2v": "vid_ltx_t2v",   # hexe's single LTX graph (Nov 17)
         "song": "song_minimax_m3", "sheet_text": "sheet_from_text", "sheet_image": "sheet_from_image", "vocals": "vocals_melband",
     },
     "sheets": {"candidates": 3, "approve": True, "yolo_source": "text", "seed": 7001},
     "timeline": {"min_seconds": 1.0, "max_seconds": 12.0, "max_fit_seconds": 15.0, "snap": 0.35},
     "grade": {"look": "A2_portra_dusk_plus", "lifts": []},
     "finish": {"chunk_seconds": 9.0, "halftone": None, "grain": 9},
-    "watchdog": {"stall_minutes": 6, "max_minutes_per_frame": 0.12, "min_minutes": 4, "retries": 1, "poll_seconds": 10},
+    "watchdog": {"stall_minutes": 6, "progress_stall_minutes": 10, "idle_minutes": 20, "max_minutes_per_frame": 0.12,
+                 "min_minutes": 4, "retries": 1, "poll_seconds": 10},
     "overlay": {},
 }
 
 # Profiles: presets layered under project.json (project.json still wins on any key it sets).
 #   profile      full = the first video's settings (a ~50-shot, ~7 hour pass); short = a ~30-40 s video in about an hour
 #   aspect       16:9 or 9:16 (stills, edits, video renders, crop and delivery size all follow)
-#   image_model  flux2 = Flux 2 Klein 9B (the first video); flux3 = FLUX 3 Image Klein (stills, identity edits, sheets)
+#   image_model  flux3 (the default) = FLUX 3 Image Klein through hexe's all-in-one graph; flux2 = Flux 2 Klein 9B (the first video)
+#                (img_flux3: stills and identity edits, distilled model, 15-16 steps); flux3_split = the earlier per-job graphs
+#   image_rewrite  {"still": false, "edit": false, "sheet": true}: the FLUX 3 prompt upsampler per job kind (img_flux3 only)
+#   frames_from_sheet  character frames made straight from the sheet (default: true when the edit graph is img_flux3)
+#   face_min  {"close": 0.5, "medium": 0.45, "wide": 0.3}: below this, a frame from the sheet gets two more seeds
 PROFILES = {
     "full": {},
     "short": {
@@ -73,22 +79,108 @@ ASPECTS = {
 }
 IMAGE_MODELS = {
     "flux2": {},
-    "flux3": {"workflows": {"still": "still_flux3", "edit2": "edit_flux3_2image", "edit3": "edit_flux3_3image",
-                            "sheet_text": "sheet7_from_text_flux3", "sheet_image": "sheet7_from_image_flux3"}},
+    # FLUX 3 through hexe's all-in-one graph: character frames made straight from the three-panel sheet (Nov 18 tests)
+    "flux3": {"workflows": {"still": "img_flux3", "edit2": "img_flux3", "edit3": "img_flux3",
+                            "sheet_text": "sheet_from_text_flux3", "sheet_image": "sheet_from_image_flux3"}},
+    # the per-job FLUX 3 graphs used before hexe's all-in-one (Nov 18): base model, 50 steps
+    "flux3_split": {"workflows": {"still": "still_flux3", "edit2": "edit_flux3_2image", "edit3": "edit_flux3_3image",
+                                  "sheet_text": "sheet7_from_text_flux3", "sheet_image": "sheet7_from_image_flux3"}},
 }
 
 
-def presets(file_cfg):
-    """The profile / aspect / image_model layers a project.json asks for, merged."""
+def presets(file_cfg, warnings=None):
+    """The profile / aspect / image_model layers a project.json asks for, merged.
+    An unknown value raises, or, given a warnings list, falls back to the default and notes it there (so one bad value
+    can't lock a project: every later call, even the one that would fix project.json, opens the project first)."""
     out = {}
-    for table, key, default in ((PROFILES, "profile", "full"), (ASPECTS, "aspect", None), (IMAGE_MODELS, "image_model", "flux2")):
+    for table, key, default in ((PROFILES, "profile", "full"), (ASPECTS, "aspect", None), (IMAGE_MODELS, "image_model", "flux3")):
         name = (file_cfg or {}).get(key) or default
+        if name is not None and name not in table:
+            msg = f"project.json {key} '{name}': choose one of {', '.join(table)}"
+            if warnings is None:
+                raise ValueError(msg)
+            warnings.append(msg + (f" (using '{default}' for now)" if default else " (ignored for now)"))
+            name = default
         if name is None:
             continue
-        if name not in table:
-            raise ValueError(f"project.json {key} '{name}': choose one of {', '.join(table)}")
         out = _merge(out, table[name])
     return out
+
+
+def check_config(file_cfg):
+    """Errors in a project.json about to be written: unknown profile / aspect / image_model. Empty list = fine."""
+    w = []
+    presets(file_cfg, w)
+    return [x.split(" (using")[0].split(" (ignored")[0] for x in w]
+
+
+SHOT_MODES = ("ff", "fflf", "lipsync", "t2v", "reuse")
+FRAMINGS = ("close", "medium", "wide")
+
+
+def check_shots(doc, canon=None):
+    """Problems in a shots.json, each naming the shot and the field: ["shot s04, field 'mode': 'ffl' is not a mode
+    (ff, fflf, lipsync, t2v, reuse)", ...]. Empty list = fine. canon (canon.json) also checks character and world keys."""
+    shots = doc.get("shots") if isinstance(doc, dict) else doc
+    if not isinstance(shots, list):
+        return ["shots.json needs a \"shots\" list"]
+    canon = canon or {}
+    chars = canon.get("characters")          # None: no canon to check against; {}: a cast-less (abstract) project
+    worlds = canon.get("worlds") or {}
+    out, ids = [], [s.get("id") for s in shots if isinstance(s, dict)]
+    for i, s in enumerate(shots):
+        if not isinstance(s, dict):
+            out.append(f"shot #{i + 1}: not an object")
+            continue
+        sid = s.get("id")
+        who = f"shot {sid}" if sid else f"shot #{i + 1}"
+        bad = lambda field, why: out.append(f"{who}, field '{field}': {why}")
+        if not sid:
+            bad("id", "missing")
+        elif ids.count(sid) > 1 and ids.index(sid) == i:
+            bad("id", f"used by {ids.count(sid)} shots")
+        mode = s.get("mode")
+        if mode not in SHOT_MODES:
+            bad("mode", (f"'{mode}' is not a mode" if mode else "missing") + f" ({', '.join(SHOT_MODES)})")
+        if s.get("dropped"):
+            continue
+        if mode == "reuse":
+            if not s.get("src"):
+                bad("src", "a reuse shot needs the take to reuse")
+        elif mode in SHOT_MODES and not (s.get("video") or "").strip():
+            bad("video", "missing: every rendered shot needs a motion prompt")
+        if s.get("framing") is not None and s.get("framing") not in FRAMINGS:
+            bad("framing", f"'{s['framing']}' ({', '.join(FRAMINGS)})")
+        if "chars" in s and not isinstance(s["chars"], list):
+            bad("chars", "must be a list of character keys")
+        elif chars is not None:
+            for c in s.get("chars") or []:
+                if c not in chars:
+                    bad("chars", f"'{c}' is not a character in canon.json ({', '.join(chars) or 'it has none'})")
+        if s.get("add") and chars is not None and (s["add"] or {}).get("char") not in chars:
+            bad("add.char", f"'{(s['add'] or {}).get('char')}' is not a character in canon.json")
+        if s.get("world") and worlds and s["world"] not in worlds:
+            bad("world", f"'{s['world']}' is not a world in canon.json ({', '.join(worlds)})")
+        for f in ("start_shot", "end_shot", "still_from"):
+            if s.get(f) and s[f] not in ids:
+                bad(f, f"'{s[f]}' is not a shot id")
+        if "seed" in s and not isinstance(s["seed"], int):
+            bad("seed", f"{s['seed']!r} is not a whole number")
+        if bool(s.get("edit_ref")) != bool(s.get("edit_prompt")):
+            bad("edit_ref" if not s.get("edit_ref") else "edit_prompt", "edit_ref and edit_prompt go together")
+    return out
+
+
+def _same_bytes(a, b):
+    if os.path.getsize(a) != os.path.getsize(b):
+        return False
+    with open(a, "rb") as fa, open(b, "rb") as fb:
+        while True:
+            x, y = fa.read(1 << 20), fb.read(1 << 20)
+            if x != y:
+                return False
+            if not x:
+                return True
 
 
 def _merge(a, b):
@@ -120,7 +212,13 @@ class Project:
         if not os.path.exists(self.path("project.json")):
             raise FileNotFoundError(f"{self.root} has no project.json (nightshift init <folder> makes one)")
         file_cfg = _load(self.path("project.json"), {})
-        self.cfg = _merge(_merge(DEFAULTS, presets(file_cfg)), file_cfg)
+        self.warnings = []
+        self.cfg = _merge(_merge(DEFAULTS, presets(file_cfg, self.warnings)), file_cfg)
+        for k, (table, default) in {"profile": (PROFILES, "full"), "aspect": (ASPECTS, None), "image_model": (IMAGE_MODELS, "flux3")}.items():
+            if file_cfg.get(k) is not None and file_cfg[k] not in table:   # the bad value must not leak into cfg either
+                self.cfg.pop(k, None) if default is None else self.cfg.update({k: default})
+        if file_cfg.get("aspect") in ASPECTS:   # the aspect owns the sizes: an old project.json's 16:9 sizes must not win over "aspect": "9:16"
+            self.cfg.update(ASPECTS[file_cfg["aspect"]])
         self.name = self.cfg.get("name") or os.path.basename(self.root)
         self._client = None
 
@@ -134,6 +232,8 @@ class Project:
     @property
     def comfy_dir(self):
         d = self.cfg["comfy"].get("dir")
+        if d and os.name != "nt" and len(d) > 2 and d[1] == ":" and d[0].isalpha():
+            return None     # a Windows path read on Linux/macOS (a copied project): upload instead of making a "C:\..." folder
         return os.path.abspath(os.path.expanduser(d)) if d else None
 
     @property
@@ -200,6 +300,10 @@ class Project:
                         s.pop(k, None)
                     else:
                         s[k] = v
+                if name == "shots.json":
+                    bad = [b for b in check_shots(doc, self.canon) if b.startswith(f"shot {sid},")]
+                    if bad:
+                        raise ValueError(f"shot {sid} not patched: " + "; ".join(bad))
                 self.save(name, doc)
                 return s
         raise KeyError(f"no shot {sid} in {name}")
@@ -215,7 +319,10 @@ class Project:
     def client(self):
         if self._client is None:
             from .comfy import Comfy
-            self._client = Comfy(self.cfg["comfy"]["url"], self.comfy_dir)
+            # one client id per project, the same in every run: ComfyUI sends progress messages only to the client id
+            # that queued the prompt, so a run that picks up jobs queued by an earlier run still hears them
+            cid = "nightshift-" + hashlib.sha1(self.root.encode("utf-8")).hexdigest()[:10]
+            self._client = Comfy(self.cfg["comfy"]["url"], self.comfy_dir, client_id=cid)
         return self._client
 
     def stage_input(self, src, name=None):
@@ -228,8 +335,12 @@ class Project:
             dst_dir = os.path.join(self.comfy_dir, "input", *self.input_subdir.split("/"))
             os.makedirs(dst_dir, exist_ok=True)
             dst = os.path.join(dst_dir, name)
-            if not (os.path.exists(dst) and os.path.samefile(src, dst)):
-                shutil.copyfile(src, dst)
+            if os.path.exists(dst) and (os.path.samefile(src, dst) or _same_bytes(src, dst)):
+                pass        # already there: don't rewrite a file a queued job may be reading right now
+            else:           # write beside it and swap in, so ComfyUI never loads a half-written file
+                tmp = dst + ".part"
+                shutil.copyfile(src, tmp)
+                os.replace(tmp, dst)
         else:
             self.client.upload(src, self.input_subdir, name)
         return f"{self.input_subdir}/{name}"
@@ -269,7 +380,7 @@ class Project:
         return hits[-1]
 
 
-def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="director", skip=()):
+def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="director", skip=(), image_model="flux3"):
     """Create a project folder from the starter template."""
     root = os.path.abspath(root)
     starter = template or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "projects", "starter"))
@@ -295,5 +406,6 @@ def init(root, name=None, comfy_url=None, comfy_dir=None, template=None, mode="d
     if comfy_dir:
         cfg["comfy"]["dir"] = comfy_dir
     cfg["mode"] = mode
+    cfg.setdefault("image_model", image_model)      # written down, so a later change of the default can't switch it
     _dump(cfg, os.path.join(root, "project.json"))
     return Project(root)

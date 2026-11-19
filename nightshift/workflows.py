@@ -83,20 +83,35 @@ class Workflow:
         return Workflow(self.name, copy.deepcopy(self.graph), self.spec, self.path)
 
     # ---- role lookup -------------------------------------------------------------------------------
+    TITLE_ALIASES = {"load_first_frame": "image", "load_last_frame": "last_image", "load_audio": "audio",
+                     "audio_start_time": "audio_start", "save": "output", "save_audio": "output_song",
+                     "load_<ref_image_0>": "image1", "load_<ref_image_1>": "image2", "load_<ref_image_2>": "image3",
+                     "load_<ref_image_3>": "image4"}
+
+    @staticmethod
+    def title_role(title):
+        """The role a node title names, or None. "ns_<role>" (hexe's naming rule, Nov 9) or the older "ns:<role>";
+        "ns_load_first_frame" -> "image", "ns_save" -> "output", "ns_toggle_use_LF" -> "toggle_use_lf". Anything after
+        the first space is a note for people ("ns_ff_strength (best 0.6-0.9)")."""
+        t = title.strip().split(" ")[0]
+        if not re.match(r"(?i)^ns[:_.]", t):
+            return None
+        role = re.sub(r"[:.]", "_", t[3:]).strip("_").lower().replace("-", "_")
+        return Workflow.TITLE_ALIASES.get(role, role) or None
+
     def _titles(self):
-        """Merge "ns:<role>" node titles into the role table (the map file wins)."""
+        """Merge "ns_<role>" node titles into the role table (the map file wins)."""
         roles = self.spec.setdefault("roles", {})
         outs = self.spec.setdefault("outputs", {})
         for nid, node in self.graph.items():
-            title = (node.get("_meta") or {}).get("title", "")
-            if not title.lower().startswith("ns:"):
+            role = self.title_role((node.get("_meta") or {}).get("title", ""))
+            if not role:
                 continue
-            role = title[3:].strip()
             inp = next((k for k in TITLE_INPUTS if k in node.get("inputs", {})), None)
             if not inp:
                 continue
             if role.startswith("output"):
-                outs.setdefault(role.split(":", 1)[1] if ":" in role else "main", {"node": nid, "input": "filename_prefix"})
+                outs.setdefault(role.split("_", 1)[1] if "_" in role else "main", {"node": nid, "input": "filename_prefix"})
             else:
                 roles.setdefault(role, {"node": nid, "input": inp})
 
@@ -132,7 +147,10 @@ class Workflow:
             if required:
                 raise WorkflowError(f"{self.name}: no role '{role}'")
             return False
-        for t in self._targets(role):
+        targets = self._targets(role)
+        if getattr(self, "job", False):
+            targets = [t for t in targets if t.get("node") in self.graph] or targets
+        for t in targets:
             if "concat_from" in t:
                 raise WorkflowError(f"{self.name}: role '{role}' is a concat hook, use append()")
             v = value
@@ -174,7 +192,7 @@ class Workflow:
         outs = self.spec.get("outputs", {})
         if not outs:
             raise WorkflowError(f"{self.name}: map has no outputs")
-        names = [which] if which else list(outs)
+        names = [which] if which else [n for n in outs if not getattr(self, "job", False) or outs[n]["node"] in self.graph]
         for n in names:
             t = outs[n]
             p = prefix if len(outs) == 1 or which else f"{prefix}_{n}"
@@ -195,14 +213,70 @@ class Workflow:
         for d in self.spec.get("defaults", []):
             self._node(d["node"])["inputs"][d["input"]] = d["value"]
 
+    def use_refs(self, n):
+        """Use only the first n reference images of a multi-reference graph (hexe's img_flux3 wires four loaders into
+        "images.image0".."images.image3"): the other slots are unhooked, and resolved() drops their loaders."""
+        for node in self.graph.values():
+            for k in [k for k in node.get("inputs", {}) if re.fullmatch(r"images\.image(\d+)", k)]:
+                if int(k.rsplit("image", 1)[1]) >= n:
+                    node["inputs"].pop(k)
+
+    # ---- resolving the switches -------------------------------------------------------------------
+    CONSTANTS = ("PrimitiveBoolean", "PrimitiveInt", "PrimitiveFloat", "PrimitiveString", "PrimitiveStringMultiline",
+                 "INTConstant", "FloatConstant", "StringConstant", "BooleanConstant")
+    OUTPUT_CLASSES = ("SaveImage", "SaveVideo", "SaveAudio", "SaveAudioMP3", "SaveAudioOpus", "SaveAudioAdvanced",
+                      "SaveAnimatedWEBP", "SaveAnimatedPNG", "PreviewImage", "PreviewAny", "PreviewAudio",
+                      "VHS_VideoCombine", "SaveLatent", "SaveGLB")
+
+    def resolved(self):
+        """The graph as ComfyUI should get it: every If/Else switch whose switch is fixed (a literal, or a toggle node)
+        replaced by the branch it picks, and every node no output needs dropped. ComfyUI checks every loader it can reach,
+        even on a branch a switch won't take, so an all-in-one graph would otherwise want a real file in every loader
+        (a last frame for a first-frame-only job, reference images for text-to-image)."""
+        g = copy.deepcopy(self.graph)
+
+        def const(v):
+            if isinstance(v, list) and len(v) == 2 and v[0] in g and g[v[0]]["class_type"] in self.CONSTANTS:
+                val = g[v[0]]["inputs"].get("value")
+                return (True, val) if not isinstance(val, list) else (False, None)
+            return (not isinstance(v, list), v)
+
+        changed = True
+        while changed:
+            changed = False
+            for nid, node in list(g.items()):
+                if node["class_type"] != "ComfySwitchNode":
+                    continue
+                known, val = const(node["inputs"].get("switch"))
+                if not known or not isinstance(val, bool):
+                    continue
+                pick = node["inputs"].get("on_true" if val else "on_false")
+                if pick is None:
+                    continue
+                for other in g.values():           # everyone who read this switch reads the picked branch instead
+                    for k, v in other["inputs"].items():
+                        if isinstance(v, list) and len(v) == 2 and v[0] == nid:
+                            other["inputs"][k] = copy.deepcopy(pick)
+                del g[nid]
+                changed = True
+        out = lambda c: c in self.OUTPUT_CLASSES or c.startswith(("Save", "Preview")) or "VideoCombine" in c
+        keep, todo = set(), [n for n, v in g.items() if out(v["class_type"])]
+        while todo:
+            n = todo.pop()
+            if n in keep or n not in g:
+                continue
+            keep.add(n)
+            todo += [v[0] for v in g[n]["inputs"].values() if isinstance(v, list) and len(v) == 2 and isinstance(v[0], str)]
+        return {n: v for n, v in g.items() if n in keep} if keep else g
+
     # ---- io -------------------------------------------------------------------------------
     def to_api(self):
-        return self.graph
+        return self.resolved()
 
     def save(self, path, meta=None):
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(self.graph, f, indent=1)
+            json.dump(self.resolved(), f, indent=1)
         m = {"workflow": self.name, "kind": self.kind, **(meta or {})}
         with open(path[:-5] + ".meta.json", "w", encoding="utf-8") as f:
             json.dump(m, f, indent=1)
@@ -261,4 +335,5 @@ def job_workflow(job_path, extra_dirs=()):
         raise WorkflowError(f"{job_path}: no .meta.json next to it; build jobs with nightshift so they carry their workflow name")
     wf = Workflow.load(meta["workflow"], extra_dirs)
     wf.graph = json.load(open(job_path, encoding="utf-8"))
+    wf.job = True          # a saved job is already resolved: map targets on branches it dropped are skipped
     return wf, meta

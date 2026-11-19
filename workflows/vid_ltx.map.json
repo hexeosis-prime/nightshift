@@ -1,0 +1,31 @@
+{
+ "workflow": "vid_ltx.json",
+ "kind": "ltx",
+ "description": "hexe's single LTX 2.3 video workflow (updated Nov 17: core LoRA loaders and core Load Audio, no VHS/rgthree). First frame, or first + last frame (ns_toggle_use_LF), generated sound or the song as audio in (ns_toggle_use_audio_in), vocals isolated for lip-sync (ns_toggle_isolate_vocals). 3 stages, the INT8 ConvRot model. Inputs found by their ns_ titles. Nightshift resolves the switches before queueing, so unused loaders drop out (no dummy last frame or audio file needed). Load Audio has no start time: pass a clip already cut to the shot. Same image as first and last frame = a locked-off camera.",
+ "roles": {
+  "end_frame_idx": [
+   {
+    "node": "5297",
+    "input": "frame_idx",
+    "type": "int"
+   },
+   {
+    "node": "5486",
+    "input": "frame_idx",
+    "type": "int"
+   },
+   {
+    "node": "5505",
+    "input": "frame_idx",
+    "type": "int"
+   }
+  ]
+ },
+ "defaults": [
+  {
+   "node": "5417",
+   "input": "value",
+   "value": true
+  }
+ ]
+}

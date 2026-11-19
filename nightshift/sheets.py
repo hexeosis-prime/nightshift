@@ -93,6 +93,10 @@ def build(project, ch, world, n=None, primary=None):
         if primary:
             wf = project.workflow("edit2")
             wf.apply_defaults()
+            if wf.has("text_to_image"):          # hexe's all-in-one FLUX 3 graph: an edit with one reference
+                wf.set("text_to_image", False)
+                wf.use_refs(1)
+                wf.try_set("prompt_enhancer", False)
             img = project.stage_input(primary, f"sheet_{ch}_primary.png")
             c = _char(project, ch)
             outfit = (c.get(f"outfit_{world}") or c.get("outfit") or {}).get("wide", "")

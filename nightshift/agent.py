@@ -73,6 +73,7 @@ JSON shape:
      "location": "the place in concrete physical words: surfaces, light sources, weather. No readable text or signs.",
      "action": "what the person does in the still, ending with a lens: '..., 85mm lens'",
      "expr": "facial expression for the first frame ('lips gently closed, about to sing' for lip-sync shots)",
+     "light": "where the light on the person comes from in this place: the sources, which side, their color, how much shadow ('a warm sodium lamp high on her left, green spill from a shop window on the right, half her face in shadow')",
      "video": "the LTX motion prompt: one continuous moment in order: shot size and subject as {<key>}, where, what happens, then the camera move (dolly, push in, arc, crane up, handheld drift, static). 2-3 sentences."
    }
  ]
@@ -87,9 +88,19 @@ Rules that matter:
 - With two characters, each one lip-syncs only the lines their voice sings; give each character shots of their own and a
   few shots with both (put both keys in chars; the first is the one singing).
 - In "video" prompts refer to people only as {<key>} (e.g. {maya}); never retype their description.
+- LTX invents whatever enters the frame after the first frame (a hand coming into view holds a microphone; a pan finds
+  a wall that was never there). In "video", say what enters or is revealed ("her hands stay empty", "the camera turns to
+  the brick wall of the same building"), keep moves small, and frame the still wide enough to hold what the shot needs.
 - Locations: use every place the user named, in a sensible order; repeat a place across several shots so it reads as a
   scene. No readable text, signs, logos, microphones or instruments in hands.
 - Everything lawful and safe for work. Invent original people; never describe a real or famous person.
+
+Abstract and instrumental videos: when the idea has no performer (shapes, light, landscapes, textures, a mood) or asks for
+an instrumental, add "abstract": true. Then "characters" is {} and every shot has "chars": []; there are no lipsync
+shots; use t2v and fflf for camera moves, and "ff" with a "location" (what the first frame shows) and an "action" (the
+lens and what moves) for a first frame that comes alive. For an instrumental, "lyrics" holds only section tags
+([Intro], [Instrumental], [Build], [Drop], [Outro]) and the caption says "instrumental, no vocals". An abstract video
+can still have a sung song: then keep the lyrics, and the shots simply show no singer.
 """
 
 
@@ -203,16 +214,21 @@ def _key(s):
     return k[:20] or "lead"
 
 
-def normalize(raw, length="medium"):
-    """Check and repair a plan; raises PlanError for what can't be repaired."""
+def normalize(raw, length="medium", abstract=None):
+    """Check and repair a plan; raises PlanError for what can't be repaired. abstract (or "abstract": true in the plan):
+    no cast and no lip-sync, and the song may be instrumental."""
     if length == "auto":
         length = raw.get("length") if raw.get("length") in LENGTHS else "short"
-    from .lyrics import sheet_lines
+    from .lyrics import INSTRUMENTAL, sheet_lines
     chars_in = raw.get("characters") or {}
     if isinstance(chars_in, list):
         chars_in = {c.get("key") or c.get("name") or f"c{i}": c for i, c in enumerate(chars_in)}
-    if not chars_in:
-        raise PlanError("no characters")
+    if abstract is None:
+        abstract = raw.get("abstract") is True or str(raw.get("abstract")).lower() == "true"
+    if abstract:
+        chars_in = {}
+    if not chars_in and not abstract:
+        raise PlanError("plan field 'characters': empty (1 or 2 people needed; an abstract plan sets \"abstract\": true)")
     chars, rename = {}, {}
     for k, c in list(chars_in.items())[:2]:
         nk = _key(k)
@@ -249,10 +265,13 @@ def normalize(raw, length="medium"):
     lyrics = (song.get("lyrics") or "").strip()
     caption = (song.get("caption") or "").strip()
     lines = sheet_lines(lyrics)
-    if len(lines) < 4:
-        raise PlanError("the lyrics are missing or too short")
+    instrumental = abstract and not lines
+    if instrumental:
+        lyrics = lyrics if lyrics.startswith("[") else INSTRUMENTAL.strip()
+    if len(lines) < 4 and not instrumental:
+        raise PlanError(f"plan field 'song.lyrics': {len(lines)} sung line(s), at least 4 needed")
     if len(caption) < 80:
-        raise PlanError("the song caption is missing or too short")
+        raise PlanError(f"plan field 'song.caption': {len(caption)} characters, at least 80 needed (genre, BPM, key, arrangement)")
     norm = lambda t: re.sub(r"[^a-z0-9' ]", "", t.lower()).split()
 
     def match_anchor(a, used):
@@ -276,7 +295,7 @@ def normalize(raw, length="medium"):
                     return i
         return best
 
-    shots, used, last_line = [], set(), -1
+    shots, used, last_line, tried = [], set(), -1, []
     for i, s in enumerate(raw.get("shots") or []):
         mode = s.get("mode") if s.get("mode") in MODES else "ff"
         cs = [rename.get(c, _key(c)) for c in (s.get("chars") or [])]
@@ -290,7 +309,13 @@ def normalize(raw, length="medium"):
         video = s.get("video") or ""
         for k, nk in rename.items():
             video = video.replace("{" + k + "}", "{" + nk + "}")
-        if mode == "t2v" or (mode == "fflf" and not cs):
+        if abstract and mode == "lipsync":
+            mode = out["mode"] = "ff"
+        if abstract and mode == "ff":          # a first frame of a place or an image, brought to life; nobody in it
+            out.update(chars=[], action=s.get("action") or "slow drifting motion, 35mm lens",
+                       location=s.get("location") or "an empty landscape at dusk", video=video or s.get("location") or
+                       "Slow, continuous motion through the frame.")
+        elif mode == "t2v" or (mode == "fflf" and not cs):
             out.update(chars=[], video=video or s.get("location") or "An empty place at dusk. Slow cinematic camera move.")
             if mode == "fflf":
                 out.update(fit=True, action="", location=(s.get("location") or "an empty street at dusk") + ", completely empty")
@@ -298,6 +323,7 @@ def normalize(raw, length="medium"):
             if not cs:
                 cs = [next(iter(chars))]
             if mode == "lipsync":
+                tried.append(s.get("anchor") or "")
                 li = match_anchor(s.get("anchor") or "", used)
                 if li is None or li <= last_line - 2:
                     mode = out["mode"] = "ff"
@@ -311,17 +337,20 @@ def normalize(raw, length="medium"):
             out.update(chars=cs[:1], still="edit", wording="C", expr=s.get("expr") or "natural",
                        action=s.get("action") or "standing still, looking into the distance, 50mm lens",
                        location=s.get("location") or "an empty street at night", video=video)
+            if s.get("light"):
+                out["light"] = s["light"]
             if len(cs) > 1:
                 out["add"] = {"char": cs[1], "where": "standing beside the other person, a little behind", "expr": "natural"}
         shots.append(out)
     if len(shots) < 3:
-        raise PlanError("the shot list is missing or too short")
-    if not any(s["mode"] == "lipsync" for s in shots):
-        raise PlanError("no lip-sync shot has an anchor that matches a lyric line")
+        raise PlanError(f"plan field 'shots': {len(shots)} usable shot(s), at least 3 needed")
+    if not abstract and not any(s["mode"] == "lipsync" for s in shots):
+        raise PlanError("plan field 'shots[].anchor': no lip-sync shot's anchor matches the first words of a lyric line" + (f" (tried: {', '.join(repr(a) for a in tried[:4])})" if tried else ""))
     from .studio import GRADES
     grade = raw.get("grade") if raw.get("grade") in GRADES else "A2_portra_dusk_plus"
-    hud = raw.get("hud") is True or str(raw.get("hud")).lower() == "true"
+    hud = (raw.get("hud") is True or str(raw.get("hud")).lower() == "true") and not instrumental
     return {"_validated": True, "title": raw.get("title") or "Untitled", "logline": raw.get("logline") or "", "length": length,
+            "abstract": abstract, "instrumental": instrumental,
             "grade": grade, "hud": hud, "aspect": raw.get("aspect") if raw.get("aspect") in ("9:16", "16:9") else None,
             "characters": chars, "worlds": worlds, "default_world": default_world,
             "song": {"caption": caption, "lyrics": lyrics}, "shots": shots}
@@ -356,6 +385,9 @@ def create_from_plan(root, plan, opts=None):
     for k in ("fps", "work_size", "crop", "final_size", "video_frames", "takes", "song_seeds", "finish", "overlay", "sheets"):
         cfg.pop(k, None)
     o["aspect"] = o.get("aspect") or plan.get("aspect") or "16:9"
+    if plan.get("instrumental"):
+        cfg["instrumental"] = True
+        o["overlay"] = False                 # no words, no lyric HUD
     cfg.update({"profile": "short", "length": plan.get("length"), "aspect": o["aspect"],
                 "image_model": o.get("image_model") or "flux3", "scene": "agent", "song_max_seconds": L["seconds"] + 15,
                 "grade": {"look": o.get("grade") or "A2_portra_dusk_plus", "lifts": []},

@@ -41,12 +41,12 @@ def numbered(src, edl, out, parts=4, on_event=print):
         with open(fs, "w") as f:
             f.write("scale=1280:-2" + ("," + ",".join(dt) if dt else ""))
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a:.4f}", "-t", f"{b - a:.4f}", "-i", src, "-filter_script:v", fs, "-an",
-                        "-c:v", "libx264", "-crf", "24", "-preset", "veryfast", os.path.join(pdir, f"r{i}.mp4")], check=True)
+                        "-c:v", "libx264", "-crf", "24", "-preset", "veryfast", "-map_metadata", "-1", os.path.join(pdir, f"r{i}.mp4")], check=True)
         on_event(f"review part {i + 1}/{parts}")
     with open(os.path.join(pdir, "list.txt"), "w") as f:
         f.write("".join(f"file 'r{i}.mp4'\n" for i in range(parts)))
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", os.path.join(pdir, "list.txt"), "-i", src,
-                    "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest", out], check=True)
+                    "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest", "-map_metadata", "-1", out], check=True)
     return out
 
 
@@ -67,12 +67,12 @@ def ab(project, pairs, out, cut_name="cut.json"):
               "[1:v]scale=960:540:force_original_aspect_ratio=increase,crop=960:540,fps=24,setsar=1[b];[a][b]hstack[v]")
         subprocess.run(["ffmpeg", "-y", "-v", "error", "-ss", str(s.get("in", 0)), "-t", str(dur), "-i", old, "-t", str(dur), "-i", new,
                         "-ss", str(t0), "-t", str(dur), "-i", cut.song, "-filter_complex", fc, "-map", "[v]", "-map", "2:a",
-                        "-c:v", "libx264", "-crf", "26", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-shortest", seg],
+                        "-c:v", "libx264", "-crf", "26", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-shortest", "-map_metadata", "-1", seg],
                        check=True)
         segs.append(seg)
     with open(os.path.join(d, "list.txt"), "w") as f:
         f.write("".join(f"file '{s}'\n" for s in segs))
-    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", os.path.join(d, "list.txt"), "-c", "copy", out], check=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", os.path.join(d, "list.txt"), "-c", "copy", "-map_metadata", "-1", out], check=True)
     return out
 
 

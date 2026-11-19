@@ -18,3 +18,7 @@ projects/*/
 runs/
 studio.local.bat
 models/faster-whisper-*/
+
+# scratch and test output kept beside the code (archive it outside the repo)
+_promo_poc/
+_archive/

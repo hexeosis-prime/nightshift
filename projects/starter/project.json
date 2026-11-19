@@ -8,18 +8,8 @@
   "_dir": "Path to the ComfyUI folder when ComfyUI runs on this machine (the one with input/ and output/). Leave null when ComfyUI is on another machine: files are uploaded and downloaded over its API."
  },
  "fps": 24,
- "work_size": [
-  1280,
-  768
- ],
- "crop": [
-  1280,
-  720
- ],
- "final_size": [
-  1920,
-  1080
- ],
+ "aspect": "16:9",
+ "_aspect": "16:9 or 9:16. Sets the render, crop and delivery sizes (work_size, crop, final_size); don't set those by hand.",
  "video_frames": 121,
  "takes": {
   "default": 1,

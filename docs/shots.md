@@ -33,6 +33,10 @@ The timeline step adds the timing fields (marked *resolved*) to `shots_resolved.
 | `expr` | `"warm smile, lips closed, about to sing"` | facial expression for the identity edit |
 | `wording` | `"C"` | identity edit wording (A: reference-image phrasing, C: BFL "image 1 / image 2" phrasing with exhaustive preservation) |
 | `sheet_ref` | `"refs/lead_face.png"` | a different reference than the world's sheet (a smiling sheet, a close-up face portrait) |
+| `light` | `"a warm sodium lamp high on her left, green spill from a window on the right, deep shadows"` | where the light comes from (sources, side, color, shadow), for a frame made from the sheet (FLUX 3); without it the world's light is used |
+| `location_refs` | `["refs/sets/diner_wide.png"]` | location plates for a frame made from the sheet: after the sheet(s), up to 4 references in all; a world can set them for every shot |
+| `from_sheet` | `false` | opt a FLUX 3 character shot out of frames-from-the-sheet (text still + identity edit instead) |
+| `locked` | `true` | the same still as first and last frame: a locked-off camera (single LTX graph) |
 | `edit_light` | `"A directional red key light hits the left side of her face."` | appended to the identity edit: relight in the same pass |
 | `add` | `{"char": "second", "where": "standing behind her on the left", "expr": "grinning"}` | second character via the three-image edit |
 | `edit_ref` + `edit_prompt` | | a free two-image edit (stage `edits`) |
