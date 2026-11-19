@@ -1,8 +1,8 @@
 """Does the character take the scene's light? Frames made from the sheet, five prompt versions (Nov 18).
 
     python3 scripts/light_test.py setup <project> <test dir> <comfy dir>   copy a finished project (sheet, canon, shots)
-    python3 scripts/light_test.py queue <test dir> [variants]              queue the frames (same seed per shot)
-    python3 scripts/light_test.py report <test dir>                        face match, face vs scene brightness, grid
+    python3 scripts/light_test.py queue <test dir> [variants|all] [seed+]  queue the frames (same seed per shot)
+    python3 scripts/light_test.py report <test dir> [A,B,A100,...]         face match, face vs scene brightness, grid
 
 Variants (16 steps cfg 1, upsampler on, the sheet as the only reference):
   A  v1, as the merge test ran: who first, no light words for the person, the world style last
@@ -53,7 +53,7 @@ def shots(p):
     return [s for s in p.load("shots_resolved.json")["shots"] if s.get("chars") and s["id"] in LIGHTS]
 
 
-def queue(dst, only=None):
+def queue(dst, only=None, seed_add=0):
     from nightshift.build import Builder
     from nightshift.project import Project
     p = Project(dst)
@@ -69,10 +69,12 @@ def queue(dst, only=None):
             s.pop("light", None)
             if o["light"]:
                 s["light"] = LIGHTS[s["id"]]
-            jp = b.sheet_frame_job(s, seed=s["seed"], tag=f"L{v}", style=o["style"], rewriter_light=o["rw"])
+            name = f"{v}{seed_add or ''}_{s['id']}"     # A_s02, or A100_s02 for the seed + 100 set
+            jp = b.sheet_frame_job(s, seed=s["seed"] + seed_add, tag=f"L{v}{seed_add or ''}", style=o["style"],
+                                   rewriter_light=o["rw"])
             job = json.load(open(jp, encoding="utf-8"))
-            st[f"{v}_{s['id']}"] = p.client.queue_prompt(job)
-            prompts[f"{v}_{s['id']}"] = next(n["inputs"]["value"] for n in job.values()
+            st[name] = p.client.queue_prompt(job)
+            prompts[name] = next(n["inputs"]["value"] for n in job.values()
                                              if n.get("_meta", {}).get("title") == "ns_prompt")
     json.dump(st, open(st_path, "w"), indent=1)
     old = json.load(open(os.path.join(dst, "light_prompts.json"))) if os.path.exists(os.path.join(dst, "light_prompts.json")) else {}
@@ -80,7 +82,8 @@ def queue(dst, only=None):
     print("queued", len(prompts))
 
 
-def report(dst, order="ABCDE"):
+def report(dst, order="A,B,C,D,E"):
+    order = order.split(",") if "," in order else list(order)
     import numpy as np
     from nightshift import score
     from nightshift.project import Project
@@ -146,7 +149,11 @@ def report(dst, order="ABCDE"):
                         fl + "".join(f"[a{k}]" for k in range(len(shot_ids))) + f"hstack={len(shot_ids)}", "-frames:v", "1",
                         row], check=True)
         rows.append(row)
-    grid = os.path.join(out, f"light_test_{order}.jpg")
+    means = {}
+    for (v, sid), (fm, br) in table.items():
+        means.setdefault(v.rstrip("0123456789"), []).append(fm)
+    print("per version, all seeds:", {k: round(float(np.mean([x for x in m if x is not None])), 2) for k, m in sorted(means.items())})
+    grid = os.path.join(out, f"light_test_{''.join(order)}.jpg")
     subprocess.run(["ffmpeg", "-v", "error", "-y", *sum([["-i", r] for r in rows], []), "-filter_complex",
                     f"vstack={len(rows)}", "-q:v", "3", grid], check=True)
     print(grid)
@@ -157,6 +164,7 @@ if __name__ == "__main__":
     if cmd == "setup":
         setup(*sys.argv[2:5])
     elif cmd == "queue":
-        queue(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
+        queue(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != "all" else None,
+              int(sys.argv[4]) if len(sys.argv) > 4 else 0)
     else:
-        report(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "ABCDE")
+        report(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "A,B,C,D,E")
