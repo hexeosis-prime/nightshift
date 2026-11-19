@@ -20,6 +20,11 @@ stopped (the process ended mid-step: run again, finished renders are kept) or st
 LLM. The watchdog frees ComfyUI's memory and retries once. If it keeps happening, restart ComfyUI and keep the GPU to itself
 while a pass renders.
 
+**"Fault failed: 2" / "VRAM Allocation failed (non OOM)" / "device not ready".** ComfyUI's dynamic VRAM loader couldn't
+map memory at that moment (seen once in an LTX text encoder, Nov 18; the next jobs rendered fine). The watchdog treats it like
+an out-of-memory: frees memory and queues the job again once. If a shot still has no clip, `run` stops at the cut with
+"shot sNN has no src in the cut"; run it again and only that shot is rendered.
+
 **Jobs "lost" after a ComfyUI restart.** Queued jobs don't survive a restart. `nightshift watch` notices they're gone and
 re-queues them; `nightshift status` shows what is open.
 

@@ -479,7 +479,7 @@ def watch(project, timeout_s=None, on_event=print):
                 err = r.get("error") or {}
                 j["status"], j["error"] = "failed", err
                 project.log("failed", job=j["job"], prompt_id=pid, error=err)
-                oom = "OutOfMemory" in str(err.get("exception_type", "")) or "out of memory" in str(err.get("exception_message", "")).lower()
+                oom = retryable(err)
                 on_event(f"FAILED   {j['job']}  {err.get('exception_type')}: {str(err.get('exception_message'))[:200]}")
                 if oom:
                     try:
@@ -495,6 +495,21 @@ def watch(project, timeout_s=None, on_event=print):
         time.sleep(wd["poll_seconds"])
     save_state(project, st)
     return status(project)
+
+
+# GPU faults that are about the moment, not the job: out of memory, and the dynamic-VRAM allocator's "Fault failed"
+# (cuMemSetAccess "device not ready", Nov 18: one LTX job died in its text encoder, the next jobs rendered fine)
+TRANSIENT = ("out of memory", "fault failed", "device not ready", "vram allocation failed", "cuda error: unspecified launch failure",
+             "cublas_status_alloc_failed", "cudnn_status_internal_error")
+
+
+def retryable(err):
+    """A failed job worth queueing again as it is (after freeing memory)."""
+    err = err or {}
+    if "OutOfMemory" in str(err.get("exception_type", "")):
+        return True
+    msg = str(err.get("exception_message", "")).lower()
+    return any(k in msg for k in TRANSIENT)
 
 
 def _retry(project, c, st, j, wd, on_event):

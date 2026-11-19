@@ -72,6 +72,12 @@ def main():
     assert dead.quiet("abc") is None
     dead.stop()
     print("ok   no websocket: falls back to the log rule")
+
+    # a GPU fault of the moment is retried once like an OOM; a real job error is not
+    assert C.retryable({"exception_type": "RuntimeError", "exception_message": "Fault failed: 2\n"})
+    assert C.retryable({"exception_type": "torch.OutOfMemoryError", "exception_message": "CUDA out of memory"})
+    assert not C.retryable({"exception_type": "ValueError", "exception_message": "Image not found: x.png"})
+    print("ok   retry: OOM and allocator faults yes, job errors no")
     print("progress ok")
 
 
