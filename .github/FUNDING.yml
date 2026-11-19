@@ -1,0 +1,4 @@
+# Sponsor button config for Nightshift (open-source local music-video workstation)
+# custom = destination WE own (own the pointer, not the platform)
+# NOTE: deep link -> https://hexeosis.com/sponsor once that page exists
+custom: ['https://hexeosis.com']
