@@ -26,6 +26,43 @@ def frames_for(sec, fps=24):
     return 8 * math.ceil(max(n - 1, 8) / 8) + 1
 
 
+SPLIT_MODES = ("lipsync", "ff")
+
+
+def split(shots, most, snap=lambda t: t, lo=1.0, sung=None):
+    """A character shot whose slot is longer than `most` seconds becomes several shots of about equal length (cuts on
+    beats), each a render of its own: s08, s08b, s08c. The pieces after the first take the shot's "split" fields (the
+    other framing and a setup of its own, written by Studio), alternating with the original, so a long held line plays as
+    close, medium, close instead of one 12-second take (Nov 20 upbeat run). Shots without "split" repeat themselves with
+    a new seed. sung(t0, t1): whether any word is sung in that span; a lip-sync piece with no words (the instrumental after
+    the last line) becomes a moving shot from the shot's "split_quiet" fields, when it has them."""
+    out = []
+    for s in shots:
+        out.append(s)
+        n = int(-(-s.get("seconds", 0) // most)) if not s.get("dropped") else 1
+        if s["mode"] not in SPLIT_MODES or not s.get("chars") or n < 2:
+            continue
+        t0, t1 = s["start"], s["start"] + s["seconds"]
+        cuts = [t0]
+        for k in range(1, n):
+            c = snap(t0 + (t1 - t0) * k / n)
+            cuts.append(c if c - cuts[-1] >= lo and t1 - c >= lo else t0 + (t1 - t0) * k / n)
+        cuts.append(t1)
+        s["seconds"] = round(cuts[1] - cuts[0], 4)
+        alt, quiet = s.get("split") or {}, s.get("split_quiet")
+        for k in range(1, n):
+            piece = {kk: v for kk, v in s.items() if kk not in ("split", "split_quiet", "anchor", "anchor_note", "lead")}
+            if k % 2 == 1:
+                piece.update(alt)
+            if s["mode"] == "lipsync" and quiet and sung and not sung(cuts[k], cuts[k + 1]):
+                piece.update(quiet, mode="ff")
+                piece.pop("no_lyric", None)
+            piece.update(id=f"{s['id']}{'bcdefgh'[k - 1]}", part_of=s["id"], start=round(cuts[k], 4),
+                         seconds=round(cuts[k + 1] - cuts[k], 4), seed=int(s.get("seed", 0)) + 7919 * k)
+            out.append(piece)
+    return out
+
+
 def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", out_cut="cut.json", song_input=None):
     from .song import song_path
     fps = project.cfg["fps"]
@@ -81,6 +118,8 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
     for s, cs in todo:
         if id(s) in chosen:
             s["t"] = max(0.0, when(chosen[id(s)]) - s.get("lead", 0.0) - 0.15)
+            if lines and lines[chosen[id(s)]].get("end"):
+                s["_line_end"] = lines[chosen[id(s)]]["end"]      # a singing shot is given its whole line when it fits
         else:
             s["anchor_note"] = "anchor not found" if not cs else "anchor out of order, unanchored"
     last = -1
@@ -100,15 +139,29 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
         b = min(beats, key=lambda x: abs(x - t))
         return b if abs(b - t) < tl["snap"] else t
 
+    lo = tl["min_seconds"]
     for (i0, t0), (i1, t1) in zip(bounds, bounds[1:]):
         run = shots[i0:i1]
         if not run:
             continue
+        # every shot first gets the shortest slot it can live with, then the rest is shared (lip-sync shots twice as
+        # much): the Nov 20 upbeat run dropped two shots squeezed to 1.0 and 1.3 s by plain 2:1 shares
         w = [2 if s["mode"] == "lipsync" else 1 for s in run]
-        tot, t, acc = sum(w), t0, 0
-        for s, wi in zip(run, w):
+        mins = [lo * 1.1] * len(run)
+        if run[0].get("_line_end") and "t" in run[0]:
+            mins[0] = max(mins[0], run[0]["_line_end"] + 0.2 - t0)      # the singer finishes the line on camera
+        fits = sum(mins) <= (t1 - t0)
+        if not fits:
+            mins = [0.0] * len(run)                         # too tight for everyone: plain shares, the shortest drop out
+        spare, tot = (t1 - t0) - sum(mins), sum(w)
+        t, acc, base = t0, 0, t0
+        for k, (s, wi) in enumerate(zip(run, w)):
             acc += wi
-            nxt = t1 if acc == tot else snap(t0 + (t1 - t0) * acc / tot)
+            base += mins[k]
+            raw = base + spare * acc / tot
+            nxt = t1 if k == len(run) - 1 else snap(raw)
+            if fits and (nxt - t < mins[k] or t1 - nxt < sum(mins[k + 1:])):
+                nxt = raw                                    # a beat snap that would starve a shot: keep the exact cut
             s["start"], s["seconds"] = round(t, 4), round(nxt - t, 4)
             t = nxt
 
@@ -126,6 +179,12 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
         a["seconds"] = round(b["start"] - a["start"], 4)
     if live:
         live[-1]["seconds"] = round(end - live[-1]["start"], 4)
+    for s in shots:
+        s.pop("_line_end", None)
+    if tl.get("split_seconds"):
+        shots = split(shots, tl["split_seconds"], snap, lo,
+                      sung=lambda a, b: any(a - 0.1 <= w["start"] < b - 0.3 for w in words))
+        live = [s for s in shots if not s.get("dropped")]
     # Render every shot at its full slot so nothing freezes: the caps above only steer how time is shared; a clip may run to
     # render_max_seconds (LTX 2.3 holds up well to 12 s and beyond). Only a slot longer than that holds its last frame.
     hard = lambda s: max(cap(s), tl.get("render_max_seconds", 12.0))

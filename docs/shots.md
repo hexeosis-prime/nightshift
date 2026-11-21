@@ -15,7 +15,10 @@ The timeline step adds the timing fields (marked *resolved*) to `shots_resolved.
 | `fit` | `true` | allows a long slot (15 s instead of 12): first/last-frame moves, intros, loop seams |
 | `voice` + `fallback_mode` | `"male"`, `"ff"` | if the chosen song has no such voice (`project.json` `song_voices`), the shot becomes `fallback_mode` |
 | `takes` / `complex` | `4` / `true` | best-of-N; `complex` uses `project.json` `takes.complex` |
-| `dropped` | `true` | leave the shot out (the timeline also drops slots under 1 s) |
+| `dropped` | `true` | leave the shot out (the timeline also drops slots under `timeline.min_seconds` when a stretch between two anchors is too tight for every shot to get one) |
+| `split` | `{"framing": "medium", "setup": ..., "video": ...}` | when the slot runs longer than `timeline.split_seconds` (Studio sets it by tone: upbeat 4.5, builds 7, mellow 10), the timeline cuts it into shots `s08`, `s08b`, `s08c`, each its own render with a new seed; the pieces in between take these fields (Studio writes the other framing and a setup of its own) |
+| `split_quiet` | `{"framing": "medium", "setup": ..., "video": ...}` | for a lip-sync shot: a piece with no sung words in it (the instrumental after a line) becomes a moving `ff` shot with these fields |
+| `part_of` | *resolved* | on a split piece: the shot it came from |
 
 ## The first frame
 

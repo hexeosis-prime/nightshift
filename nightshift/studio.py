@@ -212,14 +212,14 @@ PATTERN = [
 # quiet end.
 TONES = {
     "upbeat": {"label": "Upbeat", "blurb": "singing and dancing, quick cuts, lively camera",
-               "pace": 1.25, "energy": ("medium", "high"),
-               "bpm": 120, "song": "Upbeat and danceable, bright and driving, a hook you can move to."},
+               "pace": 1.25, "energy": ("medium", "high"), "split_seconds": 4.5,
+               "bpm": 120, "mood": "bright, driving and joyful", "song": "Upbeat and danceable, bright and driving, a hook you can move to."},
     "builds": {"label": "Builds", "blurb": "starts quiet, opens up in the chorus, settles at the end",
-               "pace": 1.0, "energy": None,
+               "pace": 1.0, "energy": None, "split_seconds": 7.0,
                "bpm": None, "song": "An emotional build: a quiet, close start that opens into a big chorus."},
     "mellow": {"label": "Mellow", "blurb": "slow and emotional: close shots, long takes, gentle camera",
-               "pace": 0.75, "energy": ("calm",),
-               "bpm": 72, "song": "Slow and intimate, sparse and warm, every word clear."},
+               "pace": 0.75, "energy": ("calm",), "split_seconds": 10.0,
+               "bpm": 72, "mood": "slow, intimate and tender", "song": "Slow and intimate, sparse and warm, every word clear."},
 }
 DEFAULT_TONE = "builds"
 
@@ -246,8 +246,10 @@ BANK = {
          "Close-up of {lead} singing straight into the lens, chin lifting on the long notes, shoulders moving with the beat. The camera pushes in slowly and steadily toward {po} face.", "medium"),
         ("profile turn", "in profile, about to turn toward the camera, 85mm lens", "calm, lips gently closed, about to sing",
          "Close-up of {lead} in profile, turning toward the camera and singing, a hand brushing the hair back from {po} face. Static camera, shallow focus.", "calm"),
-        ("light sweep", "singing with eyes closed, soft light on one side of the face, 85mm lens", "lost in the song, lips gently closed",
-         "Close-up of {lead} singing with eyes closed, head tilting and swaying with the melody, as a soft band of light slowly sweeps across {po} face. Slow handheld drift.", "calm"),
+        # was "light sweep" ("a soft band of light slowly sweeps across her face"): LTX drew the band as a flare blob floating
+        # over her hair (Nov 20 mellow run, s02). Light that moves is a reveal; the light stays as the first frame has it.
+        ("eyes closed", "singing with eyes closed, head tilted a little, 85mm lens", "lost in the song, lips gently closed",
+         "Close-up of {lead} singing with eyes closed, head tilting and swaying slowly with the melody, a few strands of hair moving in the air. Slow handheld drift.", "calm"),
         ("bright to camera", "smiling into the lens between lines, 85mm lens", "bright, smiling, about to sing",
          "Close-up of {lead} singing to the camera with a bright smile, head bobbing on the beat, eyebrows lifting with the melody. Handheld camera, a little bounce on the beat.", "high"),
         ("big note", "chin up, eyes closed, about to hit a long note, 85mm lens", "intense, lips gently closed, about to sing",
@@ -436,6 +438,28 @@ def tag_duet(lyrics, ch, ch2):
     return "\n".join(out), owner
 
 
+# A long slot (a lip-sync line held for 12 s) is split by the timeline into shots of at most the tone's split_seconds; the
+# extra pieces cut to the other framing with a setup of their own, so a held line plays as close, medium, close.
+ALT_FRAMING = {("lipsync", "close"): "medium", ("lipsync", "medium"): "close", ("ff", "medium"): "medium", ("ff", "wide"): "medium"}
+
+
+def _dress(deck, mode, framing, energies, who, c, tone):
+    """A setup from the bank for one shot: its name, the still's action and expression, and the motion prompt."""
+    key = (mode, framing) if (mode, framing) in BANK else ("ff", "wide")
+    setup, act, expr, video = deck.draw(key, energies)
+    if mode in ("lipsync", "ff") and framing != "wide":
+        # Said positively, in the still and the motion: a singer's closed fist becomes a microphone (Nov 20 upbeat run, s04:
+        # empty fists in the first frame, a microphone by the third second, though the prompt said "Nothing in her hands"
+        # and the negatives named microphones)
+        act += ", hands open and relaxed, fingers loose"
+        video += " {Po} hands stay open and empty the whole time, fingers loose, palms visible when they move."
+    if tone == "mellow":
+        video += " Everything moves slowly and gently."
+    obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((c or {}).get("pronoun"), ("them", "their"))
+    return {"setup": setup, "expr": expr, "action": act,
+            "video": video.replace("{pr}", obj).replace("{po}", pos).replace("{Po}", pos.capitalize()).replace("{lead}", "{" + who + "}")}
+
+
 def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None, shot_seed=None, tone=None, vertical=False):
     """scene: one scene key, or a list of up to three; with several, the video moves through them in order and each shot
     carries its place's look. tone: a TONES key (which setups, by energy). vertical: character shots stop at medium (a
@@ -480,19 +504,17 @@ def shots(scene, lyrics, n_shots, ch=None, seed0=1000, ch2=None, owner=None, sho
                     s["framing"] = framing = "medium"
             if vertical and framing == "wide":
                 s["framing"] = framing = "medium"
-            key = (mode, framing) if (mode, framing) in BANK else ("ff", "wide")
-            setup, act, expr, video = deck.draw(key, tone_energy(tone, i, len(pattern)))
-            if mode in ("lipsync", "ff") and framing != "wide":
-                video += " Nothing in {po} hands."            # a hand rising into frame comes up holding a microphone
-            if tone == "mellow":
-                video += " Everything moves slowly and gently."
-            s["setup"] = setup
             c = ch2 if who == "partner" else ch
-            obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((c or {}).get("pronoun"), ("them", "their"))
+            energies = tone_energy(tone, i, len(pattern))
+            s.update(_dress(deck, mode, framing, energies, who, c, tone))
             if mode == "lipsync":
                 s["no_lyric"] = True                 # quoted lyrics can burn in as subtitles; the song audio drives the mouth
-            s.update(chars=[who], still="edit", wording="C", expr=expr, action=act, location=sc["places"][place],
-                     video=video.replace("{pr}", obj).replace("{po}", pos).replace("{lead}", "{" + who + "}"))
+            s.update(chars=[who], still="edit", wording="C", location=sc["places"][place])
+            alt = ALT_FRAMING.get((mode, framing))
+            if alt:                                  # the second half of a long slot cuts to another framing (timeline.split)
+                s["split"] = dict(_dress(deck, mode, alt, energies, who, c, tone), framing=alt)
+            if mode == "lipsync":                    # a piece of a long singing slot with no words in it: she moves
+                s["split_quiet"] = dict(_dress(deck, "ff", "medium", energies, who, c, tone), framing="medium")
             if ch2 and mode == "ff" and framing == "wide" and not any(x.get("add") for x in out):
                 other = "partner" if who == "lead" else "lead"
                 s["add"] = {"char": other, "where": "standing a few steps away, facing them", "expr": "natural"}
@@ -515,6 +537,10 @@ def caption(scene, vibe, noun, seconds, instrumental=False, duet=None, tone=None
     bpm = (TONES.get(tone) or {}).get("bpm")
     if bpm:        # the tone's tempo replaces the scene's (Nov 20 run: "88 BPM" from the scene and "75 BPM" from the tone)
         genre = re.sub(r"\b\d{2,3} BPM\b", f"{bpm} BPM", genre) if re.search(r"\b\d{2,3} BPM\b", genre) else f"{genre}, {bpm} BPM"
+    mood_words = (TONES.get(tone) or {}).get("mood")
+    if mood_words:  # and its mood replaces the scene's last words ("tender and hopeful" under an upbeat song pulled it down)
+        head, _, last = genre.rpartition(", ")
+        genre = f"{head}, {mood_words}" if head and not re.search(r"BPM|major|minor", last) else f"{genre}, {mood_words}"
     voice = {"woman": "One female lead vocal", "man": "One male lead vocal", "person": "One lead vocal"}[noun]
     vocal = "Instrumental, no vocals." if instrumental else (
         f"{voice}: close and sincere, every word clear, doubled softly in the chorus. No other voices.")
@@ -653,6 +679,7 @@ def create(root, form):
         "grade": {"look": form.get("grade") if form.get("grade") in GRADES else sc["grade"], "lifts": []},
         "overlay": overlay_cfg(lyrics, form.get("title"), form.get("overlay"), form.get("aspect") or "16:9"),
         "display_name": (form.get("display_name") or "").strip()[:80] or None, "tone": tone,
+        "timeline": dict(cfg.get("timeline") or {}, split_seconds=TONES[tone]["split_seconds"]),
         "song_seeds": [101, 202, 303],     # Checkpoint Mode offers 3 of everything (plan, Phase 2); "new options" makes 3 more
         **({"identity_candidates": 3} if (form.get("mode") or "director") != "yolo" else {}),
         "sheets": {"candidates": 3, "approve": form.get("approve_looks", False) is True,   # hands-off never pauses; director mode stops for the look anyway

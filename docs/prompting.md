@@ -29,7 +29,12 @@ The short version. The full guides, built from hexe's Nov 18 prompting guides an
 - **Always say the shot size and what the camera does**, including "locked off". A real lock-off needs the same image as
   first and last frame.
 - **LTX invents whatever enters the frame later**: a hand coming into view holds a microphone, a pan finds a wall that
-  wasn't there. Say what enters ("her hands stay empty"), show it in the first frame, or pin the end with a last frame.
+  wasn't there. Say what enters, show it in the first frame, or pin the end with a last frame.
+- **A singer's closed hand becomes a microphone**, even with "Nothing in her hands" in the prompt and "microphone" in the
+  negatives (Nov 20: empty fists in the first frame, a microphone by the third second). Say what the hands are: "hands open
+  and relaxed" in the still, "her hands stay open and empty, fingers loose, palms visible when they move" in the video.
+- **Moving light is a reveal too**: "a band of light sweeps across her face" became a flare blob floating over her hair.
+  Keep the light as the first frame has it.
 - **Negatives are live** (the graph runs NAG): keep them short and aimed at defects you've seen.
 - **Sound words can become pictures**: "birdsong" puts birds in wide shots.
 
