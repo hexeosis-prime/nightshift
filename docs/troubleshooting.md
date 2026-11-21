@@ -25,9 +25,12 @@ map memory at that moment (seen once in an LTX text encoder, Nov 18; the next jo
 an out-of-memory: frees memory and queues the job again once. If a shot still has no clip, `run` stops at the cut with
 "shot sNN has no src in the cut"; run it again and only that shot is rendered.
 
-**A job sits at "Model Initializing", 0 steps, for ten minutes.** Seen once on a lip-sync shot (Nov 20): the progress
-watchdog interrupted it at 10 minutes and the retry rendered (slowly, 8.5 minutes instead of about 3.5). Nothing to do unless
-it repeats on the same shot.
+**A job sits at "Model Initializing", 0 steps, for minutes.** It happens often on the 3090: the sampler starts, loads its
+model and never takes a step. A healthy first step (model loading included) takes under two minutes, so a sampler with no
+step after `watchdog.first_step_minutes` (3) and no other sign of life is stopped, ComfyUI's memory is freed and the job is
+queued again; this hang gets one extra try. Every watchdog stop is written to `_stalls.jsonl` in the projects folder (the
+job, its kind and length, what rendered just before, free RAM and VRAM at that moment): when a few have gathered, read it
+for what they share.
 
 **A colored stripe down the right edge of a vertical video.** Every 9:16 finish before Nov 21 had its last 8 pixel columns
 (1072-1079) filled with one flat wrong color: teal, yellow or black, changing with the shot. The cut (`out/passNN_cut.mp4`)

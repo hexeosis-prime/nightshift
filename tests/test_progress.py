@@ -54,7 +54,7 @@ def main():
         time.sleep(0.05)
     mon.stop()
     assert got["path"] == "/ws?clientId=nightshift-test", got
-    assert mon.info["abc"] == {"value": 3, "max": 20, "node": "12"}, mon.info
+    assert {k: mon.info["abc"][k] for k in ("value", "max", "node")} == {"value": 3, "max": 20, "node": "12"}, mon.info
     assert got["pong"] == (0xA, b"hi"), got
     assert mon.preview and mon.info["def"]["node"] == "57"
     assert mon.quiet("abc") < 5 and mon.quiet("nobody") < 5          # a preview counts as life for the running job
@@ -65,6 +65,45 @@ def main():
         cfg = {"watchdog": {"stall_minutes": 6, "progress_stall_minutes": 10}}
     assert C._progress_stall_seconds(P) == 600
     print("ok   stall rule: 10 min with no progress and no log line (was: log silence alone)")
+
+    # the "Model Initializing" hang: a sampler node that started and never reported a step
+    hang = C.Progress("http://127.0.0.1:9", "nightshift-hang")
+    hang.stop()
+    hang.connected = True
+    msg = lambda kind, **d: hang._message(json.dumps({"type": kind, "data": dict(d, prompt_id="p1")}))
+    msg("executing", node="5")                                          # a text encoder: no steps, fine
+    msg("progress", node="5", value=1, max=1)
+    msg("executing", node="9")                                          # the sampler starts
+    hang.info["p1"]["since"] -= 200
+    node, waited = hang.before_first_step("p1")
+    assert node == "9" and 199 < waited < 210, hang.info
+    msg("progress", node="9", value=1, max=8)                           # its first step: no longer stuck
+    assert hang.before_first_step("p1") is None
+    msg("executing", node="11")                                         # the upscale pass's sampler: a new clock
+    assert hang.before_first_step("p1")[1] < 5
+    assert "SamplerCustomAdvanced" in C.SAMPLERS
+    print("ok   stuck before the first step: per node, cleared by a step, restarted by the next sampler")
+
+    # its retry budget: one more than an ordinary stall
+    class Q:
+        def __init__(self):
+            self.n = 0
+        def queue_prompt(self, prompt):
+            self.n += 1
+            return f"r{self.n}"
+    import tempfile
+    d = tempfile.mkdtemp()
+    open(os.path.join(d, "j.json"), "w").write("{}")
+    class PP:
+        path = staticmethod(lambda *a: os.path.join(d, *a))
+        log = staticmethod(lambda *a, **k: None)
+    wd = {"retries": 1}
+    for extra, want in ((0, "failed"), (1, "retried")):
+        st = {"jobs": []}
+        j = {"job": "j.json", "prompt_id": "x", "status": "stalled", "attempts": 2}
+        C._retry(PP, Q(), st, j, wd, lambda *_: None, extra=extra)
+        assert j["status"] == want, (extra, j)
+    print("ok   a job stuck at the start gets one extra try")
 
     # no websocket (an old ComfyUI, a proxy): quiet() says so and the watchdog falls back to the log
     dead = C.Progress("http://127.0.0.1:9", "nightshift-none")

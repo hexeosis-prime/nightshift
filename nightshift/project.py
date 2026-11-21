@@ -45,7 +45,7 @@ DEFAULTS = {
     "timeline": {"min_seconds": 1.0, "max_seconds": 12.0, "max_fit_seconds": 15.0, "snap": 0.35},
     "grade": {"look": "A2_portra_dusk_plus", "lifts": []},
     "finish": {"chunk_seconds": 9.0, "halftone": None, "grain": 9},
-    "watchdog": {"stall_minutes": 6, "progress_stall_minutes": 10, "idle_minutes": 20, "max_minutes_per_frame": 0.12,
+    "watchdog": {"stall_minutes": 6, "progress_stall_minutes": 10, "first_step_minutes": 3, "idle_minutes": 20, "max_minutes_per_frame": 0.12,
                  "min_minutes": 4, "retries": 1, "poll_seconds": 10},
     "overlay": {},
 }

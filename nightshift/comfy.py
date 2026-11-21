@@ -132,11 +132,23 @@ class Progress:
         kind, d = m.get("type"), m.get("data") or {}
         pid = d.get("prompt_id")
         if kind in self.LIFE and pid:
-            self.last[pid] = time.time()
+            now = self.last[pid] = time.time()
             if kind == "progress":
-                self.info[pid] = {"value": d.get("value"), "max": d.get("max"), "node": d.get("node")}
+                had = self.info.get(pid) or {}
+                self.info[pid] = {"value": d.get("value"), "max": d.get("max"), "node": d.get("node"),
+                                  "since": had.get("since", now) if had.get("node") == d.get("node") else now}
             elif kind == "executing" and d.get("node"):
-                self.info.setdefault(pid, {})["node"] = d.get("node")
+                if (self.info.get(pid) or {}).get("node") != d.get("node"):
+                    self.info[pid] = {"node": d.get("node"), "since": now}      # a new node: no step of it seen yet
+
+    def before_first_step(self, prompt_id):
+        """(node id, seconds) when the running node has not reported a single step since it started, else None. A sampler
+        that sits here for minutes is the "Model Initializing" hang (seen often on the 3090: 0/4 steps for 10+ minutes;
+        a healthy first step, model loading included, takes under two)."""
+        i = self.info.get(prompt_id) or {}
+        if not self.connected or not i.get("node") or i.get("value") or "since" not in i:
+            return None
+        return i["node"], time.time() - i["since"]
 
 
 _LISTENERS, _LISTENERS_LOCK = {}, threading.Lock()
@@ -353,6 +365,48 @@ def _progress_stall_seconds(project):
     return max(wd["stall_minutes"], wd.get("progress_stall_minutes", 10)) * 60
 
 
+SAMPLERS = ("KSampler", "KSamplerAdvanced", "SamplerCustom", "SamplerCustomAdvanced")
+
+
+def _first_step_seconds(project):
+    """A sampler that hasn't finished its first step after this long, with no other sign of life, is stuck (default 3 min:
+    the slowest healthy first step seen, an LTX upscale pass with its model loading, is under two)."""
+    return project.cfg["watchdog"].get("first_step_minutes", 3) * 60
+
+
+def _node_class(project, j, node):
+    """The class of a node in a job's prompt (cached on the queue entry's job file)."""
+    cache = _node_class.__dict__.setdefault("cache", {})
+    path = project.path(j["job"])
+    if path not in cache:
+        try:
+            cache[path] = {k: v.get("class_type", "") for k, v in json.load(open(path, encoding="utf-8")).items() if isinstance(v, dict)}
+        except Exception:
+            cache[path] = {}
+    return cache[path].get(str(node), "")
+
+
+def note_stall(project, j, why, extra=None):
+    """One line per watchdog stop in <projects>/_stalls.jsonl, across projects, to find what the hangs have in common:
+    the job, its kind and length, what ran just before it, and ComfyUI's free RAM and VRAM at that moment."""
+    rec = {"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "project": project.name, "job": j["job"], "why": why,
+           "kind": (j.get("meta") or {}).get("kind"), "frames": (j.get("meta") or {}).get("frames"),
+           "attempt": j.get("attempts", 1), "ran_for_s": round(time.time() - (j.get("started") or time.time())), **(extra or {})}
+    try:
+        s = project.client.system_stats()
+        dev = (s.get("devices") or [{}])[0]
+        rec.update(ram_free_gb=round(s["system"]["ram_free"] / 2**30, 1), vram_free_gb=round(dev.get("vram_free", 0) / 2**30, 1),
+                   torch_vram_free_gb=round(dev.get("torch_vram_free", 0) / 2**30, 1))
+    except Exception:
+        pass
+    try:
+        with open(os.path.join(os.path.dirname(project.root), "_stalls.jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+    except OSError:
+        pass
+    return rec
+
+
 def _stall_seconds(project, job_meta):
     """How long ComfyUI's log may stay silent before a running job counts as stalled. Video and song jobs sample for many
     minutes without writing a line (a 288-frame first/last-frame shot is silent 6+ min, and the old 6-minute rule killed 8
@@ -452,6 +506,12 @@ def watch(project, timeout_s=None, on_event=print):
                     calm = _progress_stall_seconds(project)
                     stalled = quiet > calm and (age is None or age > calm)
                     why_stall = "stalled (no progress from ComfyUI for %d min)" % (quiet // 60)
+                    first = mon.before_first_step(pid)
+                    if not stalled and first and _node_class(project, j, first[0]) in SAMPLERS:
+                        wait = _first_step_seconds(project)
+                        if first[1] > wait and quiet > wait:
+                            stalled, why_stall = True, "stuck before the first sampler step for %d min (\"Model Initializing\")" % (first[1] // 60)
+                            j["stuck_at_start"] = True
                 else:                                       # no websocket: fall back to the log file
                     stalled = age is not None and age > _stall_seconds(project, j.get("meta", {}))
                     why_stall = "stalled (log silent %d min)" % ((age or 0) // 60)
@@ -465,7 +525,13 @@ def watch(project, timeout_s=None, on_event=print):
                     except Exception:
                         pass
                     j["status"], j["error"] = "stalled", why
-                    _retry(project, c, st, j, wd, on_event)
+                    note_stall(project, j, why, {"node": _node_class(project, j, (mon.info.get(pid) or {}).get("node")) if mon else None,
+                                                  "before": next((x["job"] for x in reversed(st["jobs"]) if x["status"] == "done"), None)})
+                    try:
+                        c.free()                            # unload models: the retry starts from a clean GPU
+                    except Exception:
+                        pass
+                    _retry(project, c, st, j, wd, on_event, extra=1 if j.pop("stuck_at_start", False) else 0)
                 continue
             if pid in q["pending"]:
                 continue
@@ -512,8 +578,10 @@ def retryable(err):
     return any(k in msg for k in TRANSIENT)
 
 
-def _retry(project, c, st, j, wd, on_event):
-    if j.get("attempts", 1) > wd["retries"]:
+def _retry(project, c, st, j, wd, on_event, extra=0):
+    """Queue a job again, up to watchdog.retries times (one more for a job caught stuck before its first step: that hang
+    is about the moment, and catching it at 3 minutes makes a second try cheap)."""
+    if j.get("attempts", 1) > wd["retries"] + extra:
         j["status"] = "failed"
         return
     try:
