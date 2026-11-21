@@ -24,8 +24,10 @@ def main():
     assert all("Nothing in her hands." in s["video"] for s in mellow if s.get("chars") and s["framing"] != "wide")
     assert all("slowly and gently" in s["video"] for s in mellow if s.get("chars"))
     print("ok   tone: mellow draws calm setups, upbeat medium/high; vertical has no full-body character wides")
-    assert "75 BPM" in S.caption("night-avenue", "", "woman", 40, tone="mellow")
-    assert "120 BPM" in S.caption("night-avenue", "", "woman", 40, tone="upbeat")
+    import re
+    for tone, bpm in (("mellow", 72), ("upbeat", 120)):
+        cap = S.caption("seaside-dawn", "", "woman", 40, tone=tone)
+        assert re.findall(r"\d+ BPM", cap) == [f"{bpm} BPM"], re.findall(r"\d+ BPM", cap)
     print("ok   tone words in the song brief")
     assert S.overlay_cfg(S.DEFAULT_LYRICS, None, True)["style"]["title"] == ""
     assert S.overlay_cfg(S.DEFAULT_LYRICS, "Night knows", True)["style"]["title"] == "NIGHT KNOWS"

@@ -213,13 +213,13 @@ PATTERN = [
 TONES = {
     "upbeat": {"label": "Upbeat", "blurb": "singing and dancing, quick cuts, lively camera",
                "pace": 1.25, "energy": ("medium", "high"),
-               "song": "Upbeat and danceable, around 120 BPM, bright and driving, a hook you can move to."},
+               "bpm": 120, "song": "Upbeat and danceable, bright and driving, a hook you can move to."},
     "builds": {"label": "Builds", "blurb": "starts quiet, opens up in the chorus, settles at the end",
                "pace": 1.0, "energy": None,
-               "song": "An emotional build: a quiet, close start that opens into a big chorus, around 95 BPM."},
+               "bpm": None, "song": "An emotional build: a quiet, close start that opens into a big chorus."},
     "mellow": {"label": "Mellow", "blurb": "slow and emotional: close shots, long takes, gentle camera",
                "pace": 0.75, "energy": ("calm",),
-               "song": "Slow and intimate, around 75 BPM, sparse and warm, every word clear."},
+               "bpm": 72, "song": "Slow and intimate, sparse and warm, every word clear."},
 }
 DEFAULT_TONE = "builds"
 
@@ -511,6 +511,10 @@ def _ts(sec):
 def caption(scene, vibe, noun, seconds, instrumental=False, duet=None, tone=None):
     sc = SCENES[scene]
     mood = (TONES.get(tone) or {}).get("song", "")
+    genre = sc["genre"]
+    bpm = (TONES.get(tone) or {}).get("bpm")
+    if bpm:        # the tone's tempo replaces the scene's (Nov 20 run: "88 BPM" from the scene and "75 BPM" from the tone)
+        genre = re.sub(r"\b\d{2,3} BPM\b", f"{bpm} BPM", genre) if re.search(r"\b\d{2,3} BPM\b", genre) else f"{genre}, {bpm} BPM"
     voice = {"woman": "One female lead vocal", "man": "One male lead vocal", "person": "One lead vocal"}[noun]
     vocal = "Instrumental, no vocals." if instrumental else (
         f"{voice}: close and sincere, every word clear, doubled softly in the chorus. No other voices.")
@@ -532,7 +536,7 @@ def caption(scene, vibe, noun, seconds, instrumental=False, duet=None, tone=None
                f"{_ts(b)}-{_ts(c)} Chorus: everything opens up, the hook sung twice.\n"
                f"{_ts(c)}-{_ts(seconds)} Outro: the last line, a natural decay. No hard ending.\n")
     return (f"# Song brief (the MiniMax Music 3 caption)\n<!-- Written by Nightshift Studio. Headings and comments are stripped "
-            f"before the text goes to the model. See docs/prompting.md. -->\n\n{cast}## Global metadata\nGenre: {sc['genre']}."
+            f"before the text goes to the model. See docs/prompting.md. -->\n\n{cast}## Global metadata\nGenre: {genre}."
             + (f" {mood}" if mood else "") + (f" {vibe.strip().rstrip('.')}." if vibe and vibe.strip() else "") +
             f"\nA short song of about {seconds} seconds with a real ending.\n\n## Vocal details\n{vocal}\n\n## Arrangement\n" + arr)
 
