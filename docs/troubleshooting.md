@@ -25,6 +25,15 @@ map memory at that moment (seen once in an LTX text encoder, Nov 18; the next jo
 an out-of-memory: frees memory and queues the job again once. If a shot still has no clip, `run` stops at the cut with
 "shot sNN has no src in the cut"; run it again and only that shot is rendered.
 
+**A job sits at "Model Initializing", 0 steps, for ten minutes.** Seen once on a lip-sync shot (Nov 20): the progress
+watchdog interrupted it at 10 minutes and the retry rendered (slowly, 8.5 minutes instead of about 3.5). Nothing to do unless
+it repeats on the same shot.
+
+**A colored stripe down the right edge of a vertical video.** Every 9:16 finish before Nov 21 had its last 8 pixel columns
+(1072-1079) filled with one flat wrong color: teal, yellow or black, changing with the shot. The cut (`out/passNN_cut.mp4`)
+is clean; the Windows ffmpeg build garbled the tail of a 1080-wide row in the grade. The finish now widens the frame to 1088
+with its own edge pixels and crops back. To fix an older pass, move its `out/passNN_parts/` aside and run the finish again.
+
 **Jobs "lost" after a ComfyUI restart.** Queued jobs don't survive a restart. `nightshift watch` notices they're gone and
 re-queues them; `nightshift status` shows what is open.
 

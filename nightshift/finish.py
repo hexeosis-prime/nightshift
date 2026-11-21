@@ -28,8 +28,25 @@ def make_halftone(out, size=(1920, 1080), cell=6, strength=0.18):
     return out
 
 
-def _graph(look, lifts, a0, seg, overlay, halftone, grain):
-    base = grade.chain(look, "[0:v]", "[g0]") + ";"
+PAD_TO = 64
+
+
+def size(path):
+    """(width, height) of a video's first stream."""
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0",
+                        path], capture_output=True, text=True, check=True)
+    w, h = r.stdout.strip().splitlines()[0].split(",")[:2]
+    return int(w), int(h)
+
+
+def _graph(look, lifts, a0, seg, overlay, halftone, grain, size=None):
+    """size (w, h): when the width isn't a multiple of 64 (1080 for vertical), the frame is widened with its own edge pixels
+    for the grade and cropped back after. Nov 20: the Windows ffmpeg build filled the last 8 columns of every 1080-wide
+    finish with a flat wrong color (a teal, yellow or black stripe down the right edge); 1920-wide was never touched."""
+    w, h = size or (0, 0)
+    pw = -(-w // PAD_TO) * PAD_TO if w else 0
+    widen = f"pad={pw}:{h}:0:0,fillborders=right={pw - w}:mode=smear," if pw > w else ""
+    base = grade.chain(look, f"[0:v]{widen}", "[g0]") + ";"
     lf = [f"curves=all='0/0 0.18/{0.18 + k:.3f} 0.5/{0.5 + k * 0.7:.3f} 1/1':enable='between(t,{t0 - a0:.3f},{t1 - a0:.3f})'"
           for t0, t1, k in lifts if t1 > a0 and t0 < a0 + seg]
     g = base + "[g0]" + (",".join(lf) if lf else "null") + "[base];"
@@ -38,9 +55,9 @@ def _graph(look, lifts, a0, seg, overlay, halftone, grain):
         g += f"{cur}[{n}:v]overlay=format=auto[o];"
         cur, n = "[o]", n + 1
     if halftone:
-        g += f"[{n}:v]format=gbrp[ht];{cur}format=gbrp[og];[og][ht]blend=all_mode=multiply:all_opacity=0.45:shortest=1[h];"
+        g += f"[{n}:v]" + (f"pad={pw}:{h}:0:0,fillborders=right={pw - w}:mode=smear," if widen else "") + f"format=gbrp[ht];{cur}format=gbrp[og];[og][ht]blend=all_mode=multiply:all_opacity=0.45:shortest=1[h];"
         cur = "[h]"
-    g += f"{cur}" + (f"noise=alls={grain}:allf=t," if grain else "") + "format=yuv420p[v]"
+    g += f"{cur}" + (f"noise=alls={grain}:allf=t," if grain else "") + (f"crop={w}:{h}:0:0," if widen else "") + "format=yuv420p[v]"
     return g
 
 
@@ -60,7 +77,7 @@ def finish_chunk(cut_mp4, out, i, look="A2_portra_dusk_plus", lifts=(), overlay=
         cmd += ["-ss", "0" if chunked else str(a), "-t", str(chunk_s), "-c:v", "libvpx-vp9", "-i", (overlay % i) if chunked else overlay]
     if halftone:
         cmd += ["-loop", "1", "-framerate", str(fps), "-i", halftone]
-    cmd += ["-filter_complex", _graph(look, list(lifts), a, chunk_s, overlay, halftone, grain), "-map", "[v]", "-an",
+    cmd += ["-filter_complex", _graph(look, list(lifts), a, chunk_s, overlay, halftone, grain, size(cut_mp4)), "-map", "[v]", "-an",
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "17", "-frames:v", str(frames), "-map_metadata", "-1", os.path.join(parts, f"p{i:02d}.mp4")]
     subprocess.run(cmd, check=True)
     return os.path.join(parts, f"p{i:02d}.mp4")
