@@ -56,8 +56,10 @@ class Fake:
                     n += 1
                 fn = f"{base}_{n:05d}{tail}{ext}"
                 path = os.path.join(d, fn)
-                if ext == ".png":
-                    cmd = ["-f", "lavfi", "-i", "testsrc2=s=1280x768", "-frames:v", "1"]
+                if ext == ".png":            # a box at a place of its own: two renders are never the same bytes
+                    k = int(__import__("hashlib").md5((pid + str(nid)).encode()).hexdigest()[:8], 16)
+                    cmd = ["-f", "lavfi", "-i", "testsrc2=s=1280x768", "-frames:v", "1",
+                           "-vf", f"drawbox=x={k % 1200}:y={k // 7 % 700}:w=48:h=48:color=red:t=fill"]
                 elif ext == ".mp4":
                     cmd = ["-f", "lavfi", "-i", "testsrc2=s=1280x768:r=24", "-t", "13", "-pix_fmt", "yuv420p", "-c:v", "libx264", "-preset", "ultrafast"]
                 else:
