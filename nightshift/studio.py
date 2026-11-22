@@ -682,6 +682,7 @@ def create(root, form):
         "display_name": (form.get("display_name") or "").strip()[:80] or None, "tone": tone,
         "timeline": dict(cfg.get("timeline") or {}, split_seconds=TONES[tone]["split_seconds"]),
         "song_seeds": [101, 202, 303],     # Checkpoint Mode offers 3 of everything (plan, Phase 2); "new options" makes 3 more
+        "auto_pass_minutes": 60,           # a checkpoint left alone this long carries on with the top picks (Intervene: go back)
         **({"identity_candidates": 3} if (form.get("mode") or "director") != "yolo" else {}),
         "sheets": {"candidates": 3, "approve": form.get("approve_looks", False) is True,   # hands-off never pauses; director mode stops for the look anyway
                    "yolo_source": "image" if photo else "text"},

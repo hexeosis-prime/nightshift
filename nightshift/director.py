@@ -165,3 +165,130 @@ def _sheet_jobs(project, ch, w, n, start):
     """n more sheet candidates, numbered after the ones there are."""
     from . import sheets as SH
     return SH.build(project, ch, w, n=n, start=start)
+
+
+# ---- going back to the song or the look -------------------------------------------------------------------------------
+# (Phase 2: "go back, always available, nothing is a trap"). Going back reopens the choice; the choice made before is kept
+# aside. Choosing the same one again changes nothing. Choosing another sets aside, never deletes, what depended on it: a new
+# song re-times the video (analysis, timeline, every clip); a new look redoes that character's first frames and clips.
+def _move_aside(project, rel, sub):
+    """Move one project file (if there) into an _aside folder next to it; returns its new relative path."""
+    src = project.path(rel)
+    if not os.path.exists(src):
+        return None
+    d = os.path.join(os.path.dirname(src), "_aside", sub)
+    os.makedirs(d, exist_ok=True)
+    dst = os.path.join(d, os.path.basename(src))
+    if os.path.exists(dst):
+        base, ext = os.path.splitext(dst)
+        dst = f"{base}_{int(os.path.getmtime(src))}{ext}"
+    shutil.move(src, dst)
+    return project.rel(dst)
+
+
+def reopen(project, st, to):
+    """Before running again from `to`: take the current song or look out of play (kept aside) so its checkpoint asks again."""
+    from . import sheets as SH
+    from . import song as SONG
+    sub = f"pass{st.get('pass', 1):02d}"
+    if to == "song_pick":
+        try:
+            cur = project.rel(SONG.song_path(project))
+        except FileNotFoundError:
+            return
+        before = _move_aside(project, cur, sub)
+        cfg = project.load("project.json")
+        cfg["song"] = None
+        project.save("project.json", cfg)
+        project.cfg["song"] = None
+        picks = project.load("studio_picks.json", {}) or {}
+        picks.pop("song", None)
+        project.save("studio_picks.json", picks)
+        st.setdefault("reopened", {})["song"] = before
+    elif to == "sheets_review":
+        canon = project.load("canon.json")
+        was = {}
+        for ch, ws in SH.worlds(project).items():
+            cur = SH.sheet_path(project, ch, ws[0])
+            if not cur:
+                continue
+            was[f"{ch}:{ws[0]}"] = _move_aside(project, cur, sub)
+            canon["characters"][ch].get("sheet", {}).pop(ws[0], None)
+        project.save("canon.json", canon)
+        picks = project.load("studio_picks.json", {}) or {}
+        for k in list(picks):
+            if k.startswith("sheet:"):
+                picks.pop(k)
+        project.save("studio_picks.json", picks)
+        st["approved"] = [c for c in st.get("approved", []) if c not in ("sheets_review", "outfits_review")]
+        st.setdefault("reopened", {})["look"] = was
+    project.log("reopen", to=to)
+
+
+def _same_file(a, b):
+    from .project import _same_bytes
+    return bool(a and b and os.path.exists(a) and os.path.exists(b) and _same_bytes(a, b))
+
+
+def settle_song(project, st, on_event):
+    """After the song checkpoint reopened by reopen(): if another song was chosen, what was timed to the old one goes aside."""
+    from . import song as SONG
+    before = (st.get("reopened") or {}).pop("song", None)
+    if before is None:
+        return False
+    now = SONG.song_path(project)
+    if _same_file(project.path(before), now):
+        on_event("same song as before: everything made for it is kept")
+        return False
+    sub = f"pass{st.get('pass', 1):02d}"
+    moved = [m for m in (_move_aside(project, f, sub) for f in
+             ["song/lines.json", "song/words.json", "song/beatmap.json", "shots_resolved.json", "cut.json"]
+             + [project.rel(v) for v in project.renders("song", "vocals_*")]) if m]
+    clips = []
+    for s in (project.load("shots.json", {}) or {}).get("shots", []):
+        clips += aside(project, s["id"])
+    for f in project.renders("clips", "*"):                      # split pieces (s08b, ...) are only in the resolved plan
+        if os.path.isfile(f):
+            os.makedirs(project.path("clips", "_aside"), exist_ok=True)
+            shutil.move(f, os.path.join(project.path("clips", "_aside"), os.path.basename(f)))
+            clips.append(os.path.basename(f))
+    on_event(f"a new song: its timing, the plan's timeline and {len(clips)} clip(s) set aside; the video is timed and rendered again")
+    project.log("song_changed", before=before, moved=moved)
+    return True
+
+
+def settle_look(project, st, on_event):
+    """After the look checkpoint reopened by reopen(): a character whose sheet changed gets new first frames and clips."""
+    from . import sheets as SH
+    was = (st.get("reopened") or {}).pop("look", None)
+    if was is None:
+        return []
+    changed = []
+    for key, before in was.items():
+        ch, w = key.split(":", 1)
+        now = SH.sheet_path(project, ch, w)
+        if now and not _same_file(project.path(before) if before else None, project.path(now)):
+            changed.append(ch)
+    if not changed:
+        on_event("same look as before: every frame and clip is kept")
+        return []
+    b = B.Builder(project)
+    picks = project.load("review/still_picks.json", {}) or {}
+    n = 0
+    for s in b.shots:
+        if not (s.get("chars") and s["chars"][0] in changed):
+            continue
+        for f in project.renders("stills", f"{s['id']}_*"):
+            if _label(s["id"], f).startswith(STILL_TAGS):
+                d = project.path("stills", "_aside")
+                os.makedirs(d, exist_ok=True)
+                shutil.move(f, os.path.join(d, os.path.basename(f)))
+                n += 1
+        picks.pop(s["id"], None)
+        aside(project, s["id"])
+        if s.get("still") and s["still"] != "edit":
+            project.patch_shot(s["id"], {"still": "edit"}, "shots_resolved.json")
+    project.save("review/still_picks.json", picks)
+    on_event(f"a new look for {', '.join(changed)}: {n} first frame(s) and their clips set aside; they are made again from it")
+    project.log("look_changed", chars=changed)
+    return changed

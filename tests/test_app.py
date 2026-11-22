@@ -154,6 +154,46 @@ def main(keep=False, stay=False):
         v = wait(base, name, lambda v: v["step"] == "done" and not v["running"])
         assert v["finished"] == ["out/pass01.mp4", "out/pass02.mp4"], v["finished"]
         print("ok   revise: back to the takes after the pass makes pass 2")
+        # back to the look: the same sheet again keeps every frame; another sheet redoes the character's frames and clips
+        call(base, f"/api/projects/{name}/back", {"to": "sheets_review"})
+        v = wait(base, name, lambda v: v["waiting"])
+        assert v["waiting"]["checkpoint"] == "sheets_review" and v["pass"] == 3, (v["waiting"], v["pass"])
+        opts = v["waiting"]["choices"][0]["options"]
+        other = next(o["file"] for o in opts if o["file"] != ch["options"][1]["file"])
+        frames_before = sorted(os.listdir(p.path("stills")))
+        call(base, f"/api/projects/{name}/pick", {"kind": "sheet", "char": "lead", "world": "real", "file": other})
+        call(base, f"/api/projects/{name}/continue", {})
+        v = wait(base, name, lambda v: v["waiting"])
+        assert v["waiting"]["checkpoint"] == "stills_review", v["waiting"]
+        log = "\n".join(call(base, f"/api/projects/{name}/log")["lines"][-80:])
+        assert "a new look for lead" in log, log[-1500:]
+        assert os.path.isdir(p.path("stills", "_aside")) and os.listdir(p.path("stills", "_aside"))
+        assert os.path.isdir(p.path("refs", "sheets", "_aside")), "the old sheet is kept"
+        rows = [r for r in v["waiting"]["choices"] if r["kind"] == "still" and r["who"]]
+        assert rows and all(len(r["options"]) >= 2 for r in rows) and sorted(os.listdir(p.path("stills"))) != frames_before
+        for cp in ("stills_review", "takes_review", "pass_review"):
+            assert v["waiting"]["checkpoint"] == cp, (cp, v["waiting"]["checkpoint"])
+            call(base, f"/api/projects/{name}/continue", {})
+            v = wait(base, name, lambda v: v["waiting"] or (v["step"] == "done" and not v["running"]))
+        assert v["finished"][-1] == "out/pass03.mp4", v["finished"]
+        print("ok   back to the look: another sheet makes new first frames and clips in pass 3, the old ones kept aside")
+        # auto-continue: a checkpoint left alone past auto_pass_minutes carries on with the top picks; Intervene reopens it
+        call(base, f"/api/projects/{name}/back", {"to": "takes_review"})
+        v = wait(base, name, lambda v: v["waiting"])
+        assert v["waiting"]["checkpoint"] == "takes_review" and v["waiting"]["auto_at"], v["waiting"]
+        v = call(base, f"/api/projects/{name}/auto", {"minutes": 0.01})
+        assert studio.tick(now=time.time() + 5) == name
+        v = wait(base, name, lambda v: v["waiting"] and v["waiting"]["checkpoint"] == "pass_review")
+        assert v["auto_passed"] is None or v["auto_passed"]["checkpoint"] == "takes_review"
+        call(base, f"/api/projects/{name}/continue", {})
+        v = wait(base, name, lambda v: v["step"] == "done" and not v["running"])
+        assert v["auto_passed"]["checkpoint"] == "takes_review", v["auto_passed"]
+        call(base, f"/api/projects/{name}/intervene", {})
+        v = wait(base, name, lambda v: v["waiting"])
+        assert v["waiting"]["checkpoint"] == "takes_review" and v["auto_passed"] is None, (v["waiting"], v["auto_passed"])
+        v = call(base, f"/api/projects/{name}/hold", {"on": True})
+        assert v["waiting"]["hold"] and v["waiting"]["auto_at"] is None and studio.tick(now=time.time() + 3600) is None
+        print("ok   auto-continue: past its time the checkpoint carries on with the top picks; Intervene reopens it; Wait for me holds it")
         call(base, f"/api/projects/{name}/archive", {"on": True})
         assert next(x for x in call(base, "/api/projects")["projects"] if x["name"] == name)["archived"]
         wh = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0",

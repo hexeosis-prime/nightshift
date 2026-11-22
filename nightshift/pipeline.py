@@ -153,7 +153,7 @@ def _checkpoint(project, st, step, on_event, packet, name=None, even_in_yolo=Fal
         return
     if name in st.get("approved", []):
         return
-    st["waiting"] = {"checkpoint": name, "packet": packet, "since": time.strftime("%Y-%m-%d %H:%M")}
+    st["waiting"] = {"checkpoint": name, "packet": packet, "since": time.strftime("%Y-%m-%d %H:%M"), "since_ts": time.time()}
     save_state(project, st)
     on_event(f"CHECKPOINT {name}: review {', '.join(packet) if packet else '(see review/)'} then run `nightshift continue`")
     raise Stop(name)
@@ -164,8 +164,10 @@ def step_sheets(project, st, on_event):
     """Character sheets before anything else. Stops for the director (and in yolo mode too while sheets.approve is on)."""
     from . import sheets as SH
     k = SH.cfg(project)
+    from . import director as D
     need = [(ch, ws) for ch, ws in SH.worlds(project).items() if any(not SH.sheet_path(project, ch, w) for w in ws)]
     if not need:
+        D.settle_look(project, st, on_event)          # back at the look (Phase 2): another sheet chosen redoes its frames
         return []
     stop = project.cfg.get("mode") != "yolo" or k["approve"]
     for phase, name in ((0, "sheets_review"), (1, "outfits_review")):
@@ -195,13 +197,16 @@ def step_sheets(project, st, on_event):
             if ranked:
                 SH.pick(project, ch, w, ranked[0]["file"])
                 on_event(f"sheet {ch} / {w}: {ranked[0]['file']} ({ranked[0]['by']} {ranked[0]['score']})")
+    D.settle_look(project, st, on_event)
     return []
 
 
 def step_song(project, st, on_event):
+    from . import director as D
     from . import lyrics, song
     try:
         song.song_path(project)
+        D.settle_song(project, st, on_event)       # back at the song (Phase 2): another song re-times the video
         return []
     except FileNotFoundError:
         pass
@@ -229,6 +234,7 @@ def step_song(project, st, on_event):
         return []
     _checkpoint(project, st, "song", on_event, ["review/songs.json"] + [r["file"] for r in rows])
     _default_song(project, rows, on_event)
+    D.settle_song(project, st, on_event)
     return []
 
 

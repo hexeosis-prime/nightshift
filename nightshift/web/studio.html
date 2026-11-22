@@ -83,6 +83,8 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
 .drop .x{position:absolute;top:6px;right:6px;z-index:2;background:rgba(0,0,0,.7);border:0;border-radius:6px;padding:3px 7px;cursor:pointer;display:none}
 .drop.has .x{display:block}
 .note{font-size:12.5px;color:var(--faint);margin-top:10px}
+.note .lnk,.autonote .lnk{background:none;border:0;color:var(--amber);cursor:pointer;font:inherit;padding:0;text-decoration:underline}
+.autonote{margin-top:12px;font-size:13px;color:var(--dim)}
 .scenes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .scene{position:relative;border:1px solid var(--line2);border-radius:12px;overflow:hidden;cursor:pointer;min-height:150px;
   display:flex;flex-direction:column;justify-content:flex-end;padding:12px;transition:.18s}
@@ -152,6 +154,7 @@ textarea{resize:vertical;min-height:84px;font:13px/1.55 var(--mono)}
 .steps{list-style:none;margin:0;padding:0;border-left:1px solid var(--line2)}
 .steps li{position:relative;padding:7px 0 7px 18px;font:500 13px/1.2 var(--mono);color:var(--faint);letter-spacing:.04em}
 .steps li::before{content:"";position:absolute;left:-5px;top:11px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:1px solid var(--line2)}
+.steps li.clk{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.steps li.clk:hover{color:var(--amber)}
 .steps li.done{color:var(--dim)}.steps li.done::before{background:var(--dim);border-color:var(--dim)}
 .steps li.now{color:var(--amber)}.steps li.now::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px var(--amber)}
 .steps li.wait{color:var(--amber)}.steps li.wait::before{background:transparent;border:2px solid var(--amber)}
@@ -500,6 +503,7 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
           <div class="phead"><h3 id="nowTitle">Ready</h3><span class="label" id="nowSub"></span></div>
           <div class="status"><span class="big mono" id="nowJobs"></span><div class="bar"><i id="nowBar" style="width:0"></i></div></div>
           <p class="err hide" id="nowHealth" style="margin:12px 0 0"></p>
+          <div class="autonote hide" id="autoBanner"></div>
         </div>
         <div class="panel cp hide" id="cpPanel">
           <div class="phead"><h3 id="cpTitle"></h3><span class="label">checkpoint</span></div>
@@ -509,14 +513,19 @@ pre.sample{font:12.5px/1.55 var(--mono);color:var(--dim);background:var(--bg);bo
             <textarea id="cpNotes" placeholder="Notes for the pass log (optional)"></textarea>
             <button class="btn primary" onclick="act('continue')" id="cpGo">Approve &amp; carry on</button>
           </div>
+          <div class="note" id="cpAuto"></div>
+        </div>
+        <div class="panel hide" id="pastPanel">
+          <div class="phead"><h3 id="pastTitle"></h3><span class="label">earlier step</span><button class="btn sm ghost" style="margin-left:auto" onclick="closePast()">Close</button></div>
+          <div id="pastBody"></div>
         </div>
         <div class="panel final hide" id="finalPanel">
           <div class="phead"><h3>Finished</h3><span class="label" id="finalName"></span></div>
           <video id="finalVid" controls playsinline></video>
           <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap"><a class="btn primary" id="finalDl" download>Download</a>
-            <button class="btn" onclick='goBack("takes_review")'>Revise: video takes</button><button class="btn" onclick='goBack("stills_review")'>Revise: first frames</button>
+            <span id="finalBacks"></span>
             <button class="btn" onclick="go('')">Start new</button><button class="btn ghost" onclick="archiveIt()">Archive</button></div>
-          <div class="note">Revising starts the next pass: everything made so far is kept, only what you change renders again.</div>
+          <div class="note">Revising starts the next pass: everything made so far is kept (anything replaced is moved aside, never deleted), only what you change renders again. A new song re-times the whole video; a new look redoes the character's frames.</div>
         </div>
         <div class="panel">
           <div class="phead"><h3>On the wall</h3><span class="label">latest renders</span></div>
@@ -883,6 +892,36 @@ async function act(what){
 async function reroll(body){
   try { render(await api(`/api/projects/${encodeURIComponent(CUR)}/reroll`, body)); lastView = null } catch(e){ $("pErr").textContent = e.message }
 }
+const PAST_STEPS = {sheets:"sheets_review", song:"song_pick", sheetedits:"stills_review", pick:"takes_review"};
+async function showPast(step){
+  const v = lastV || {}, c = v.cfg || {}, ar = (c.aspect || "16:9") === "9:16" ? "9/16" : "16/9";
+  try {
+    const r = await (await fetch(`/api/projects/${encodeURIComponent(CUR)}/past/${step}`)).json();
+    if (r.error) throw new Error(r.error);
+    let html = "";
+    for (const ch of r.rows) {
+      const mark = f => f === ch.chosen ? `<span class="tag">chosen</span>` : "";
+      if (ch.kind === "sheet") html += `<div class="shotrow"><div class="head"><b>${esc(ch.char === "lead" ? "Lead" : ch.char)}</b><span class="label">${ch.options.length} looks</span></div><div class="opts">` +
+        ch.options.map((o, i) => `<div class="opt ${o.file === ch.chosen ? "on" : ""}">${mark(o.file)}<span class="zoom" onclick="return zoom('${fileUrl(v.name, o.file)}', event)">⤢ View large</span><img src="${fileUrl(v.name, o.file)}" loading="lazy"><div class="meta"><span>look ${i + 1}</span><span>${o.score == null ? "" : esc(o.by) + " " + o.score}</span></div></div>`).join("") + `</div></div>`;
+      else if (ch.kind === "song") html += `<div class="shotrow"><div class="head"><b>The song</b><span class="label">${ch.options.length} takes</span></div><div class="songs">` +
+        ch.options.map(o => `<div class="song ${o.file === ch.chosen ? "on" : ""}"><div class="cov">${o.score == null ? "" : `<b>${Math.round(o.score * 100)}%</b>`}${esc(o.by)}${o.seconds ? ` · ${Math.round(o.seconds)} s` : ""}${o.file === ch.chosen ? " · <b>chosen</b>" : ""}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}"></audio></div>`).join("") + `</div></div>`;
+      else { const vid = ch.kind === "take";
+        html += `<div class="shotrow"><div class="head"><b>Shot ${+ch.shot.slice(1) || esc(ch.shot)}</b><span class="label">${esc(ch.desc || "")}</span></div><div class="mini ${vid ? "v" : ""}" style="--ar:${ar}">` +
+        ch.options.map(o => `<div class="opt ${o.file === ch.chosen ? "on" : ""}">${vid ? `<video src="${fileUrl(v.name, o.file)}#t=0.5" preload="metadata" muted playsinline loop onmouseenter="this.play()" onmouseleave="this.pause()"></video>` : `<span class="zoom" onclick="return zoom('${fileUrl(v.name, o.file)}', event)">⤢</span><img src="${fileUrl(v.name, o.file)}" loading="lazy">`}<div class="meta"><span>${o.file === ch.chosen ? "chosen" : ""}</span><span>${o.score == null ? "" : "face " + o.score}</span></div></div>`).join("") + `</div></div>`; }
+    }
+    html = html || `<div class="note">Nothing to choose at this step.</div>`;
+    if (r.can_back) html += `<div class="cpacts"><button class="btn" ${v.running ? "disabled title='Stop the run first'" : ""} onclick='goBack("${r.checkpoint}"); closePast()'>← Go back here and choose again</button></div>
+      <div class="note">${{sheets_review:"Another look redoes the character's first frames and clips.", song_pick:"Another song re-times the video and renders the clips again.", stills_review:"Changing a first frame renders that shot's clip again.", takes_review:"Swapping a take changes the cut only."}[r.checkpoint] || ""} Choosing the same again changes nothing. Nothing is deleted.</div>`;
+    $("pastTitle").textContent = "Earlier: " + (STEP_NAMES[step] || step);
+    $("pastBody").innerHTML = html;
+    $("pastPanel").classList.remove("hide");
+    $("pastPanel").scrollIntoView({behavior:"smooth", block:"start"});
+  } catch(e){ $("pErr").textContent = e.message }
+}
+function closePast(){ $("pastPanel").classList.add("hide") }
+async function holdIt(on){
+  try { render(await api(`/api/projects/${encodeURIComponent(CUR)}/hold`, {on})); lastView = null } catch(e){ $("pErr").textContent = e.message }
+}
 async function goBack(to){
   try { render(await api(`/api/projects/${encodeURIComponent(CUR)}/back`, {to})); lastView = null; window.scrollTo(0, 0) } catch(e){ $("pErr").textContent = e.message }
 }
@@ -958,7 +997,8 @@ function render(v){
   $("pSteps").innerHTML = steps.map(s => {
     let cls = done.has(s) ? "done" : "";
     if (s === v.step && v.step !== "done") cls = v.waiting ? "wait" : v.running ? "now" : "";
-    return `<li class="${cls}">${esc(STEP_NAMES[s] || s)}</li>`}).join("");
+    const can = PAST_STEPS[s] && done.has(s) && !(v.waiting && v.waiting.checkpoint === PAST_STEPS[s]);
+    return `<li class="${cls}${can ? " clk" : ""}"${can ? ` onclick='showPast("${s}")' title="See the choices"` : ""}>${esc(STEP_NAMES[s] || s)}</li>`}).join("");
   $("runBtn").classList.toggle("hide", v.running || !!v.waiting || v.step === "done");
   $("runBtn").textContent = v.step ? "Carry on" : "Run";
   $("runBtn").disabled = v.busy_other;
@@ -977,6 +1017,12 @@ function render(v){
   if (h.status === "stalled") $("nowTitle").textContent = "Looks stalled";
   $("nowHealth").classList.toggle("hide", !hurt);
   $("nowHealth").textContent = hurt ? (h.error ? h.error + ". " : "") + (h.advice ? h.advice.charAt(0).toUpperCase() + h.advice.slice(1) + "." : "") : "";
+  const hm = t => new Date(t * 1000).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+  const w0 = v.waiting, ap = v.auto_passed;
+  $("cpAuto").innerHTML = !w0 ? "" : w0.hold ? `Waiting for you: this checkpoint won't carry on by itself. <button class="lnk" onclick="holdIt(false)">Let it carry on after ${v.auto_pass_minutes ? (v.auto_pass_minutes >= 60 ? v.auto_pass_minutes / 60 + " h" : v.auto_pass_minutes + " min") : "a while"}</button>`
+    : w0.auto_at ? `If nothing is chosen, carries on with the top picks at ${hm(w0.auto_at)}. <button class="lnk" onclick="holdIt(true)">Wait for me</button>` : "";
+  $("autoBanner").classList.toggle("hide", !ap || !!w0);
+  $("autoBanner").innerHTML = ap && !w0 ? `Carried on by itself past <b>${esc((CP[ap.checkpoint] || [ap.checkpoint])[0])}</b> at ${esc(ap.t.slice(11))} with the top picks. <button class="lnk" onclick="act('intervene')">Intervene</button> pauses the run and reopens it.` : "";
   if (sig === lastView) return; lastView = sig;
   // checkpoint
   const w = v.waiting;
@@ -1021,7 +1067,9 @@ function render(v){
       html += `<div class="packet">` + w.files.filter(f => /\.(png|jpe?g|webp|mp4)$/i.test(f)).map(f => /\.mp4$/i.test(f) ?
         `<video controls playsinline src="${fileUrl(v.name, f)}#t=0.5" preload="metadata"></video><div class="note">${esc(/review/.test(f) ? "Review copy: shot numbers burned in, for notes" : "The pass")}</div>` : `<img src="${fileUrl(v.name, f)}" loading="lazy" onclick="zoom(this.src)">`).join("") + `</div>`;
     }
-    const backs = {takes_review:[["stills_review", "Back to first frames"]], pass_review:[["takes_review", "Back to video takes"], ["stills_review", "Back to first frames"]]}[w.checkpoint] || [];
+    const BACK_LABEL = {sheets_review:"Back to the look", song_pick:"Back to the song", stills_review:"Back to first frames", takes_review:"Back to video takes"};
+    const ORDER = ["sheets_review", "song_pick", "stills_review", "takes_review", "pass_review"];
+    const backs = (v.can_back || []).filter(c => ORDER.indexOf(c) < ORDER.indexOf(w.checkpoint)).reverse().map(c => [c, BACK_LABEL[c]]);
     html += backs.length ? `<div class="cpacts">` + backs.map(([to, l]) => `<button class="btn" onclick='goBack("${to}")'>← ${l}</button>`).join("") + `</div>` : "";
     $("cpBody").innerHTML = html;
     $("cpGo").textContent = w.checkpoint === "pass_review" ? "This is the video: finish" : "Approve & carry on";
@@ -1033,7 +1081,10 @@ function render(v){
   $("wall").closest(".panel").classList.toggle("hide", !!v.waiting);   // at a checkpoint the choices are the wall
   if (fin2) { const key = v.name + "/" + fin2, u = fileUrl(v.name, fin2) + "?t=" + Date.now();
     if ($("finalVid").dataset.key !== key) { $("finalVid").src = u; $("finalVid").dataset.key = key }   // the file name repeats across projects: key on project + file
-    $("finalVid").className = c.aspect === "9:16" ? "v" : ""; $("finalDl").href = u; $("finalName").textContent = fin2 }
+    $("finalVid").className = c.aspect === "9:16" ? "v" : ""; $("finalDl").href = u; $("finalName").textContent = fin2
+    const REV = {takes_review:"Revise: video takes", stills_review:"Revise: first frames", song_pick:"Revise: the song", sheets_review:"Revise: the look"};
+    const bk = ["takes_review", "stills_review", "song_pick", "sheets_review"].filter(c => (v.can_back || []).includes(c)).map(c => `<button class="btn" onclick='goBack("${c}")'>${REV[c]}</button>`).join("");
+    if ($("finalBacks").dataset.k !== bk) { $("finalBacks").innerHTML = bk; $("finalBacks").dataset.k = bk } }
   // wall
   $("wall").classList.toggle("v", c.aspect === "9:16");
   $("wall").innerHTML = v.renders.length ? v.renders.map(f => {

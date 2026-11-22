@@ -240,6 +240,7 @@ class Studio:
         def work(on_event):
             st = pipeline.state(p)
             st["waiting"]["busy"] = {"kind": what, "shot": body.get("shot"), "char": body.get("char")}
+            st["waiting"]["touched"] = time.time()
             pipeline.save_state(p, st)
             try:
                 jobs, kind = D.reroll_jobs(p, body)
@@ -251,28 +252,181 @@ class Studio:
                 st = pipeline.state(p)
                 if st.get("waiting"):
                     st["waiting"].pop("busy", None)
+                    st["waiting"]["touched"] = time.time()          # the timer counts from when the new options are ready
                     pipeline.save_state(p, st)
         self._launch(name, work, f"making new options ({what}{' ' + body['shot'] if body.get('shot') else ''})")
 
-    BACK = {"stills_review": "sheetedits", "takes_review": "videos"}
+    BACK = {"sheets_review": "sheets", "song_pick": "song", "stills_review": "sheetedits", "takes_review": "videos"}
+    ORDER = ["sheets_review", "song_pick", "stills_review", "takes_review", "pass_review"]
 
     def back(self, name, body):
         """Go back to a checkpoint: from an open checkpoint later in the pass, or after the pass as a revision (a new pass
-        that keeps every render and pick; only what changes renders again)."""
+        that keeps every render and pick; only what changes renders again). The song and the look reopen their choice
+        (director.reopen): choosing the same again changes nothing, another one redoes what depended on it."""
+        from . import director as D
         to = body.get("to")
         if to not in self.BACK:
             raise ValueError(f"can't go back to {to}")
         p = self.project(name)
+        if to not in self.can_back(p):
+            raise ValueError({"song_pick": "this video uses your own track: there are no song takes to choose from",
+                              "sheets_review": "this video has no character look to choose"}.get(to, f"can't go back to {to}"))
+        if self.busy() and self.busy()["project"] == name:
+            raise RuntimeError("stop the run first (or wait for it to reach a checkpoint)")
         st = pipeline.state(p)
-        order = ["stills_review", "takes_review", "pass_review"]
+        order = self.ORDER
         if st.get("step") == "done":
             st = pipeline.new_pass(p)
-            st["approved"] = st.get("approved", []) + order[:order.index(to)]    # what came before stays approved
+            st["approved"] = list(dict.fromkeys(st.get("approved", []) + order[:order.index(to)]))  # what came before stays
         st["approved"] = [c for c in st.get("approved", []) if c not in order[order.index(to):]]
         st["waiting"] = None
+        D.reopen(p, st, to)
         pipeline.save_state(p, st)
         p.log("back", to=to, pass_=st.get("pass"))
         self.start(name, start=self.BACK[to])
+
+    # ---- auto-continue (Phase 2: "every checkpoint is a hard gate with an inactivity timer") -------------------------
+    def auto_due(self, p, st):
+        """When the open checkpoint carries on by itself (epoch seconds), or None: no timer, held, or busy."""
+        w = st.get("waiting") or {}
+        m = p.cfg.get("auto_pass_minutes")
+        if not w or not m or w.get("hold") or w.get("busy") or p.cfg.get("mode") == "yolo":
+            return None
+        base = max(w.get("since_ts") or 0, w.get("touched") or 0)
+        if not base:
+            try:
+                base = time.mktime(time.strptime(w["since"], "%Y-%m-%d %H:%M"))
+            except (KeyError, ValueError):
+                return None
+        return base + float(m) * 60
+
+    def tick(self, now=None):
+        """One look at every project: a checkpoint past its time carries on with the top-ranked options (one at a time:
+        one GPU). Returns the project it started, if any."""
+        if self.busy():
+            return None
+        now = now or time.time()
+        for row in self.list():
+            if row.get("archived") or not row.get("waiting") or row.get("error"):
+                continue
+            p = self.project(row["name"])
+            st = pipeline.state(p)
+            due = self.auto_due(p, st)
+            if due is None or now < due or external_run(p, st):
+                continue
+            self.auto_pass(row["name"])
+            return row["name"]
+        return None
+
+    def auto_pass(self, name):
+        p = self.project(name)
+        st = pipeline.state(p)
+        cp = st["waiting"]["checkpoint"]
+        st.setdefault("auto_passed", []).append({"checkpoint": cp, "pass": st.get("pass", 1), "t": time.strftime("%Y-%m-%d %H:%M"),
+                                                 "t_ts": time.time()})
+        pipeline.save_state(p, st)
+        p.log("auto_pass", checkpoint=cp)
+        m = p.cfg.get("auto_pass_minutes")
+        self.emit(name, f"no choice at this checkpoint for {m:g} min: carrying on with the top-ranked options (Intervene to go back)")
+        self.start(name, approve=True, notes=f"auto-passed after {m:g} min")
+
+    def intervene(self, name):
+        """Pause the run and reopen the checkpoint that carried on by itself."""
+        p = self.project(name)
+        st = pipeline.state(p)
+        last = next((a for a in reversed(st.get("auto_passed", [])) if a.get("pass") == st.get("pass", 1)
+                     and not a.get("intervened")), None)
+        if not last:
+            raise ValueError("nothing carried on by itself in this pass")
+        if last["checkpoint"] not in self.BACK:
+            raise ValueError("the finished video was approved by itself: use Revise to change it")
+        r = self.busy()
+        if r and r["project"] == name:
+            self.stop(name)
+            r["thread"].join(timeout=180)
+            if r["thread"].is_alive():
+                raise RuntimeError("the run is still stopping; try Intervene again in a moment")
+        st = pipeline.state(p)
+        for a in st.get("auto_passed", []):
+            if a is not None and a.get("t_ts") == last.get("t_ts"):
+                a["intervened"] = True
+        pipeline.save_state(p, st)
+        self.emit(name, f"intervened: back to {last['checkpoint']}")
+        self.back(name, {"to": last["checkpoint"]})
+
+    def hold(self, name, on=True):
+        """Wait for me: this checkpoint doesn't carry on by itself."""
+        p = self.project(name)
+        st = pipeline.state(p)
+        if not st.get("waiting"):
+            raise ValueError("nothing is waiting")
+        st["waiting"]["hold"] = bool(on)
+        pipeline.save_state(p, st)
+
+    def auto_minutes(self, name, minutes):
+        p = self.project(name)
+        cfg = p.load("project.json")
+        cfg["auto_pass_minutes"] = float(minutes) if minutes else None
+        p.save("project.json", cfg)
+
+    def touch(self, p):
+        st = pipeline.state(p)
+        if st.get("waiting"):
+            st["waiting"]["touched"] = time.time()
+            pipeline.save_state(p, st)
+
+    def start_ticker(self, every=30):
+        def loop():
+            while True:
+                time.sleep(every)
+                try:
+                    self.tick()
+                except Exception as e:
+                    print("auto-continue check failed:", e)
+        threading.Thread(target=loop, daemon=True, name="auto-pass").start()
+
+    STEP_CP = {"sheets": "sheets_review", "song": "song_pick", "sheetedits": "stills_review", "pick": "takes_review"}
+
+    def past(self, name, step):
+        """A finished step's choices, read only: every option with the chosen one marked (Phase 2: "while on video takes,
+        click Song and see all 3 song choices, with the one picked marked")."""
+        from .project import _same_bytes
+        p = self.project(name)
+        cp = self.STEP_CP.get(step)
+        if not cp:
+            raise ValueError(f"{step} has no choices to show")
+        rows = self.choices(p, cp)
+        same = lambda a, b: bool(a and b and os.path.exists(a) and os.path.exists(b)
+                                 and os.path.getsize(a) == os.path.getsize(b) and _same_bytes(a, b))
+        for r in rows:
+            if r["kind"] == "sheet":
+                from . import sheets as SH
+                cur = SH.sheet_path(p, r["char"], r["world"])
+                r["chosen"] = next((o["file"] for o in r["options"] if cur and same(p.path(o["file"]), p.path(cur))), None)
+            elif r["kind"] == "song":
+                try:
+                    from .song import song_path
+                    cur = song_path(p)
+                except FileNotFoundError:
+                    cur = None
+                r["chosen"] = next((o["file"] for o in r["options"] if cur and same(p.path(o["file"]), cur)), None)
+            elif r["kind"] == "still":
+                r["chosen"] = next((o["file"] for o in r["options"] if o.get("label") == r.get("picked_label")), None)
+            elif r["kind"] == "take":
+                r["chosen"] = r.get("picked_file")
+        return {"step": step, "checkpoint": cp, "rows": rows, "can_back": cp in self.can_back(p)}
+
+    def can_back(self, p):
+        """The checkpoints this project can go back to (Studio shows a button for each)."""
+        from . import sheets as SH
+        out = []
+        if p.cfg.get("mode") == "yolo":
+            return out
+        if any(SH.candidates(p, ch, ws[0]) for ch, ws in SH.worlds(p).items()):
+            out.append("sheets_review")
+        if p.renders("songs", "*.mp3") or p.renders("songs", "*.wav") or p.renders("songs", "*.flac"):
+            out.append("song_pick")
+        return out + ["stills_review", "takes_review"]
 
     def archive(self, name, on=True):
         p = self.project(name)
@@ -312,7 +466,7 @@ class Studio:
         packet = None
         if w:
             packet = {"checkpoint": w["checkpoint"], "since": w.get("since"), "files": [f for f in w.get("packet", []) if f],
-                      "busy": w.get("busy"),
+                      "busy": w.get("busy"), "hold": bool(w.get("hold")), "auto_at": self.auto_due(p, st),
                       "choices": self.choices(p, w["checkpoint"])}
         outs = sorted([f for f in os.listdir(p.path("out")) if re.match(r"pass\d+\.mp4$", f)]) if os.path.isdir(p.path("out")) else []
         busy = self.busy()
@@ -333,6 +487,9 @@ class Studio:
             "pass": st.get("pass"), "step": st.get("step"), "done": [h["step"] for h in st.get("history", [])],
             "steps": pipeline.STEPS, "jobs": counts, "waiting": packet,
             "finished": [f"out/{f}" for f in outs], "renders": self.renders(p), "health": health,
+            "can_back": self.can_back(p), "auto_pass_minutes": p.cfg.get("auto_pass_minutes"),
+            "auto_passed": next((a for a in reversed(st.get("auto_passed", [])) if a.get("pass") == st.get("pass", 1)
+                                 and not a.get("intervened") and a["checkpoint"] in self.BACK), None),
         }
 
     def choices(self, p, checkpoint):
@@ -378,6 +535,7 @@ class Studio:
         f = body.get("file") or ""
         if not _inside(p.root, p.path(f)):
             raise ValueError("bad file")
+        self.touch(p)
         if kind in ("still", "take"):
             from . import director as D
             return D.pick(p, body)
@@ -557,6 +715,8 @@ def handler(app):
                     return self._json({"projects": app.list()})
                 if len(parts) == 3 and parts[:2] == ["api", "projects"]:
                     return self._json(app.view(parts[2]))
+                if len(parts) == 5 and parts[:2] == ["api", "projects"] and parts[3] == "past":
+                    return self._json(app.past(parts[2], parts[4]))
                 if len(parts) == 4 and parts[:2] == ["api", "projects"] and parts[3] == "log":
                     lines, n = app.log_lines(parts[2], int(q.get("since", 0)))
                     return self._json({"lines": lines, "next": n})
@@ -607,6 +767,12 @@ def handler(app):
                         app.back(name, body)
                     elif action == "archive":
                         app.archive(name, body.get("on", True))
+                    elif action == "intervene":
+                        app.intervene(name)
+                    elif action == "hold":
+                        app.hold(name, body.get("on", True))
+                    elif action == "auto":
+                        app.auto_minutes(name, body.get("minutes"))
                     else:
                         return self._json({"error": f"unknown action {action}"}, 404)
                     return self._json(app.view(name))
@@ -631,6 +797,7 @@ def serve(root, comfy_url, comfy_dir=None, host="127.0.0.1", port=8189, open_bro
         atexit.register(proc.terminate)
         app.mcp_port = mcp_port
         print(f"MCP server for agents on http://{lan_ip()}:{mcp_port}/mcp (your local network only; there is no login)")
+    app.start_ticker()                       # checkpoints left alone past auto_pass_minutes carry on by themselves
     srv = ThreadingHTTPServer((host, port), handler(app))
     url = f"http://{'127.0.0.1' if host in ('0.0.0.0', '') else host}:{port}/"
     print(f"Nightshift Studio on {url}  (projects in {app.root}; ComfyUI at {comfy_url})")
