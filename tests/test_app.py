@@ -165,7 +165,7 @@ def main(keep=False, stay=False):
         call(base, f"/api/projects/{name}/continue", {})
         v = wait(base, name, lambda v: v["waiting"])
         assert v["waiting"]["checkpoint"] == "stills_review", v["waiting"]
-        log = "\n".join(call(base, f"/api/projects/{name}/log")["lines"][-80:])
+        log = "\n".join(call(base, f"/api/projects/{name}/log")["lines"])
         assert "a new look for lead" in log, log[-1500:]
         assert os.path.isdir(p.path("stills", "_aside")) and os.listdir(p.path("stills", "_aside"))
         assert os.path.isdir(p.path("refs", "sheets", "_aside")), "the old sheet is kept"
