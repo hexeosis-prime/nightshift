@@ -232,8 +232,27 @@ def step_song(project, st, on_event):
     return []
 
 
+def _seconds(f):
+    from .assemble import duration
+    try:
+        return round(duration(f), 2)
+    except Exception:
+        return None
+
+
+def song_rank(target=None, full=0.95, long_enough=0.8):
+    """Sort key for song takes: (sings the sheet and long enough), coverage, clarity."""
+    def key(r):
+        cov, sec = r.get("lyric_coverage") or 0, r.get("seconds")
+        ok_len = not target or sec is None or sec >= long_enough * target
+        return (-(cov >= full and ok_len), -cov, -(r.get("clarity") or 0))
+    return key
+
+
 def rank_songs(project, on_event=print, rendered=None):
-    """Every rendered take, transcribed once and ranked by lyric coverage, then clarity -> review/songs.json."""
+    """Every rendered take, transcribed once and ranked -> review/songs.json. Takes that sing (nearly) the whole sheet AND
+    run at least 80% of the asked length come first, then by coverage, then clarity. Nov 21 upbeat run: at 120 BPM the
+    takes ran 34, 26.5 and 23.7 s for a 40 s brief, and the clearest one (26.5 s) made a 26-second video."""
     from . import lyrics
     rendered = rendered or (project.renders("songs", "*.mp3") + project.renders("songs", "*.wav") + project.renders("songs", "*.flac"))
     sheet = lyrics.sheet_lines(open(project.path("song", "lyrics.txt"), encoding="utf-8").read())
@@ -246,8 +265,9 @@ def rank_songs(project, on_event=print, rendered=None):
             on_event(f"song {os.path.basename(f)}: sings {lyrics.coverage(sheet, heard):.0%} of the lyric sheet "
                      f"(clarity {lyrics.clarity(sheet, heard):.2f})")
         heard = json.load(open(wj))["words"]
-        rows.append({"file": project.rel(f), "lyric_coverage": lyrics.coverage(sheet, heard), "clarity": lyrics.clarity(sheet, heard)})
-    rows.sort(key=lambda r: (-r["lyric_coverage"], -r.get("clarity", 0)))
+        rows.append({"file": project.rel(f), "lyric_coverage": lyrics.coverage(sheet, heard), "clarity": lyrics.clarity(sheet, heard),
+                     "seconds": _seconds(f)})
+    rows.sort(key=song_rank(project.cfg.get("song_max_seconds")))
     project.save("review/songs.json", {"songs": rows})
     return rows
 

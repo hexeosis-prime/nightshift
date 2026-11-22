@@ -21,7 +21,7 @@ def main():
         assert any(energy(s) == "high" for s in up)
         vert = S.shots(["night-avenue"], S.DEFAULT_LYRICS, 8, ch, shot_seed=seed, vertical=True)["shots"]
         assert not [s for s in vert if s.get("chars") and s["framing"] == "wide"], "full-body character wide in 9:16"
-    assert all("Her hands stay open and empty" in s["video"] for s in mellow if s.get("chars") and s["framing"] != "wide")
+    assert all("Her hands stay empty, fingers relaxed." in s["video"] for s in mellow if s.get("chars") and s["framing"] != "wide")
     assert all("slowly and gently" in s["video"] for s in mellow if s.get("chars"))
     print("ok   tone: mellow draws calm setups, upbeat medium/high; vertical has no full-body character wides")
     import re

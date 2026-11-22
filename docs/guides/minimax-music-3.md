@@ -178,7 +178,9 @@ stops` · `extreme sidechain compression ducking the entire mix to the kick drum
 
 - **[FIELD] Render several seeds** (`song_seeds`, four by default) and let Nightshift rank them by **lyric coverage**:
   Whisper transcribes each take and measures how much of the lyric sheet is actually sung; takes that sing every line are
-  ranked by **clarity** (how confidently the words were heard). The top take is picked; listen before a long render.
+  ranked by **clarity** (how confidently the words were heard). A take must also run at least 80% of the asked length to
+  rank first (Nov 21: at 120 BPM the takes of a 40-second brief ran 34, 26.5 and 23.7 s, and the clearest short one made a
+  26-second video). The top take is picked; listen before a long render.
 - **[FIELD] How the words are heard (fixed Nov 19).** Whisper's voice-activity filter cut sung lines over music, and the
   lyric sheet given as a prompt made it skip ahead and echo lines back at one instant: one Nov 18 song showed 2 of 6
   lines timed, and the takes scored 21-86% though all four sang every line. Nightshift now transcribes without the voice

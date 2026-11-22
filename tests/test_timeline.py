@@ -14,7 +14,7 @@ def main():
     sing = [s for s in plan if s["mode"] == "lipsync"]
     assert sing and all(s.get("split", {}).get("framing") in ("close", "medium") for s in sing)
     assert all(s["split"]["framing"] != s["framing"] for s in sing), [(s["framing"], s["split"]["framing"]) for s in sing]
-    assert all("Her hands stay open and empty" in s["split"]["video"] or s["split"]["framing"] == "wide" for s in sing)
+    assert all("Her hands stay empty, fingers relaxed." in s["split"]["video"] or s["split"]["framing"] == "wide" for s in sing)
     print("ok   studio: every singing shot carries a second framing for the timeline to cut to")
 
     # an 11.8 s singing slot at the upbeat tone's 4.5 s: three shots, close / medium / close, cuts inside the slot
@@ -37,6 +37,16 @@ def main():
     assert "no_lyric" not in out[2] and out[2]["framing"] == "medium"
     print("ok   a wordless piece of a singing slot becomes a moving shot")
     assert {t: S.TONES[t]["split_seconds"] for t in S.TONES} == {"upbeat": 4.5, "builds": 7.0, "mellow": 10.0}
+
+    # song takes: the one that sings the sheet AND runs long enough wins over a clearer short one (Nov 21: 26.5 s of 40)
+    from nightshift import pipeline as PL
+    rows = [{"file": "a", "lyric_coverage": 1.0, "clarity": .95, "seconds": 26.6},
+            {"file": "b", "lyric_coverage": 1.0, "clarity": .91, "seconds": 23.7},
+            {"file": "c", "lyric_coverage": .964, "clarity": .92, "seconds": 34.3}]
+    assert [r["file"] for r in sorted(rows, key=PL.song_rank(40))] == ["c", "a", "b"]
+    assert [r["file"] for r in sorted(rows, key=PL.song_rank(None))] == ["a", "b", "c"]
+    assert sorted(rows + [{"file": "d", "lyric_coverage": .7, "clarity": .99, "seconds": 40}], key=PL.song_rank(40))[0]["file"] == "c"
+    print("ok   song takes: long enough and fully sung first, then coverage, then clarity")
     print("timeline ok")
 
 

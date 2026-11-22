@@ -122,10 +122,18 @@ def resolve(project, shots_name="shots.json", out_shots="shots_resolved.json", o
                 s["_line_end"] = lines[chosen[id(s)]]["end"]      # a singing shot is given its whole line when it fits
         else:
             s["anchor_note"] = "anchor not found" if not cs else "anchor out of order, unanchored"
-    last = -1
+    first = next((k for k, s in enumerate(shots) if "t" in s), None)
+    if first:                                   # singing from the first second (Nov 21 upbeat: the first line at 0.0 s):
+        before = [s for s in shots[:first] if not s.get("dropped")]  # no room for the intro, the singer opens the video
+        if before and shots[first]["t"] < len(before) * tl["min_seconds"] * 1.1:
+            for s in before:
+                s["dropped"] = True
+                s["anchor_note"] = "no room before the first sung line"
+            shots[first]["t"] = 0.0
+    last = None
     for s in shots:
         if "t" in s:
-            if s["t"] <= last + tl["min_seconds"]:
+            if last is not None and s["t"] <= last + tl["min_seconds"]:
                 s.pop("t")
                 s["anchor_note"] = "anchor too close to the previous one, unanchored"
             else:

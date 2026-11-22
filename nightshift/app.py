@@ -353,7 +353,7 @@ class Studio:
         if checkpoint == "song_pick":
             rows = (p.load("review/songs.json") or {}).get("songs", [])
             return [{"kind": "song", "picked": p.cfg.get("song"), "picked_file": picks.get("song"),
-                     "options": [{"file": r["file"], "score": r["lyric_coverage"],
+                     "options": [{"file": r["file"], "score": r["lyric_coverage"], "seconds": r.get("seconds"),
                                   "by": "instrumental" if r["lyric_coverage"] is None else "of the lyric sheet sung"} for r in rows]}]
         if checkpoint in ("stills_review", "takes_review"):
             from . import director as D

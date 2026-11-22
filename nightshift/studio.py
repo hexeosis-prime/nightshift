@@ -451,8 +451,9 @@ def _dress(deck, mode, framing, energies, who, c, tone):
         # Said positively, in the still and the motion: a singer's closed fist becomes a microphone (Nov 20 upbeat run, s04:
         # empty fists in the first frame, a microphone by the third second, though the prompt said "Nothing in her hands"
         # and the negatives named microphones)
-        act += ", hands open and relaxed, fingers loose"
-        video += " {Po} hands stay open and empty the whole time, fingers loose, palms visible when they move."
+        # (Nov 21: "palms visible when they move" made every shot an open-palms gesture; the plainer line kept the mics away)
+        act += ", hands relaxed and open"
+        video += " {Po} hands stay empty, fingers relaxed."
     if tone == "mellow":
         video += " Everything moves slowly and gently."
     obj, pos = {"she": ("her", "her"), "he": ("him", "his")}.get((c or {}).get("pronoun"), ("them", "their"))

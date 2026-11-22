@@ -1001,7 +1001,7 @@ function render(v){
         const b = {kind:"song"};
         const chosen = ch.picked_file || (ch.options[0] || {}).file;
         html += `<div class="shotrow"><div class="head"><b>The song</b><span class="label">${ch.options.length} takes, best first</span>${isBusy(b) ? making : rr(b, "3 new takes")}</div><div class="songs">` + ch.options.map((o, i) => `<div class="song ${chosen === o.file ? "on" : ""}">
-          <div class="cov">${o.score == null ? "" : `<b>${Math.round(o.score * 100)}%</b>`}${esc(o.by)}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}"></audio>
+          <div class="cov">${o.score == null ? "" : `<b>${Math.round(o.score * 100)}%</b>`}${esc(o.by)}${o.seconds ? ` · ${Math.round(o.seconds)} s` : ""}</div><audio controls preload="none" src="${fileUrl(v.name, o.file)}"></audio>
           <button class="btn sm choose" onclick='pick(${JSON.stringify({kind:"song", file:o.file})}); this.closest(".songs").querySelectorAll(".song").forEach(x=>x.classList.toggle("on", x===this.closest(".song")))'>${chosen === o.file ? "chosen" : "use this one"}</button></div>`).join("") +
           `</div><div class="note">The best take is chosen unless you pick another.</div></div>`;
       } else if (ch.kind === "still" || ch.kind === "take") {
